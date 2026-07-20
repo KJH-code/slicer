@@ -21,6 +21,7 @@ python3 cone_selector.py [model.stl]             # Stage 3: 각도/방향 자동
 python3 region_selector.py [model.stl]           # Stage 4: 부위별(오버행 심한 정도) 각도 결정
 python3 compare_overhang_methods.py [model.stl]  # 검증: 면법선 vs 레이어별 2D 판정 비교
 python3 compare_complexity.py [model.stl]        # 핵심: '복잡도 vs 성능' 균일/구간별/세밀 비교
+python3 analyze_k.py [model.stl]                  # 구간별 이득이 k에 어떻게 의존하나 -> analyze_k.png
 ```
 
 STL 경로를 안 주면 데모용 구(sphere)로 실행된다.
