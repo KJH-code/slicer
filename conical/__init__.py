@@ -20,6 +20,8 @@ from .overhang import analyze_overhangs, support_area_fraction, summarize
 from .sweep import support_fraction, sweep_table
 from .selector import evaluate_J, select_cone, k_sensitivity
 from .meshio import load_mesh_or_demo
+from .metrics import face_support_and_staircase
+from .varangle import select_uniform, select_banded, select_fine
 
 __all__ = [
     "config",
@@ -28,4 +30,6 @@ __all__ = [
     "support_fraction", "sweep_table",
     "evaluate_J", "select_cone", "k_sensitivity",
     "load_mesh_or_demo",
+    "face_support_and_staircase",
+    "select_uniform", "select_banded", "select_fine",
 ]

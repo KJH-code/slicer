@@ -18,8 +18,9 @@ pip install -r requirements.txt
 python3 overhang_analysis.py [model.stl]        # Stage 1: 오버행 분석 (면 법선)
 python3 angle_sweep.py                           # Stage 2: 각도별 남은 서포트 곡선 -> angle_sweep.png
 python3 cone_selector.py [model.stl]             # Stage 3: 각도/방향 자동 결정 + 이유
-python3 region_selector.py [model.stl]           # Stage 4: 부위별(영역 2~3개) 각도 결정
+python3 region_selector.py [model.stl]           # Stage 4: 부위별(오버행 심한 정도) 각도 결정
 python3 compare_overhang_methods.py [model.stl]  # 검증: 면법선 vs 레이어별 2D 판정 비교
+python3 compare_complexity.py [model.stl]        # 핵심: '복잡도 vs 성능' 균일/구간별/세밀 비교
 ```
 
 STL 경로를 안 주면 데모용 구(sphere)로 실행된다.
@@ -37,9 +38,23 @@ conical/
   overhang_layers.py 레이어별 2D 오버행 판정 (실제 슬라이서 방식, 더 정확)
   sweep.py           Stage 2 — 각도별 남은 서포트(%) 계산
   selector.py        Stage 3 — 평가함수 J 로 각도/방향 자동 결정
-  regions.py         Stage 4 — 부위별(영역 2~3개) 각도 결정
+  regions.py         Stage 4 — 부위별(오버행 심한 정도) 각도 결정
+  metrics.py         성능 지표 (서포트 / 강도proxy / 평균각)
+  varangle.py        높이 구간별 변수각 θ(z) 전략 (균일/구간별/세밀)
   meshio.py          STL 로드 / 데모 구 생성 도우미
 ```
+
+### 연구 논지: 균일 원뿔 vs 부위별 각도
+
+비교 대상은 RotBot식 **균일 원뿔(모델 전체 각도 1개)**. 우리 방법은 모델을
+**높이 구간으로 나눠 각 구간에 최적 각도**를 준다(= 변수각 원뿔 θ(z), RotBot의
+`var_angle` 방식이라 실제로 프린트 가능). 균일각은 전체 타협값이라 손해고,
+구간별은 '각도 예산'을 오버행 심한 구간에만 몰아써서 더 적은 왜곡으로 서포트를
+더 줄인다. `compare_complexity.py`가 균일/구간2/구간3/세밀을 **서포트·강도proxy·
+평균각·계산시간**으로 비교한다(복잡도 vs 성능 가성비 곡선).
+
+> 강도는 실측이 아니라 '레이어-표면 정렬' 기반 가벼운 proxy다 (증명 아닌 경향).
+> '세밀(면마다)'은 이론적 바닥일 뿐 물리적으로 못 찍는다(유효한 θ(z) 아님).
 
 ### 오버행 판정 두 가지 (조사 반영)
 
