@@ -1,3 +1,7 @@
 trimesh
 numpy
 matplotlib
+# 아래 3개는 실제 STL 견고성 + 레이어별 2D 오버행 판정(overhang_layers.py)에 필요
+shapely
+networkx
+scipy
