@@ -23,6 +23,7 @@ from .meshio import load_mesh_or_demo, center_on_axis
 from .metrics import face_support_and_staircase
 from .varangle import select_uniform, select_banded, select_fine
 from .strength import face_strength, part_strength
+from . import analytic
 
 __all__ = [
     "config",
@@ -34,4 +35,5 @@ __all__ = [
     "face_support_and_staircase",
     "select_uniform", "select_banded", "select_fine",
     "face_strength", "part_strength",
+    "analytic",
 ]

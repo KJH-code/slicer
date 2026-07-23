@@ -1,0 +1,94 @@
+"""
+analytic.py — 해석적(닫힌형) 오버행 판정 + 면별 임계각. 팀메 방식을 채택·통합.
+
+우리 기존 방식(sweep.py/metrics.py)은 각도마다 메시를 '실제로 변환'해 법선을 다시
+계산했다(느리고, 스윕 필요). 팀메(find_conical_angle)는 변환 없이, 원본 면 법선을
+'국소 원뿔 빌드 방향'에 투영한 값을 바로 쓴다:
+
+    g(α) = n_z·cosα + d·n_r·sinα                (d=방향부호, n_r=법선의 반경성분)
+
+  · 이는 실공간에서 면이 국소 원뿔 레이어와 이루는 각(변환 왜곡 없음).
+  · 닫힌형이라 빠르고, 면마다 '자기지지가 되는 최소 각도 θ*'를 asin으로 즉시 푼다.
+
+자기지지 조건(우리 45° 관례와 정렬): g(α) ≥ κ,  κ = −sin(threshold).
+  · α=0에서 g=n_z 이므로 n_z ≥ −sin45  →  기존 판정과 정확히 일치.
+
+출처/크레딧: 팀메 저장소 26037-arch/find_conical_angle
+             (conical_slicing/evaluation.py 의 _score = n_z·cos + d·n_r·sin,
+              phase=atan2(a,b), boundary=asin(κ/R) 최소각 로직).
+⚠ 이 방식도 원뿔 축(원점) 기준 n_r 을 쓰므로, 분석 전 meshio.center_on_axis 필요.
+"""
+
+import numpy as np
+
+from .config import THRESHOLD_DEG, MAX_ANGLE_DEG
+
+
+def radial_normal(mesh):
+    """각 면 법선의 '반경(축에서 바깥) 방향' 성분 n_r. 축 위(중심)면은 0."""
+    fn = mesh.face_normals
+    c = mesh.vertices[mesh.faces].mean(axis=1)
+    x, y = c[:, 0], c[:, 1]
+    r = np.sqrt(x**2 + y**2)
+    safe = np.where(r > 1e-9, r, 1.0)
+    return np.where(r > 1e-9, (x * fn[:, 0] + y * fn[:, 1]) / safe, 0.0)
+
+
+def _dir_sign(direction):
+    return 1.0 if direction == "outward" else -1.0
+
+
+def overhang_score(mesh, angle_deg, direction, radial=None):
+    """g(α) = n_z·cosα + d·n_r·sinα. 클수록 안전(위를 봄), 작을수록 오버행."""
+    nz = mesh.face_normals[:, 2]
+    nr = radial_normal(mesh) if radial is None else radial
+    d = _dir_sign(direction)
+    a = np.radians(angle_deg)
+    return nz * np.cos(a) + d * nr * np.sin(a)
+
+
+def needs_support(mesh, angle_deg, direction, threshold_deg=THRESHOLD_DEG):
+    """해석적 자기지지 판정: g(α) < κ 이면 서포트 필요."""
+    kappa = -np.sin(np.radians(threshold_deg))
+    return overhang_score(mesh, angle_deg, direction) < kappa
+
+
+def support_fraction(mesh, angle_deg, direction, threshold_deg=THRESHOLD_DEG):
+    """해석적 방식으로 남은 서포트 넓이 비율(%)."""
+    need = needs_support(mesh, angle_deg, direction, threshold_deg)
+    areas = mesh.area_faces
+    return areas[need].sum() / areas.sum() * 100.0
+
+
+def critical_angle(mesh, direction, threshold_deg=THRESHOLD_DEG,
+                   angle_max=MAX_ANGLE_DEG):
+    """면마다 '자기지지가 되는 최소 원뿔각 θ*'를 닫힌형으로 계산.
+
+    반환: theta_star[F]  (도)
+      ·  0             : 이미(각도 0에서) 자기지지
+      ·  0 < θ* ≤ max  : 이 각도부터 자기지지
+      ·  np.nan        : 이 방향·각도 범위 안에서는 못 고침 (Rank1 'irreducible')
+
+    유도: g(α)=n_z cosα + d·n_r sinα = R·sin(α+δ),  R=hypot(n_z, d·n_r), δ=atan2(n_z, d·n_r).
+          g(α) ≥ κ 의 최소 α ≥ 0  →  α* = asin(κ/R) − δ.
+    """
+    nz = mesh.face_normals[:, 2]
+    b = _dir_sign(direction) * radial_normal(mesh)      # = d·n_r
+    R = np.hypot(nz, b)
+    kappa = -np.sin(np.radians(threshold_deg))
+
+    theta = np.full(len(nz), np.nan)
+    # 1) 이미 자기지지 (각도 0)
+    already = nz >= kappa
+    theta[already] = 0.0
+
+    # 2) 나머지: 각도를 키워 도달 가능한가? (b>0 이라야 g가 증가, 그리고 κ/R≥−1)
+    rest = ~already
+    with np.errstate(invalid="ignore", divide="ignore"):
+        reachable = rest & (b > 1e-12) & (R > 1e-12) & (kappa / np.where(R > 0, R, 1) >= -1.0)
+        ratio = np.clip(kappa / np.where(R > 0, R, 1.0), -1.0, 1.0)
+        delta = np.arctan2(nz, b)
+        alpha = np.degrees(np.arcsin(ratio) - delta)     # 최소 α (도)
+    ok = reachable & (alpha >= -1e-9) & (alpha <= angle_max + 1e-9)
+    theta[ok] = np.clip(alpha[ok], 0.0, angle_max)
+    return theta
