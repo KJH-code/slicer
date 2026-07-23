@@ -23,6 +23,7 @@ import trimesh
 
 from conical.varangle import select_uniform, select_banded, select_fine
 from conical.config import THRESHOLD_DEG
+from conical.meshio import center_on_axis
 
 
 def profile_str(res):
@@ -38,7 +39,7 @@ def profile_str(res):
 def run_model(name, mesh, k=0.2):
     mesh = mesh.copy()
     mesh.merge_vertices()
-    mesh.apply_translation([0, 0, -mesh.bounds[0][2]])  # 바닥 z=0
+    center_on_axis(mesh)  # 회전축(Z)에 XY 센터링 + 바닥 z=0 (off-axis 왜곡 방지)
 
     print(f"\n{'='*74}\n[{name}]  면수 {len(mesh.faces):,},  k={k},  임계각 {THRESHOLD_DEG:.0f}°\n{'='*74}")
     print(f"{'전략':>10} | {'서포트':>7} | {'강도proxy':>9} | {'평균각':>6} | {'계산시간':>8} | 프로파일(아래→위)")

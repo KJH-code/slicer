@@ -18,12 +18,12 @@ import trimesh
 from conical.overhang import analyze_overhangs, support_area_fraction
 from conical.overhang_layers import layer_support_area
 from conical.config import THRESHOLD_DEG
+from conical.meshio import center_on_axis
 
 
 def compare_one(name, mesh, layer_height=0.4, threshold_deg=THRESHOLD_DEG):
-    # 바닥이 z=0 에 오도록 내려놓기 (실제 배치처럼)
-    mesh = mesh.copy()
-    mesh.apply_translation([0, 0, -mesh.bounds[0][2]])
+    # 회전축(Z)에 XY 센터링 + 바닥 z=0 (off-axis 왜곡 방지)
+    mesh = center_on_axis(mesh.copy())
 
     _, need = analyze_overhangs(mesh, threshold_deg)
     face_pct = support_area_fraction(mesh, need)      # 표면적 대비 %

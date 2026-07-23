@@ -19,7 +19,7 @@ from .transform import transform_cone
 from .overhang import analyze_overhangs, support_area_fraction, summarize
 from .sweep import support_fraction, sweep_table
 from .selector import evaluate_J, select_cone, k_sensitivity
-from .meshio import load_mesh_or_demo
+from .meshio import load_mesh_or_demo, center_on_axis
 from .metrics import face_support_and_staircase
 from .varangle import select_uniform, select_banded, select_fine
 from .strength import face_strength, part_strength
@@ -30,7 +30,7 @@ __all__ = [
     "analyze_overhangs", "support_area_fraction", "summarize",
     "support_fraction", "sweep_table",
     "evaluate_J", "select_cone", "k_sensitivity",
-    "load_mesh_or_demo",
+    "load_mesh_or_demo", "center_on_axis",
     "face_support_and_staircase",
     "select_uniform", "select_banded", "select_fine",
     "face_strength", "part_strength",

@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 
 from conical.varangle import select_uniform, select_banded
 from conical.metrics import face_support_and_staircase
+from conical.meshio import center_on_axis
 from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
 
 
@@ -66,7 +67,7 @@ def k_sweep(mesh, k_values):
 def analyze(name, mesh, ax=None):
     mesh = mesh.copy()
     mesh.merge_vertices()
-    mesh.apply_translation([0, 0, -mesh.bounds[0][2]])
+    center_on_axis(mesh)   # 회전축(Z)에 XY 센터링 + 바닥 z=0 (off-axis 왜곡 방지)
 
     kscale = natural_k_scale(mesh)
     ks = np.round(np.linspace(0.02, 1.0, 25), 3)
