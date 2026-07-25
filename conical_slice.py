@@ -1,0 +1,148 @@
+"""
+conical_slice.py — 형상 적응형 원뿔 슬라이싱 파이프라인 (분석 → 실제 G-code).
+
+RotBot 의 검증된 3단계 구조에 우리 '자동 각도 결정'을 앞단으로 붙인 것:
+
+    [1] 분석/결정 : STL 오버행 분석 → 최적 (방향, 각도) 자동 선택  (우리 기여)
+    [2] 정변환    : 메시를 원뿔 변환 (+ 사전 세분화)               (RotBot 차용)
+    [3] 평면 슬라이싱 :
+          · 기본: 내장 미니 슬라이서 (외부 의존 없음, 연구용)
+          · 옵션: --slicer-cmd 로 외부 슬라이서 CLI 를 꽂음
+                  (예: "prusa-slicer -g -o {gcode} {stl}")
+    [4] 역변환    : 적응 현 분할 L=2√(2rε) 로 실공간 G-code 생성   (우리 개선)
+
+사용:
+    python3 conical_slice.py model.stl                      # 각도 자동
+    python3 conical_slice.py model.stl --angle 30 --direction outward
+    python3 conical_slice.py model.stl --layer-height 0.2 --chord-tol 0.05
+    python3 conical_slice.py model.stl --slicer-cmd "prusa-slicer -g -o {gcode} {stl}"
+
+출력: <입력이름>_conical.gcode  (+ 요약 리포트 stdout)
+⚠ 슬라이서 자동 서포트는 끄고 쓸 것 — 변환공간의 45° 판정은 물리와 다르다
+   (docs/warped_threshold_finding.md). 서포트 필요 여부는 [1]의 해석식이 판단.
+"""
+
+import argparse
+import math
+import subprocess
+import tempfile
+from pathlib import Path
+
+import numpy as np
+import trimesh
+
+from conical import analytic
+from conical.meshio import center_on_axis
+from conical.transform import transform_cone
+from conical.planar_slicer import slice_mesh
+from conical.backtransform import backtransform
+from conical import gcode as gc
+from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
+
+
+def auto_select(mesh):
+    """해석식으로 (방향, 각도) 자동 선택: 남는 서포트 최소, 동률이면 작은 각."""
+    best = None
+    for direction in ("outward", "inward"):
+        for angle in np.arange(0.0, MAX_ANGLE_DEG + 1e-9, ANGLE_STEP):
+            s = analytic.support_fraction(mesh, angle, direction, THRESHOLD_DEG)
+            if best is None or s < best[0] - 1e-12 or \
+               (abs(s - best[0]) <= 1e-12 and angle < best[1]):
+                best = (s, float(angle), direction)
+    return best  # (support%, angle, direction)
+
+
+def refine(mesh, max_edge):
+    """정변환 전 세분화: 긴 변을 쪼개야 '변환 후 평면 슬라이스'가 원뿔면을 잘 근사."""
+    v, f = trimesh.remesh.subdivide_to_size(mesh.vertices, mesh.faces,
+                                            max_edge=max_edge)
+    return trimesh.Trimesh(vertices=v, faces=f, process=False)
+
+
+def run_external_slicer(cmd_template, warped_mesh, workdir):
+    stl_path = Path(workdir) / "warped.stl"
+    gcode_path = Path(workdir) / "warped.gcode"
+    warped_mesh.export(stl_path)
+    cmd = cmd_template.format(stl=stl_path, gcode=gcode_path)
+    subprocess.run(cmd, shell=True, check=True)
+    with open(gcode_path) as fh:
+        return gc.parse(fh.readlines())
+
+
+def main():
+    ap = argparse.ArgumentParser(description="adaptive conical slicing pipeline")
+    ap.add_argument("stl")
+    ap.add_argument("--angle", type=float, default=None, help="원뿔 각도(도). 생략=자동")
+    ap.add_argument("--direction", choices=["outward", "inward"], default=None)
+    ap.add_argument("--layer-height", type=float, default=0.3)
+    ap.add_argument("--perimeters", type=int, default=2)
+    ap.add_argument("--infill-spacing", type=float, default=2.5,
+                    help="인필 간격 mm (0=인필 없음)")
+    ap.add_argument("--chord-tol", type=float, default=0.05,
+                    help="역변환 허용 현 오차 ε (mm)")
+    ap.add_argument("--max-edge", type=float, default=1.5,
+                    help="정변환 전 최대 변 길이 (세분화)")
+    ap.add_argument("--slicer-cmd", default=None,
+                    help='외부 슬라이서 CLI 템플릿. 예 "prusa-slicer -g -o {gcode} {stl}"')
+    ap.add_argument("-o", "--output", default=None)
+    args = ap.parse_args()
+
+    mesh = trimesh.load(args.stl, force="mesh")
+    mesh = center_on_axis(mesh)
+    base = analytic.support_fraction(mesh, 0.0, "outward", THRESHOLD_DEG)
+
+    # [1] 각도 결정
+    if args.angle is not None:
+        direction = args.direction or "outward"
+        angle = args.angle
+        after = analytic.support_fraction(mesh, angle, direction, THRESHOLD_DEG)
+        why = "사용자 지정"
+    else:
+        after, angle, direction = auto_select(mesh)
+        why = "자동 (해석식, 서포트 최소·동률시 작은 각)"
+
+    print("=" * 62)
+    print(f"[conical_slice] {args.stl}")
+    print(f"  각도 결정   : {direction} {angle:.0f}°  ({why})")
+    print(f"  서포트 예측 : {base:.1f}% (평면) → {after:.1f}% (선택 각도)")
+
+    # [2] 세분화 + 정변환
+    fine = refine(mesh, args.max_edge)
+    if angle > 0:
+        warped = trimesh.Trimesh(
+            vertices=transform_cone(fine.vertices, angle, direction),
+            faces=fine.faces, process=False)
+    else:
+        warped = fine
+    print(f"  메시        : {len(mesh.faces):,} → 세분화 {len(fine.faces):,} 면")
+
+    # [3] 평면 슬라이싱 (변환공간)
+    if args.slicer_cmd:
+        with tempfile.TemporaryDirectory() as td:
+            items = run_external_slicer(args.slicer_cmd, warped, td)
+        print(f"  슬라이서    : 외부 CLI ({args.slicer_cmd.split()[0]})")
+    else:
+        items = slice_mesh(warped, layer_height=args.layer_height,
+                           perimeters=args.perimeters,
+                           infill_spacing=args.infill_spacing)
+        print(f"  슬라이서    : 내장 (layer {args.layer_height}mm, "
+              f"perim {args.perimeters}, infill {args.infill_spacing}mm)")
+
+    n_moves_planar = sum(1 for k, _ in items if k == "move")
+
+    # [4] 역변환 (적응 현 분할)
+    real_items, stats = backtransform(items, angle, direction,
+                                      chord_tol=args.chord_tol)
+    out_path = args.output or (Path(args.stl).stem + "_conical.gcode")
+    gc.write(real_items, out_path)
+
+    print(f"  역변환      : 이동 {stats['moves_in']:,} → {stats['moves_out']:,} "
+          f"(확장 {stats['expansion']:.2f}배, ε={args.chord_tol}mm 적응 분할)")
+    print(f"  출력        : {out_path}")
+    print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "
+          "큰 각도는 틸트 하드웨어 필요.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
