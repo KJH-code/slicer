@@ -137,6 +137,25 @@
         </div>
 
         <div class="field">
+          <label for="stlFile">STL 모델 (선택 — 모델/왜곡/오버행 확인)</label>
+          <input id="stlFile" type="file" accept=".stl" />
+          <label class="check-row"><input id="showModel" type="checkbox" checked /><span>모델 표시</span></label>
+          <label class="check-row"><input id="warpModel" type="checkbox" /><span>변환(왜곡) 상태로 보기</span></label>
+          <label class="check-row"><input id="overhangColor" type="checkbox" checked /><span>서포트 필요 면 빨간 색칠</span></label>
+          <label style="margin-top:8px" for="modelOpacity">모델 투명도:
+            <span id="modelOpacityValue" class="range-value">0.35</span></label>
+          <input id="modelOpacity" type="range" min="0.05" max="1" step="0.05" value="0.35" />
+          <div style="display:flex; gap:8px; align-items:center; margin-top:8px; color:var(--muted); font-size:0.88rem">
+            각도 <input id="angleManual" type="number" value="0" step="1" min="0" max="60" />°
+            <select id="dirManual" style="width:auto">
+              <option value="outward" selected>outward</option>
+              <option value="inward">inward</option>
+            </select>
+            <span style="font-size:0.8rem">(G-code 메타 있으면 자동)</span>
+          </div>
+        </div>
+
+        <div class="field">
           <span class="field-title">재생</span>
           <div class="play-row">
             <button id="playBtn">▶ 재생</button>
@@ -411,8 +430,95 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
     const partFrame = document.getElementById("partFrame");
     const pivotDepth = document.getElementById("pivotDepth");
     const simStats = document.getElementById("simStats");
+    const stlFile = document.getElementById("stlFile");
+    const showModel = document.getElementById("showModel");
+    const warpModel = document.getElementById("warpModel");
+    const overhangColor = document.getElementById("overhangColor");
+    const modelOpacity = document.getElementById("modelOpacity");
+    const modelOpacityValue = document.getElementById("modelOpacityValue");
+    const angleManual = document.getElementById("angleManual");
+    const dirManual = document.getElementById("dirManual");
 
-    const sim = { moves: [], meta: {}, playing: false, idx: 0, is5x: false };
+    const sim = { moves: [], meta: {}, playing: false, idx: 0, is5x: false,
+                  stl: null };
+
+    // ── STL 파서 (바이너리 + ASCII) ──
+    function parseSTL(buffer) {
+      const view = new DataView(buffer);
+      // ASCII 판별: "solid"로 시작하고 "facet" 포함
+      const head = new TextDecoder().decode(buffer.slice(0, 512));
+      const isAscii = head.trimStart().startsWith("solid") && head.includes("facet");
+      const vx = [], vy = [], vz = [], fi = [], fj = [], fk = [];
+      if (isAscii) {
+        const text = new TextDecoder().decode(buffer);
+        const re = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g;
+        let m, n = 0;
+        while ((m = re.exec(text)) !== null) {
+          vx.push(Number(m[1])); vy.push(Number(m[2])); vz.push(Number(m[3]));
+          n++;
+          if (n % 3 === 0) { fi.push(n-3); fj.push(n-2); fk.push(n-1); }
+        }
+      } else {
+        const count = view.getUint32(80, true);
+        for (let t = 0; t < count; t++) {
+          const off = 84 + t * 50 + 12;          // 법선 12바이트 건너뜀
+          for (let v = 0; v < 3; v++) {
+            vx.push(view.getFloat32(off + v*12, true));
+            vy.push(view.getFloat32(off + v*12 + 4, true));
+            vz.push(view.getFloat32(off + v*12 + 8, true));
+          }
+          fi.push(t*3); fj.push(t*3+1); fk.push(t*3+2);
+        }
+      }
+      if (!fi.length) throw new Error("STL에서 삼각형을 찾지 못했습니다.");
+      // 파이프라인과 동일한 센터링: XY bbox 중심 → 0, 바닥 → z=0
+      let minx=Infinity,maxx=-Infinity,miny=Infinity,maxy=-Infinity,minz=Infinity;
+      for (let i=0;i<vx.length;i++){
+        if(vx[i]<minx)minx=vx[i]; if(vx[i]>maxx)maxx=vx[i];
+        if(vy[i]<miny)miny=vy[i]; if(vy[i]>maxy)maxy=vy[i];
+        if(vz[i]<minz)minz=vz[i]; }
+      const cx=(minx+maxx)/2, cy=(miny+maxy)/2;
+      for (let i=0;i<vx.length;i++){ vx[i]-=cx; vy[i]-=cy; vz[i]-=minz; }
+      return { vx, vy, vz, fi, fj, fk, nTri: fi.length };
+    }
+
+    // 원뿔 변환 (transform.py 와 동일): x/cosθ, y/cosθ, z + c·r·tanθ
+    function warpVerts(stl, angleDeg, direction) {
+      const th = angleDeg * Math.PI / 180;
+      const c = direction === "inward" ? -1 : 1;
+      const ct = Math.cos(th), tt = Math.tan(th);
+      const wx = new Array(stl.vx.length), wy = new Array(stl.vx.length),
+            wz = new Array(stl.vx.length);
+      for (let i = 0; i < stl.vx.length; i++) {
+        const r = Math.hypot(stl.vx[i], stl.vy[i]);
+        wx[i] = stl.vx[i] / ct; wy[i] = stl.vy[i] / ct;
+        wz[i] = stl.vz[i] + c * r * tt;
+      }
+      return { wx, wy, wz };
+    }
+
+    // 면별 서포트 필요 판정 (analytic.py 와 동일: g = nz·cosα + d·nr·sinα < −sin45)
+    function overhangFaceColors(stl, angleDeg, direction) {
+      const th = angleDeg * Math.PI / 180;
+      const d = direction === "inward" ? -1 : 1;
+      const kappa = -Math.sin(45 * Math.PI / 180);
+      const colors = new Array(stl.nTri);
+      for (let t = 0; t < stl.nTri; t++) {
+        const a = stl.fi[t], b = stl.fj[t], c2 = stl.fk[t];
+        const ux = stl.vx[b]-stl.vx[a], uy = stl.vy[b]-stl.vy[a], uz = stl.vz[b]-stl.vz[a];
+        const wx2 = stl.vx[c2]-stl.vx[a], wy2 = stl.vy[c2]-stl.vy[a], wz2 = stl.vz[c2]-stl.vz[a];
+        let nx = uy*wz2 - uz*wy2, ny = uz*wx2 - ux*wz2, nz = ux*wy2 - uy*wx2;
+        const nl = Math.hypot(nx, ny, nz) || 1;
+        nx/=nl; ny/=nl; nz/=nl;
+        // centroid 반경방향 성분
+        const cxm=(stl.vx[a]+stl.vx[b]+stl.vx[c2])/3, cym=(stl.vy[a]+stl.vy[b]+stl.vy[c2])/3;
+        const rr = Math.hypot(cxm, cym);
+        const nr = rr > 1e-9 ? (cxm*nx + cym*ny)/rr : 0;
+        const g = nz*Math.cos(th) + d*nr*Math.sin(th);
+        colors[t] = g < kappa ? "#d9534f" : "#5f7ea8";   // 빨강=서포트 필요
+      }
+      return colors;
+    }
 
     // conical_slice.py 의 메타/헤더에서 각도·방향·틸트 추출
     function parseGcodeText(text) {
@@ -477,12 +583,15 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
     }
 
     function renderSim() {
-      if (!sim.moves.length || mode !== "gcode") return;
+      if ((!sim.moves.length && !sim.stl) || mode !== "gcode") return;
       const upto = Math.max(1, Math.round(sim.idx));
       const cm = colorMode.value;
       const restore = sim.is5x && partFrame.checked;
       const pivot = Number(pivotDepth.value) || 50;
       const tilt = Math.abs(sim.meta.tilt ?? sim.meta.angle ?? 0);
+      // STL 표시용 각도/방향: G-code 메타 우선, 없으면 수동 입력
+      const mAngle = sim.meta.angle ?? Number(angleManual.value) || 0;
+      const mDir = sim.meta.direction ?? dirManual.value;
 
       const ex = {x:[],y:[],z:[],c:[]}, tr = {x:[],y:[],z:[]};
       let prev = null; let head = null; let curV = null, curZ = null;
@@ -503,16 +612,45 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
         prev = p; head = p; curV = mv.v; curZ = p.z;
       }
 
-      const traces = [{
+      const traces = [];
+
+      // ── STL 모델 (선택) ──
+      // 기계좌표 모드(5축, 복원 꺼짐)에선 좌표계가 달라 모델을 숨긴다.
+      const modelVisible = sim.stl && showModel.checked && !(sim.is5x && !restore);
+      if (modelVisible) {
+        const warped = warpModel.checked;
+        const vv = warped ? warpVerts(sim.stl, mAngle, mDir)
+                          : { wx: sim.stl.vx, wy: sim.stl.vy, wz: sim.stl.vz };
+        const meshTrace = {
+          type:"mesh3d", x:vv.wx, y:vv.wy, z:vv.wz,
+          i:sim.stl.fi, j:sim.stl.fj, k:sim.stl.fk,
+          opacity: Number(modelOpacity.value), flatshading: true,
+          lighting:{ambient:0.55, diffuse:0.7, specular:0.1},
+          name: warped ? "변환 모델" : "원본 모델", hoverinfo:"skip"
+        };
+        if (overhangColor.checked) {
+          // 원본 보기: 각도 0 판정 = "평면 슬라이싱이면 어디가 문제인가"
+          // 변환 보기: 선택 각도 판정 = "원뿔 적용 후 무엇이 남는가"
+          //   (변환 후 남은 오버행 = 원본 법선에 g(mAngle) 판정과 동일 — analytic.py)
+          meshTrace.facecolor = overhangFaceColors(sim.stl, warped ? mAngle : 0, mDir);
+        } else {
+          meshTrace.color = "#5f7ea8";
+        }
+        traces.push(meshTrace);
+      }
+
+      // 왜곡(변환) 보기는 변환공간이라 실공간 툴패스와 좌표계가 다름 → 툴패스 숨김
+      const showPath = sim.moves.length && !(modelVisible && warpModel.checked);
+      if (showPath) traces.push({
         type:"scatter3d", mode:"lines", x:ex.x, y:ex.y, z:ex.z,
         line:{ width:4, color:ex.c, colorscale:"Viridis", showscale:true,
                colorbar:{ title:{text:colorMode.selectedOptions[0].text}, len:0.6,
                           tickfont:{color:"#eef2ff"} } },
-        name:"압출", hoverinfo:"skip" }];
-      if (showTravel.checked) traces.push({
+        name:"압출", hoverinfo:"skip" });
+      if (showPath && showTravel.checked) traces.push({
         type:"scatter3d", mode:"lines", x:tr.x, y:tr.y, z:tr.z,
         line:{width:1.5, color:"#5a6480"}, name:"이동", hoverinfo:"skip", opacity:0.5 });
-      if (showHead.checked && head) traces.push({
+      if (showPath && showHead.checked && head) traces.push({
         type:"scatter3d", mode:"markers", x:[head.x], y:[head.y], z:[head.z],
         marker:{size:6, color:"#ff8a8a", symbol:"diamond"}, name:"노즐", hoverinfo:"skip" });
 
@@ -527,16 +665,24 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
         uirevision:"keep-camera" },
         { responsive:true, displaylogo:false, scrollZoom:true });
 
-      const pct = (upto / sim.moves.length * 100);
-      progressValue.textContent = `${pct.toFixed(0)}%`;
-      const mv = sim.moves[Math.min(upto, sim.moves.length) - 1];
-      simStats.textContent =
-        `이동 ${upto.toLocaleString()} / ${sim.moves.length.toLocaleString()}  (G-code ${mv.line}행)\n` +
-        `압출 경로 ${ (sim.meta.exLen/1000).toFixed(2) } m  · 전체 ${ (sim.meta.totalLen/1000).toFixed(2) } m\n` +
-        (sim.meta.angle !== null ? `원뿔: ${sim.meta.direction ?? "?"} ${sim.meta.angle}°\n` : "") +
-        (sim.is5x ? `Open5x: 틸트 ${tilt}°  V ${curV === null ? "-" : curV.toFixed(1) + "°"}  ` +
-                    `(${restore ? "부품좌표 복원" : "기계좌표 그대로"})\n` : "") +
-        (curZ !== null ? `현재 z ${curZ.toFixed(2)} mm` : "");
+      if (sim.moves.length) {
+        const pct = (upto / sim.moves.length * 100);
+        progressValue.textContent = `${pct.toFixed(0)}%`;
+        const mv = sim.moves[Math.min(upto, sim.moves.length) - 1];
+        simStats.textContent =
+          `이동 ${upto.toLocaleString()} / ${sim.moves.length.toLocaleString()}  (G-code ${mv.line}행)\n` +
+          `압출 경로 ${ (sim.meta.exLen/1000).toFixed(2) } m  · 전체 ${ (sim.meta.totalLen/1000).toFixed(2) } m\n` +
+          (sim.meta.angle !== null ? `원뿔: ${sim.meta.direction ?? "?"} ${sim.meta.angle}°\n` : "") +
+          (sim.is5x ? `Open5x: 틸트 ${tilt}°  V ${curV === null ? "-" : curV.toFixed(1) + "°"}  ` +
+                      `(${restore ? "부품좌표 복원" : "기계좌표 그대로"})\n` : "") +
+          (curZ !== null ? `현재 z ${curZ.toFixed(2)} mm` : "") +
+          (modelVisible && warpModel.checked ? "\n⚠ 변환 보기: 실공간 툴패스는 숨김(좌표계 다름)" : "");
+      } else if (sim.stl) {
+        simStats.textContent =
+          `STL만 표시: 삼각형 ${sim.stl.nTri.toLocaleString()}개\n` +
+          `각도 ${mAngle}° ${mDir} — ${warpModel.checked ? "변환(왜곡) 상태" : "원본"}\n` +
+          `빨간 면 = ${warpModel.checked ? "이 각도로도 남는 서포트" : "평면 슬라이싱 시 서포트 필요"}`;
+      }
     }
 
     function drawEmptyGcodePlot() {
@@ -598,6 +744,27 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
     showHead.addEventListener("change", renderSim);
     partFrame.addEventListener("change", renderSim);
     pivotDepth.addEventListener("change", renderSim);
+
+    stlFile.addEventListener("change", async () => {
+      const file = stlFile.files && stlFile.files[0];
+      if (!file) return;
+      try {
+        setStatus(`${file.name} (STL) 읽는 중...`);
+        sim.stl = parseSTL(await file.arrayBuffer());
+        setStatus(`${file.name}: 삼각형 ${sim.stl.nTri.toLocaleString()}개` +
+                  (sim.moves.length ? "" : " (G-code 없이 모델만 표시)"));
+        if (!sim.moves.length) sim.idx = 1;
+        renderSim();
+      } catch (err) { setStatus(err instanceof Error ? err.message : String(err), "error"); }
+    });
+    showModel.addEventListener("change", renderSim);
+    warpModel.addEventListener("change", renderSim);
+    overhangColor.addEventListener("change", renderSim);
+    modelOpacity.addEventListener("input", () => {
+      modelOpacityValue.textContent = Number(modelOpacity.value).toFixed(2);
+      renderSim(); });
+    angleManual.addEventListener("change", renderSim);
+    dirManual.addEventListener("change", renderSim);
 
     drawEmptyPlot();
   </script>
