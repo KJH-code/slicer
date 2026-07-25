@@ -84,6 +84,11 @@ def main():
                     help="정변환 전 최대 변 길이 (세분화)")
     ap.add_argument("--slicer-cmd", default=None,
                     help='외부 슬라이서 CLI 템플릿. 예 "prusa-slicer -g -o {gcode} {stl}"')
+    ap.add_argument("--mode", choices=["xyz", "open5x"], default="xyz",
+                    help="xyz=3축(작은 각도) / open5x=베드 틸트+회전 기계좌표 [실험적]")
+    ap.add_argument("--machine", choices=["prusa-uv", "voron-bc"], default="prusa-uv")
+    ap.add_argument("--pivot-depth", type=float, default=50.0,
+                    help="베드면→틸트축 거리 mm (Open5x 스탠드오프별, 실기 보정)")
     ap.add_argument("-o", "--output", default=None)
     args = ap.parse_args()
 
@@ -133,14 +138,26 @@ def main():
     # [4] 역변환 (적응 현 분할)
     real_items, stats = backtransform(items, angle, direction,
                                       chord_tol=args.chord_tol)
-    out_path = args.output or (Path(args.stl).stem + "_conical.gcode")
-    gc.write(real_items, out_path)
-
     print(f"  역변환      : 이동 {stats['moves_in']:,} → {stats['moves_out']:,} "
           f"(확장 {stats['expansion']:.2f}배, ε={args.chord_tol}mm 적응 분할)")
+
+    # [5] 출력 모드
+    if args.mode == "open5x":
+        from conical.open5x import to_open5x, PRUSA_UV, VORON_BC
+        prof = PRUSA_UV if args.machine == "prusa-uv" else VORON_BC
+        prof.pivot_depth = args.pivot_depth
+        real_items, o5 = to_open5x(real_items, angle, direction, prof)
+        print(f"  Open5x      : 틸트 {prof.tilt_axis}={angle:.0f}° 고정, "
+              f"{prof.rot_axis} {o5['v_turns']:.1f}회전 누적 "
+              f"(pivot {args.pivot_depth}mm) [실험적 — 부호·피벗 실기보정 필요]")
+    out_path = args.output or (Path(args.stl).stem +
+                               ("_open5x.gcode" if args.mode == "open5x"
+                                else "_conical.gcode"))
+    gc.write(real_items, out_path)
     print(f"  출력        : {out_path}")
-    print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "
-          "큰 각도는 틸트 하드웨어 필요.")
+    if args.mode == "xyz":
+        print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "
+              "큰 각도는 틸트 하드웨어 필요.")
     return 0
 
 
