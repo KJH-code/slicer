@@ -699,7 +699,10 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
           (sim.is5x ? `Open5x: 틸트 ${tilt}°  V ${curV === null ? "-" : curV.toFixed(1) + "°"}  ` +
                       `(${restore ? "부품좌표 복원" : "기계좌표 그대로"})\n` : "") +
           (curZ !== null ? `현재 z ${curZ.toFixed(2)} mm` : "") +
-          (modelVisible && warpModel.checked ? "\n⚠ 변환 보기: 실공간 툴패스는 숨김(좌표계 다름)" : "");
+          (modelVisible && warpModel.checked ? "\n⚠ 변환 보기: 실공간 툴패스는 숨김(좌표계 다름)" : "") +
+          (cm === "v" && !sim.hasV ?
+            "\n⚠ 이 G-code엔 V축이 없어 단색이 됩니다 (3축 출력)." +
+            "\n   V 색상은 --mode open5x 로 만든 파일에서만 의미 있음." : "");
       } else if (sim.stl) {
         const pct = overhangAreaPct(sim.stl, mAngle, mDir);
         const pct0 = overhangAreaPct(sim.stl, 0, mDir);
@@ -729,8 +732,8 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
         const parsed = parseGcodeText(text);
         if (!parsed.moves.length) throw new Error("G0/G1 이동을 찾지 못했습니다.");
         sim.moves = parsed.moves; sim.meta = parsed.meta;
-        sim.is5x = parsed.moves.some(m => m.v !== null && m.v !== undefined) &&
-                   parsed.meta.tilt !== null;
+        sim.hasV = parsed.moves.some(m => m.v !== null && m.v !== undefined);
+        sim.is5x = sim.hasV && parsed.meta.tilt !== null;
         // G-code 메타의 각도/방향을 입력칸에 미리 채움 (이후엔 입력칸이 기준)
         if (parsed.meta.angle !== null) angleManual.value = parsed.meta.angle;
         if (parsed.meta.direction) dirManual.value = parsed.meta.direction;
