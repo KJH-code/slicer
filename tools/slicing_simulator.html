@@ -590,7 +590,7 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
       const pivot = Number(pivotDepth.value) || 50;
       const tilt = Math.abs(sim.meta.tilt ?? sim.meta.angle ?? 0);
       // STL 표시용 각도/방향: G-code 메타 우선, 없으면 수동 입력
-      const mAngle = sim.meta.angle ?? Number(angleManual.value) || 0;
+      const mAngle = sim.meta.angle ?? (Number(angleManual.value) || 0);
       const mDir = sim.meta.direction ?? dirManual.value;
 
       const ex = {x:[],y:[],z:[],c:[]}, tr = {x:[],y:[],z:[]};
