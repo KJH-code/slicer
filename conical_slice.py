@@ -153,7 +153,10 @@ def main():
     out_path = args.output or (Path(args.stl).stem +
                                ("_open5x.gcode" if args.mode == "open5x"
                                 else "_conical.gcode"))
-    gc.write(real_items, out_path)
+    # 뷰어/후처리 도구가 읽는 메타데이터 (tools/slicing_simulator.html 등)
+    meta = [("raw", f"; conical: angle={angle:.1f} direction={direction} "
+                    f"mode={args.mode} chord_tol={args.chord_tol}")]
+    gc.write(meta + real_items, out_path)
     print(f"  출력        : {out_path}")
     if args.mode == "xyz":
         print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "
