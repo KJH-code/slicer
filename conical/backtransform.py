@@ -68,6 +68,18 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
             continue
 
         n_in += 1
+        dE = (mv.e - e_prev) if mv.e is not None else None
+        warp_len = math.dist((X, Y, Zw), (nX, nY, nZ))
+
+        # 순수 E 이동(리트랙트/프라임: XYZ 변화 없음)은 분할·스케일 대상이 아니다.
+        # 기존에는 warp_len≈0 → scale=0 으로 ΔE가 사라져 리트랙션이 전부 무력화됐다
+        # (내장 슬라이서는 리트랙션이 없어 무해했지만 외부 슬라이서 G-code에선 치명적).
+        if dE is not None and warp_len < 1e-9:
+            e_prev = e_prev + dE
+            out.append(("move", Move(g=mv.g, e=e_prev, f=mv.f, extra=mv.extra)))
+            n_out += 1
+            continue
+
         # 시작/끝 실공간 좌표와 허용 현 길이로 분할 수 결정
         x0, y0, z0 = _inv_point(X, Y, Zw, th, c)
         x1, y1, z1 = _inv_point(nX, nY, nZ, th, c)
@@ -75,9 +87,6 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
         r_mid = 0.5 * (math.hypot(x0, y0) + math.hypot(x1, y1))
         allowed = 2.0 * math.sqrt(max(2.0 * r_mid * chord_tol, 1e-12))
         n = max(1, min(max_sub, math.ceil(real_len / max(allowed, 1e-9))))
-
-        dE = (mv.e - e_prev) if mv.e is not None else None
-        warp_len = math.dist((X, Y, Zw), (nX, nY, nZ))
         # 실공간 누적 길이로 E 배분 (총 ΔE × 실길이/변환길이 보정 포함)
         pts = []
         total_real = 0.0
