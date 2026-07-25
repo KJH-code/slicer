@@ -1,7 +1,9 @@
 trimesh
 numpy
 matplotlib
-# 아래 3개는 실제 STL 견고성 + 레이어별 2D 오버행 판정(overhang_layers.py)에 필요
+# 아래는 실제 STL 견고성 + 레이어별 2D 오버행 판정(overhang_layers.py)에 필요
 shapely
 networkx
 scipy
+# trimesh polygons_full(내장 슬라이서·레이어별 오버행)에 필요
+rtree
