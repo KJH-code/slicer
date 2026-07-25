@@ -520,6 +520,29 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
       return colors;
     }
 
+    // 이 각도에서 남는 서포트 넓이 % (analytic.support_fraction 과 동일 정의)
+    function overhangAreaPct(stl, angleDeg, direction) {
+      const th = angleDeg * Math.PI / 180;
+      const d = direction === "inward" ? -1 : 1;
+      const kappa = -Math.sin(45 * Math.PI / 180);
+      let bad = 0, total = 0;
+      for (let t = 0; t < stl.nTri; t++) {
+        const a = stl.fi[t], b = stl.fj[t], c2 = stl.fk[t];
+        const ux = stl.vx[b]-stl.vx[a], uy = stl.vy[b]-stl.vy[a], uz = stl.vz[b]-stl.vz[a];
+        const wx2 = stl.vx[c2]-stl.vx[a], wy2 = stl.vy[c2]-stl.vy[a], wz2 = stl.vz[c2]-stl.vz[a];
+        let nx = uy*wz2 - uz*wy2, ny = uz*wx2 - ux*wz2, nz = ux*wy2 - uy*wx2;
+        const nl = Math.hypot(nx, ny, nz);
+        if (nl < 1e-12) continue;
+        const area = nl / 2; total += area;
+        nx/=nl; ny/=nl; nz/=nl;
+        const cxm=(stl.vx[a]+stl.vx[b]+stl.vx[c2])/3, cym=(stl.vy[a]+stl.vy[b]+stl.vy[c2])/3;
+        const rr = Math.hypot(cxm, cym);
+        const nr = rr > 1e-9 ? (cxm*nx + cym*ny)/rr : 0;
+        if (nz*Math.cos(th) + d*nr*Math.sin(th) < kappa) bad += area;
+      }
+      return total > 0 ? bad / total * 100 : 0;
+    }
+
     // conical_slice.py 의 메타/헤더에서 각도·방향·틸트 추출
     function parseGcodeText(text) {
       const moves = []; const meta = { angle: null, direction: null, tilt: null };
@@ -589,9 +612,9 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
       const restore = sim.is5x && partFrame.checked;
       const pivot = Number(pivotDepth.value) || 50;
       const tilt = Math.abs(sim.meta.tilt ?? sim.meta.angle ?? 0);
-      // STL 표시용 각도/방향: G-code 메타 우선, 없으면 수동 입력
-      const mAngle = sim.meta.angle ?? (Number(angleManual.value) || 0);
-      const mDir = sim.meta.direction ?? dirManual.value;
+      // STL 표시용 각도/방향: 입력칸이 항상 기준 (G-code 로드시 메타값이 미리 채워짐)
+      const mAngle = Number(angleManual.value) || 0;
+      const mDir = dirManual.value;
 
       const ex = {x:[],y:[],z:[],c:[]}, tr = {x:[],y:[],z:[]};
       let prev = null; let head = null; let curV = null, curZ = null;
@@ -629,10 +652,10 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
           name: warped ? "변환 모델" : "원본 모델", hoverinfo:"skip"
         };
         if (overhangColor.checked) {
-          // 원본 보기: 각도 0 판정 = "평면 슬라이싱이면 어디가 문제인가"
-          // 변환 보기: 선택 각도 판정 = "원뿔 적용 후 무엇이 남는가"
+          // 빨강 = '입력한 각도'에서 남는 서포트 (0이면 평면 슬라이싱 기준).
+          // 각도를 올리면 빨강이 줄어드는 걸 원본/변환 어느 보기에서든 바로 볼 수 있다.
           //   (변환 후 남은 오버행 = 원본 법선에 g(mAngle) 판정과 동일 — analytic.py)
-          meshTrace.facecolor = overhangFaceColors(sim.stl, warped ? mAngle : 0, mDir);
+          meshTrace.facecolor = overhangFaceColors(sim.stl, mAngle, mDir);
         } else {
           meshTrace.color = "#5f7ea8";
         }
@@ -678,10 +701,13 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
           (curZ !== null ? `현재 z ${curZ.toFixed(2)} mm` : "") +
           (modelVisible && warpModel.checked ? "\n⚠ 변환 보기: 실공간 툴패스는 숨김(좌표계 다름)" : "");
       } else if (sim.stl) {
+        const pct = overhangAreaPct(sim.stl, mAngle, mDir);
+        const pct0 = overhangAreaPct(sim.stl, 0, mDir);
         simStats.textContent =
           `STL만 표시: 삼각형 ${sim.stl.nTri.toLocaleString()}개\n` +
           `각도 ${mAngle}° ${mDir} — ${warpModel.checked ? "변환(왜곡) 상태" : "원본"}\n` +
-          `빨간 면 = ${warpModel.checked ? "이 각도로도 남는 서포트" : "평면 슬라이싱 시 서포트 필요"}`;
+          `남는 서포트: ${pct.toFixed(1)}%  (평면 0°: ${pct0.toFixed(1)}%)\n` +
+          `빨간 면 = 이 각도에서 서포트 필요한 곳. 각도를 바꿔보세요!`;
       }
     }
 
@@ -705,6 +731,9 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
         sim.moves = parsed.moves; sim.meta = parsed.meta;
         sim.is5x = parsed.moves.some(m => m.v !== null && m.v !== undefined) &&
                    parsed.meta.tilt !== null;
+        // G-code 메타의 각도/방향을 입력칸에 미리 채움 (이후엔 입력칸이 기준)
+        if (parsed.meta.angle !== null) angleManual.value = parsed.meta.angle;
+        if (parsed.meta.direction) dirManual.value = parsed.meta.direction;
         sim.idx = parsed.moves.length;
         progress.value = 1000;
         setStatus(`${file.name}: 이동 ${parsed.moves.length.toLocaleString()}개` +
@@ -763,6 +792,7 @@ conical_slice.py 출력(_conical.gcode / _open5x.gcode)을 그대로 읽습니�
     modelOpacity.addEventListener("input", () => {
       modelOpacityValue.textContent = Number(modelOpacity.value).toFixed(2);
       renderSim(); });
+    angleManual.addEventListener("input", renderSim);   // 화살표/타이핑 즉시 반영
     angleManual.addEventListener("change", renderSim);
     dirManual.addEventListener("change", renderSim);
 
