@@ -70,7 +70,7 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
 
     items = [("raw", f"; conical built-in planar slicer"),
              ("raw", f"; layers={n_layers} layer_h={layer_height} width={extrusion_width}"),
-             ("raw", "G21"), ("raw", "G90"), ("raw", "M83")]  # mm, 절대좌표, 상대압출 아님(절대 E)
+             ("raw", "G21"), ("raw", "G90"), ("raw", "M82")]  # mm, 절대좌표, 절대 E(M82)
     state = {"e": 0.0}
 
     for i in range(n_layers):
