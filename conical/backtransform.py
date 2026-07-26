@@ -21,23 +21,38 @@ backtransform.py — 변환공간 G-code → 실공간 G-code 역변환 (RotBot 
 import math
 
 from .gcode import Move
+from .profile import AngleProfile
 
 
-def _inv_point(X, Y, Zw, theta_rad, c):
-    ct = math.cos(theta_rad)
+def _inv_point(X, Y, Zw, profile, c):
+    """역변환 (가변각 일반화): θ = θ(Zw) 를 점별로 조회 — 닫힌 식, 반복 불필요."""
+    th = math.radians(float(profile.theta_at(Zw)))
+    ct = math.cos(th)
     x = X * ct
     y = Y * ct
-    z = Zw - c * math.hypot(X, Y) * math.sin(theta_rad)
+    z = Zw - c * math.hypot(X, Y) * math.sin(th)
     return x, y, z
+
+
+def _crosses_blend(blends, z0, z1):
+    lo, hi = (z0, z1) if z0 <= z1 else (z1, z0)
+    return any(a < hi and b > lo for a, b in blends)
 
 
 def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400):
     """파싱된 G-code 아이템들을 역변환한다. raw 줄은 그대로 통과.
 
+    cone_angle_deg 자리에 float(고정각) 또는 AngleProfile(가변각 θ(Z′)) 허용 —
+    float 는 상수 프로필로 감싸므로 기존 호출부는 무수정 호환.
+    ⚠ 블렌드 구간(각도가 변하는 Z′ 구간)을 지나는 이동은 허용 현 길이를 절반으로
+      (분할 2배): θ 변화가 z 곡률을 추가하므로 보수적으로 잡는다.
+
     반환: (새 아이템 리스트, 통계 dict)
     """
-    th = math.radians(cone_angle_deg)
+    profile = cone_angle_deg if isinstance(cone_angle_deg, AngleProfile) \
+        else AngleProfile.constant(cone_angle_deg)
     c = 1.0 if cone_type == "outward" else -1.0
+    blends = profile.blend_intervals()
 
     out = []
     X = Y = Zw = None            # 변환공간 현재 위치 (모달)
@@ -56,7 +71,7 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
         if nX is None or nY is None or nZ is None or X is None:
             # 아직 위치가 정해지기 전(첫 이동 등): 점만 역변환해 그대로 내보냄
             if nX is not None and nY is not None and nZ is not None:
-                x, y, z = _inv_point(nX, nY, nZ, th, c)
+                x, y, z = _inv_point(nX, nY, nZ, profile, c)
                 out.append(("move", Move(g=mv.g, x=x, y=y, z=z, e=mv.e, f=mv.f)))
                 if mv.e is not None:
                     e_prev = mv.e
@@ -81,11 +96,13 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
             continue
 
         # 시작/끝 실공간 좌표와 허용 현 길이로 분할 수 결정
-        x0, y0, z0 = _inv_point(X, Y, Zw, th, c)
-        x1, y1, z1 = _inv_point(nX, nY, nZ, th, c)
+        x0, y0, z0 = _inv_point(X, Y, Zw, profile, c)
+        x1, y1, z1 = _inv_point(nX, nY, nZ, profile, c)
         real_len = math.dist((x0, y0, z0), (x1, y1, z1))
         r_mid = 0.5 * (math.hypot(x0, y0) + math.hypot(x1, y1))
         allowed = 2.0 * math.sqrt(max(2.0 * r_mid * chord_tol, 1e-12))
+        if blends and _crosses_blend(blends, Zw, nZ):
+            allowed *= 0.5     # ⚠ 블렌드 통과 이동: θ 변화가 z 곡률 추가 → 분할 2배
         n = max(1, min(max_sub, math.ceil(real_len / max(allowed, 1e-9))))
         # 실공간 누적 길이로 E 배분 (총 ΔE × 실길이/변환길이 보정 포함)
         pts = []
@@ -94,7 +111,7 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
         for i in range(1, n + 1):
             t = i / n
             xi, yi, zi = _inv_point(X + (nX - X) * t, Y + (nY - Y) * t,
-                                    Zw + (nZ - Zw) * t, th, c)
+                                    Zw + (nZ - Zw) * t, profile, c)
             seg = math.dist((px, py, pz), (xi, yi, zi))
             total_real += seg
             pts.append((xi, yi, zi, seg))

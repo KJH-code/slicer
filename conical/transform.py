@@ -25,3 +25,17 @@ def transform_cone(vertices, cone_angle_deg, cone_type):
     yt = y / np.cos(th)
     zt = z + c * r * np.tan(th)
     return np.column_stack([xt, yt, zt])
+
+
+def transform_cone_profile(vertices, profile, direction="outward"):
+    """θ(Z′) 가변각 프로필로 정점 배열을 워프 (profile.AngleProfile 사용).
+
+    정점별로 z = Z′ − c·r·T(Z′) 의 정확 해 Z′를 구한 뒤(profile.solve_forward),
+    그 지점의 θ로 XY를 1/cosθ 스케일한다. 상수 프로필이면 transform_cone 과
+    수치적으로 동일하다(테스트 T2로 강제).
+    """
+    x, y, z = vertices[:, 0], vertices[:, 1], vertices[:, 2]
+    r = np.sqrt(x**2 + y**2)
+    zw = profile.solve_forward(z, r, direction)
+    th = np.radians(profile.theta_at(zw))
+    return np.column_stack([x / np.cos(th), y / np.cos(th), zw])
