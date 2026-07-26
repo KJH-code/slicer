@@ -1,3 +1,4 @@
+;CONICAL_META {"version":1,"direction":"outward","profile":[[0.0,26.0]],"layer_height":0.3,"extrusion_width":0.45,"chord_tol":0.05,"source_stl":"examples/funnel.stl","mode":"xyz"}
 ; conical: angle=26.0 direction=outward mode=xyz chord_tol=0.05
 ; conical built-in planar slicer
 ; layers=39 layer_h=0.3 width=0.45

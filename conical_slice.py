@@ -198,14 +198,27 @@ def main():
                                ("_open5x.gcode" if args.mode == "open5x"
                                 else "_conical.gcode"))
     # 뷰어/후처리 도구가 읽는 메타데이터 (tools/slicing_simulator.html 등)
+    # ;CONICAL_META — 검증 탭이 파일 하나로 자기 계산을 할 수 있게 하는
+    # 한 줄 JSON (자기기술 G-code, 사이드카 파일 없음).
+    import json as _json
     if profile is not None:
+        bps = [[float(z), float(t)] for z, t in zip(profile.zs, profile.thetas_deg)]
+        meta_dir = "outward"          # 부호 각도 규약 (음수=inward)
         prof_txt = ",".join(f"{z:g}:{t:g}"
                             for z, t in zip(profile.zs, profile.thetas_deg))
-        meta = [("raw", f"; conical: profile={prof_txt} direction=outward "
-                        f"mode={args.mode} chord_tol={args.chord_tol}")]
+        legacy = f"; conical: profile={prof_txt} direction=outward " \
+                 f"mode={args.mode} chord_tol={args.chord_tol}"
     else:
-        meta = [("raw", f"; conical: angle={angle:.1f} direction={direction} "
-                        f"mode={args.mode} chord_tol={args.chord_tol}")]
+        bps = [[0.0, float(angle)]]
+        meta_dir = direction
+        legacy = f"; conical: angle={angle:.1f} direction={direction} " \
+                 f"mode={args.mode} chord_tol={args.chord_tol}"
+    meta_json = _json.dumps({
+        "version": 1, "direction": meta_dir, "profile": bps,
+        "layer_height": args.layer_height, "extrusion_width": 0.45,
+        "chord_tol": args.chord_tol, "source_stl": str(args.stl),
+        "mode": args.mode}, separators=(",", ":"))
+    meta = [("raw", f";CONICAL_META {meta_json}"), ("raw", legacy)]
     gc.write(meta + real_items, out_path)
     print(f"  출력        : {out_path}")
     print(f"  검증        : python3 toolpath_check.py {out_path}")

@@ -43,6 +43,8 @@ def main():
     ap.add_argument("--layer-height", type=float, default=None)
     ap.add_argument("--nozzle", action="store_true", help="노즐 간섭 검사도 수행")
     ap.add_argument("--png", default=None)
+    ap.add_argument("--export-json", default=None,
+                    help="샘플점·판정·파라미터·집계를 JSON으로 저장 (검증 탭 대조용 정답지)")
     args = ap.parse_args()
 
     lines = open(args.gcode).readlines()
@@ -67,6 +69,20 @@ def main():
         print(f"  노즐 간섭     : {ns['collision_pct']:.2f} % "
               f"(첫 간섭 z={ns['first_collision_z']})"
               "  [HotendProfile은 실측 전 추정값]")
+
+    if args.export_json:
+        import json
+        payload = {
+            "params": {"layer_height": lh, "width": args.width},
+            "unsupported_pct": st["unsupported_pct"],
+            "layers": st["layers"],
+            "points": [[round(float(x), 4), round(float(y), 4),
+                        round(float(z), 4), int(s), round(float(ww), 5)]
+                       for (x, y, z), s, ww in zip(pts, sup, w)],
+        }
+        with open(args.export_json, "w") as fh:
+            json.dump(payload, fh, separators=(",", ":"))
+        print(f"  JSON 저장     : {args.export_json} (점 {len(pts):,}개)")
 
     png = args.png or (Path(args.gcode).stem + "_check.png")
     fig, axes = plt.subplots(1, 2, figsize=(11, 5))

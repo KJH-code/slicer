@@ -1,3 +1,4 @@
+;CONICAL_META {"version":1,"direction":"outward","profile":[[0.0,26.0]],"layer_height":0.3,"extrusion_width":0.45,"chord_tol":0.05,"source_stl":"examples/funnel.stl","mode":"open5x"}
 ; conical: angle=26.0 direction=outward mode=open5x chord_tol=0.05
 ; Open5x conical mode [EXPERIMENTAL] tilt U=26.0deg fixed, V tracks azimuth
 ; pivot_depth=50.0mm  (calibrate on machine; signs too)
