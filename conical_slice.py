@@ -37,19 +37,19 @@ from conical.transform import transform_cone
 from conical.planar_slicer import slice_mesh
 from conical.backtransform import backtransform
 from conical import gcode as gc
-from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
+from conical.selector import select_cone
+from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP, DEFAULT_K
 
 
-def auto_select(mesh):
-    """해석식으로 (방향, 각도) 자동 선택: 남는 서포트 최소, 동률이면 작은 각."""
-    best = None
-    for direction in ("outward", "inward"):
-        for angle in np.arange(0.0, MAX_ANGLE_DEG + 1e-9, ANGLE_STEP):
-            s = analytic.support_fraction(mesh, angle, direction, THRESHOLD_DEG)
-            if best is None or s < best[0] - 1e-12 or \
-               (abs(s - best[0]) <= 1e-12 and angle < best[1]):
-                best = (s, float(angle), direction)
-    return best  # (support%, angle, direction)
+def auto_select(mesh, k=DEFAULT_K):
+    """평가함수 J = (서포트 감소) − k×각도 로 (방향, 각도) 자동 선택.
+
+    이전에는 k 없이 순수 서포트 최소화였는데, 그건 프로젝트 핵심 통찰인
+    '최소화의 함정'(항상 최대각 선택)과 모순이라 selector 의 J 로 교체.
+    (selector 는 판정 통일로 해석식을 쓴다.)
+    """
+    best, _ = select_cone(mesh, k, verbose=False)
+    return best["support"], best["angle"], best["direction"], best["J"]
 
 
 def refine(mesh, max_edge):
@@ -84,6 +84,8 @@ def main():
                     help="정변환 전 최대 변 길이 (세분화)")
     ap.add_argument("--slicer-cmd", default=None,
                     help='외부 슬라이서 CLI 템플릿. 예 "prusa-slicer -g -o {gcode} {stl}"')
+    ap.add_argument("--k", type=float, default=DEFAULT_K,
+                    help=f"J의 각도 비용 가중치 (기본 {DEFAULT_K}; analyze_k 참조)")
     ap.add_argument("--mode", choices=["xyz", "open5x"], default="xyz",
                     help="xyz=3축(작은 각도) / open5x=베드 틸트+회전 기계좌표 [실험적]")
     ap.add_argument("--machine", choices=["prusa-uv", "voron-bc"], default="prusa-uv")
@@ -103,8 +105,8 @@ def main():
         after = analytic.support_fraction(mesh, angle, direction, THRESHOLD_DEG)
         why = "사용자 지정"
     else:
-        after, angle, direction = auto_select(mesh)
-        why = "자동 (해석식, 서포트 최소·동률시 작은 각)"
+        after, angle, direction, j_score = auto_select(mesh, args.k)
+        why = f"J 기준, k={args.k} (J={j_score:.2f})"
 
     print("=" * 62)
     print(f"[conical_slice] {args.stl}")
