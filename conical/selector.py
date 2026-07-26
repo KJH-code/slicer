@@ -23,7 +23,9 @@ k를 어떻게 정하나:
 """
 
 from .config import MAX_ANGLE_DEG, ANGLE_STEP, THRESHOLD_DEG
-from .sweep import support_fraction
+# 판정 기준 통일(2026-07 리뷰): 변환공간 근사(sweep) 대신 해석식(실공간 국소
+# 레이어 각)을 쓴다. 시그니처 동일. 근거: docs/warped_threshold_finding.md
+from .analytic import support_fraction
 
 
 # ─────────────────────────────────────────────────────────────

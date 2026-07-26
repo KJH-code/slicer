@@ -24,7 +24,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from conical.varangle import select_uniform, select_banded
-from conical.metrics import face_support_and_staircase
+# 판정 기준 통일(2026-07 리뷰): metrics → analytic (해석식)
+from conical.analytic import face_support_and_staircase
 from conical.meshio import center_on_axis
 from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
 

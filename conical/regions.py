@@ -17,9 +17,7 @@ regions.py — 부위별(영역별) 원뿔 각도 결정 (Stage 4, 확장).
 """
 
 import numpy as np
-import trimesh
 
-from .transform import transform_cone
 from .overhang import analyze_overhangs
 from .selector import evaluate_J
 from .config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
@@ -57,14 +55,13 @@ def assign_regions_by_overhang(mesh, n_regions, threshold_deg=THRESHOLD_DEG):
 # 2) 서포트 판정 도우미: 변환 후에도 서포트가 필요한 면들
 # ─────────────────────────────────────────────────────────────
 def still_needs_support(mesh, cone_angle_deg, cone_type, threshold_deg=THRESHOLD_DEG):
-    """변환 후에도 서포트가 필요한 면들의 boolean 배열(전체 면 기준)을 돌려준다."""
-    if cone_angle_deg == 0:
-        tmesh = mesh
-    else:
-        v = transform_cone(mesh.vertices, cone_angle_deg, cone_type)
-        tmesh = trimesh.Trimesh(vertices=v, faces=mesh.faces, process=False)
-    _, need = analyze_overhangs(tmesh, threshold_deg)
-    return need
+    """이 각도에서도 서포트가 필요한 면들의 boolean 배열(전체 면 기준).
+
+    판정 기준 통일(2026-07 리뷰): 변환공간 근사(메시 재변환+법선 재계산) 대신
+    해석식(실공간 국소 레이어 각)을 쓴다. α=0 에서 두 정의는 일치.
+    """
+    from . import analytic
+    return analytic.needs_support(mesh, cone_angle_deg, cone_type, threshold_deg)
 
 
 # ─────────────────────────────────────────────────────────────

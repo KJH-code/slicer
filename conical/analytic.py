@@ -60,6 +60,20 @@ def support_fraction(mesh, angle_deg, direction, threshold_deg=THRESHOLD_DEG):
     return areas[need].sum() / areas.sum() * 100.0
 
 
+def face_support_and_staircase(mesh, angle_deg, direction,
+                               threshold_deg=THRESHOLD_DEG):
+    """해석식 버전 (metrics.face_support_and_staircase 의 대체):
+      needs_support = g < κ,  staircase = max(0, −g).
+
+    g = n_z·cosα + d·n_r·sinα 는 변환공간 n_z' 의 실공간 대응물이므로
+    α=0 에서 기존 metrics 정의와 정확히 일치하고, α>0 에서는 왜곡 없는
+    물리 기준이 된다 (docs/warped_threshold_finding.md — 판정 기준 통일).
+    """
+    g = overhang_score(mesh, angle_deg, direction)
+    kappa = -np.sin(np.radians(threshold_deg))
+    return g < kappa, np.maximum(0.0, -g)
+
+
 def critical_angle(mesh, direction, threshold_deg=THRESHOLD_DEG,
                    angle_max=MAX_ANGLE_DEG):
     """면마다 '자기지지가 되는 최소 원뿔각 θ*'를 닫힌형으로 계산.
