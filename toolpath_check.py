@@ -63,7 +63,7 @@ def main():
               ", ".join(f"z≈{k * lh:.1f}:{v:.0f}%" for k, v in worst if v > 0))
 
     if args.nozzle:
-        col, ns = check_nozzle(pts, mid, HotendProfile())
+        col, ns = check_nozzle(pts, mid, HotendProfile(), clearance=lh)
         print(f"  노즐 간섭     : {ns['collision_pct']:.2f} % "
               f"(첫 간섭 z={ns['first_collision_z']})"
               "  [HotendProfile은 실측 전 추정값]")

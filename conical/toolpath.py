@@ -138,10 +138,15 @@ class HotendProfile:
     block_height: float = 12.0     # 히트블록 높이 (mm)
 
 
-def check_nozzle(pts, move_id, hotend=None, batch_samples=2000):
+def check_nozzle(pts, move_id, hotend=None, batch_samples=2000,
+                 clearance=0.3):
     """노즐 간섭 검사 (3축, 노즐 수직). 반환: collision(bool), 통계 dict.
 
     이전 배치=트리, 같은 배치 안 앞선 점=브루트포스 (check_support 와 동일 구조).
+    clearance: 간섭으로 세지 않는 팁 위 여유(기본 층고 1배). 방금 찍은 자기
+    비드는 정의상 노즐에 닿아 있으므로 — 원뿔 경로는 진행 방향으로 미세하게
+    내려가 직전 샘플이 µm 단위로 '위'가 되는데, 이걸 간섭으로 오검출하는 버그를
+    스윕 실측(4°에서 51% 오검출)으로 잡아 추가한 하한이다.
     """
     h = hotend or HotendProfile()
     n = len(pts)
@@ -154,9 +159,10 @@ def check_nozzle(pts, move_id, hotend=None, batch_samples=2000):
     radius = math.sqrt(r_h_max ** 2 + dz_max ** 2)
 
     def hit(dz, horiz):
-        cone = (dz > 1e-9) & (dz <= h.cone_height) & \
+        cone = (dz > clearance) & (dz <= h.cone_height) & \
                (horiz < h.tip_radius + dz * tan_half)
-        block = (dz > h.block_z0) & (dz <= dz_max) & (horiz < h.block_radius)
+        block = (dz > max(h.block_z0, clearance)) & (dz <= dz_max) & \
+                (horiz < h.block_radius)
         return cone | block
 
     tree = None
