@@ -15,7 +15,7 @@ from conical.meshio import load_mesh_or_demo
 if __name__ == "__main__":
     import sys
 
-    mesh, path = load_mesh_or_demo(sys.argv, subdivisions=3)
+    mesh, path = load_mesh_or_demo(sys.argv, subdivisions=4)  # 데모 구 통일 (14.7%)
     if path is None:
         print("[STL 없음 -> 데모용 구로 실행]")
 

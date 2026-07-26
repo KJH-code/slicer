@@ -22,9 +22,23 @@ python3 region_selector.py [model.stl]           # Stage 4: 부위별(오버행 
 python3 compare_overhang_methods.py [model.stl]  # 검증: 면법선 vs 레이어별 2D 판정 비교
 python3 compare_complexity.py [model.stl]        # 핵심: '복잡도 vs 성능' 균일/구간별/세밀 비교
 python3 analyze_k.py [model.stl]                  # 구간별 이득이 k에 어떻게 의존하나 -> analyze_k.png
+python3 compare_ceiling.py [model.stl]            # 실현 가능한 밴드 계획 vs 이상적 천장
 ```
 
 STL 경로를 안 주면 데모용 구(sphere)로 실행된다.
+
+### 슬라이싱 파이프라인 (STL → 원뿔 G-code)
+
+```
+python3 conical_slice.py model.stl                       # 각도 자동 (J 기준, --k 로 조정)
+python3 conical_slice.py model.stl --angle 30 --direction outward   # 수동 지정
+python3 conical_slice.py model.stl --mode open5x         # Open5x 5축 기계좌표 [실험적]
+python3 conical_slice.py model.stl \
+  --slicer-cmd "prusa-slicer -g --load profiles/conical_pipeline.ini --dont-arrange -o {gcode} {stl}"
+```
+
+출력 G-code는 `tools/slicing_simulator.html`(브라우저)에서 재생·확인할 수 있다.
+예시 입력/출력은 `examples/` 참고.
 
 ## 구조
 
@@ -33,17 +47,39 @@ STL 경로를 안 주면 데모용 구(sphere)로 실행된다.
 
 ```
 conical/
-  config.py          설정값 한 곳에 모음 (임계각, 최대 각도, 탐색 간격) + 슬라이서 관례 변환
+  config.py          설정값 한 곳에 모음 (임계각, 최대 각도, DEFAULT_K) + 슬라이서 관례 변환
   transform.py       원뿔 좌표 변환식 (RotBot 방식)
+  analytic.py        ★ 판정 기준(해석식): 실공간 국소 레이어 각 + 면별 임계각
   overhang.py        Stage 1 — 면별 오버행 분석 (빠른 면 법선 방식)
-  overhang_layers.py 레이어별 2D 오버행 판정 (실제 슬라이서 방식, 더 정확)
-  sweep.py           Stage 2 — 각도별 남은 서포트(%) 계산
-  selector.py        Stage 3 — 평가함수 J 로 각도/방향 자동 결정
-  regions.py         Stage 4 — 부위별(오버행 심한 정도) 각도 결정
-  metrics.py         성능 지표 (서포트 / 강도proxy / 평균각)
-  varangle.py        높이 구간별 변수각 θ(z) 전략 (균일/구간별/세밀)
-  meshio.py          STL 로드 / 데모 구 생성 도우미
+  overhang_layers.py 레이어별 2D 오버행 판정 (실제 슬라이서 방식)
+  sweep.py           (레거시) 변환공간 근사 — 비교·재현용
+  metrics.py         (레거시) 변환공간 지표 — 비교·재현용
+  selector.py        Stage 3 — 평가함수 J 로 각도/방향 자동 결정 (해석식)
+  regions.py         Stage 4 — 부위별(오버행 심한 정도) 각도 결정 (해석식)
+  varangle.py        높이 구간별 변수각 θ(z) 전략 (균일/구간별/세밀, 해석식)
+  clusters.py        오버행 클러스터 진단 + 적응 천장(ceiling)
+  bandplan.py        실현 가능한 밴드 계획 (팀메 bands.py 미러)
+  strength.py        이론 강도 (Hankinson)
+  gcode.py           G-code 데이터 모델 (파싱/쓰기)
+  planar_slicer.py   내장 미니 평면 슬라이서 (연구용)
+  backtransform.py   역변환 + 적응 현 분할 L=2√(2rε)
+  open5x.py          Open5x 5축 기계좌표 변환 [실험적]
+  meshio.py          STL 로드 / 축 센터링 / 데모 구
+profiles/            외부 슬라이서(PrusaSlicer) 파이프라인 프리셋
+tools/               시뮬레이터(html)·G-code 진단·엑셀 생성기
+examples/            예시 입력(STL)과 출력(G-code)
+tests/               회귀 테스트
 ```
+
+### 판정 기준 (통일됨)
+
+오버행/서포트 판정은 **해석식**(`analytic.py`: 면이 실공간 국소 원뿔 레이어와
+이루는 각, `g = n_z·cosθ + d·n_r·sinθ`)으로 통일했다. 변환공간 방식
+(`sweep.py`/`metrics.py`)은 α>0에서 물리와 어긋나(비등각 왜곡,
+`docs/warped_threshold_finding.md`) 레거시 비교용으로만 유지한다.
+
+의존성 참고: `rtree`가 없으면 내장 슬라이서/레이어별 판정이 죽는다
+(`requirements.txt`에 포함).
 
 ### 연구 논지: 균일 원뿔 vs 부위별 각도
 
