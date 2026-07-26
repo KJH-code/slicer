@@ -33,11 +33,13 @@ import trimesh
 
 from conical import analytic
 from conical.meshio import center_on_axis
-from conical.transform import transform_cone
+from conical.transform import transform_cone, transform_cone_profile
 from conical.planar_slicer import slice_mesh
 from conical.backtransform import backtransform
 from conical import gcode as gc
 from conical.selector import select_cone
+from conical.profile import AngleProfile
+from conical.varangle import select_banded
 from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP, DEFAULT_K
 
 
@@ -74,6 +76,11 @@ def main():
     ap.add_argument("stl")
     ap.add_argument("--angle", type=float, default=None, help="원뿔 각도(도). 생략=자동")
     ap.add_argument("--direction", choices=["outward", "inward"], default=None)
+    ap.add_argument("--profile", default=None,
+                    help='가변각 θ(Z′) 수동 지정 "Z1:deg1,Z2:deg2,..." '
+                         '(예 "0:15,10:15,14:35,30:35"; 음수=inward)')
+    ap.add_argument("--auto-bands", type=int, default=None,
+                    help="밴드 N개 자동 탐색(select_banded) → 가변각 프로필")
     ap.add_argument("--layer-height", type=float, default=0.3)
     ap.add_argument("--perimeters", type=int, default=2)
     ap.add_argument("--infill-spacing", type=float, default=2.5,
@@ -98,8 +105,30 @@ def main():
     mesh = center_on_axis(mesh)
     base = analytic.support_fraction(mesh, 0.0, "outward", THRESHOLD_DEG)
 
-    # [1] 각도 결정
-    if args.angle is not None:
+    # [1] 각도 결정 (고정각 / 가변각 프로필)
+    profile = None
+    banded_info = None
+    if args.profile is not None or args.auto_bands is not None:
+        if args.angle is not None:
+            raise SystemExit("--angle 과 --profile/--auto-bands 는 동시 사용 불가")
+        if args.mode == "open5x":
+            raise SystemExit("가변각 + open5x 는 향후 과제 (틸트 U가 상수라는 "
+                             "가정이 깨짐) — xyz 모드만 지원")
+        r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
+        if args.profile is not None:
+            profile = AngleProfile.parse(args.profile)
+            if (args.direction or "outward") == "inward":
+                profile = AngleProfile(list(zip(profile.zs, -profile.thetas_deg)))
+            why = "수동 프로필"
+        else:
+            banded_info = select_banded(mesh, args.k, args.auto_bands)
+            profile = AngleProfile.from_banded_result(banded_info, r_max)
+            why = f"--auto-bands {args.auto_bands} (J, k={args.k})"
+        profile.validate(r_max, "outward")
+        direction = "outward"          # 부호 있는 각도 규약 (음수=inward)
+        angle = None
+        after = analytic.support_fraction_profile(mesh, profile, THRESHOLD_DEG)
+    elif args.angle is not None:
         direction = args.direction or "outward"
         angle = args.angle
         after = analytic.support_fraction(mesh, angle, direction, THRESHOLD_DEG)
@@ -110,12 +139,25 @@ def main():
 
     print("=" * 62)
     print(f"[conical_slice] {args.stl}")
-    print(f"  각도 결정   : {direction} {angle:.0f}°  ({why})")
-    print(f"  서포트 예측 : {base:.1f}% (평면) → {after:.1f}% (선택 각도)")
+    if profile is not None:
+        print(f"  각도 결정   : 가변각 프로필 ({why}, 가역성 검증 통과)")
+        print(profile.describe())
+        if banded_info is not None:
+            print(f"  밴드 서포트 추정: {banded_info['support_pct']:.1f}% "
+                  f"(select_banded, 이상적 추정)")
+    else:
+        print(f"  각도 결정   : {direction} {angle:.0f}°  ({why})")
+    print(f"  서포트 예측 : {base:.1f}% (평면) → {after:.1f}% "
+          f"({'프로필' if profile is not None else '선택 각도'}"
+          f"{', 축상 근사' if profile is not None else ''})")
 
     # [2] 세분화 + 정변환
     fine = refine(mesh, args.max_edge)
-    if angle > 0:
+    if profile is not None:
+        warped = trimesh.Trimesh(
+            vertices=transform_cone_profile(fine.vertices, profile, "outward"),
+            faces=fine.faces, process=False)
+    elif angle > 0:
         warped = trimesh.Trimesh(
             vertices=transform_cone(fine.vertices, angle, direction),
             faces=fine.faces, process=False)
@@ -137,9 +179,9 @@ def main():
 
     n_moves_planar = sum(1 for k, _ in items if k == "move")
 
-    # [4] 역변환 (적응 현 분할)
-    real_items, stats = backtransform(items, angle, direction,
-                                      chord_tol=args.chord_tol)
+    # [4] 역변환 (적응 현 분할; 프로필이면 점별 θ(Zw) + 블렌드 분할 2배)
+    real_items, stats = backtransform(items, profile if profile is not None else angle,
+                                      direction, chord_tol=args.chord_tol)
     print(f"  역변환      : 이동 {stats['moves_in']:,} → {stats['moves_out']:,} "
           f"(확장 {stats['expansion']:.2f}배, ε={args.chord_tol}mm 적응 분할)")
 
@@ -156,10 +198,17 @@ def main():
                                ("_open5x.gcode" if args.mode == "open5x"
                                 else "_conical.gcode"))
     # 뷰어/후처리 도구가 읽는 메타데이터 (tools/slicing_simulator.html 등)
-    meta = [("raw", f"; conical: angle={angle:.1f} direction={direction} "
-                    f"mode={args.mode} chord_tol={args.chord_tol}")]
+    if profile is not None:
+        prof_txt = ",".join(f"{z:g}:{t:g}"
+                            for z, t in zip(profile.zs, profile.thetas_deg))
+        meta = [("raw", f"; conical: profile={prof_txt} direction=outward "
+                        f"mode={args.mode} chord_tol={args.chord_tol}")]
+    else:
+        meta = [("raw", f"; conical: angle={angle:.1f} direction={direction} "
+                        f"mode={args.mode} chord_tol={args.chord_tol}")]
     gc.write(meta + real_items, out_path)
     print(f"  출력        : {out_path}")
+    print(f"  검증        : python3 toolpath_check.py {out_path}")
     if args.mode == "xyz":
         print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "
               "큰 각도는 틸트 하드웨어 필요.")

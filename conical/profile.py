@@ -159,6 +159,37 @@ class AngleProfile:
         return prof
 
     @classmethod
+    def from_banded_result(cls, banded_result, r_max, safety=1.5, min_blend=0.5):
+        """varangle.select_banded 결과(실공간 z 밴드 + 각도/방향) → 프로필 어댑터.
+
+        ⚠ 경계 해석(정직): select_banded 의 z 경계를 축상(r=0, Z′=z) 기준 Z′ 로
+          근사 — 축에서 멀수록 경계가 최대 r·tanθ 만큼 어긋날 수 있다. 이 오차의
+          실질 영향은 툴패스 검사기(toolpath_check.py)가 판정한다.
+        방향은 부호로 접음: inward 밴드 = 음수 각도 (c=+1 규약).
+        빈 밴드(None)는 이전 밴드 각도를 이어받아 불필요한 블렌드를 피한다.
+        """
+        edges = banded_result["edges"]
+        prof_list = banded_result["profile"]
+        bands = []
+        prev_theta = 0.0
+        for i, p in enumerate(prof_list):
+            if p is None:
+                theta = prev_theta
+            else:
+                ang, direction = p
+                theta = float(ang) if direction == "outward" else -float(ang)
+            bands.append((float(edges[i]), float(edges[i + 1]), theta))
+            prev_theta = theta
+        # 같은 각도 연속 밴드 병합 (블렌드 최소화)
+        merged = [list(bands[0])]
+        for lo, hi, th in bands[1:]:
+            if abs(th - merged[-1][2]) < 1e-12:
+                merged[-1][1] = hi
+            else:
+                merged.append([lo, hi, th])
+        return cls.from_bands([tuple(b) for b in merged], r_max, safety, min_blend)
+
+    @classmethod
     def parse(cls, text):
         """CLI 문자열 "Z1:deg1,Z2:deg2,..." → 프로필 (deg 는 부호 허용)."""
         bps = []

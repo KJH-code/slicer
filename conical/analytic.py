@@ -60,6 +60,23 @@ def support_fraction(mesh, angle_deg, direction, threshold_deg=THRESHOLD_DEG):
     return areas[need].sum() / areas.sum() * 100.0
 
 
+def support_fraction_profile(mesh, profile, threshold_deg=THRESHOLD_DEG):
+    """가변각 프로필 θ(Z′)의 남은 서포트 넓이(%) 추정 (부호 있는 각도, c=+1).
+
+    ⚠ 정직: 각 면의 각도는 centroid 의 '축상 Z′≈z' 근사로 조회한다 — 축에서
+      먼 면은 실제 Z′가 r·tanθ 만큼 달라 경계 부근에서 어긋날 수 있다.
+      실질 영향은 툴패스 검사기가 판정한다.
+    """
+    fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
+    th = np.radians(profile.theta_at(fz))
+    nz = mesh.face_normals[:, 2]
+    nr = radial_normal(mesh)
+    g = nz * np.cos(th) + nr * np.sin(th)
+    need = g < -np.sin(np.radians(threshold_deg))
+    areas = mesh.area_faces
+    return areas[need].sum() / areas.sum() * 100.0
+
+
 def sweep_table(mesh, angles, direction, threshold_deg=THRESHOLD_DEG):
     """각도 리스트를 훑어 각 각도의 남은 서포트(%) 리스트 (sweep.sweep_table 의
     해석식 대체 — 판정 기준 통일)."""
