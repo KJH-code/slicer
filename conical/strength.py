@@ -34,8 +34,10 @@ HANKINSON_N = 2          # 지수 (기본 2)
 def layer_normals(mesh, angle_deg, cone_type):
     """각 면 위치에서의 '레이어 면 법선'(실공간 단위벡터).
 
-    원뿔 레이어는 실공간에서 반각 θ 만큼 기울어진 원뿔면이다. 반경 방향으로
-    outward(c=+1)는 z가 반경 따라 오르고, inward(c=-1)는 내린다.
+    유도: 정변환 z' = z + c·ρ·tanθ 의 등고면은 z = h − c·ρ·tanθ 이고, 그
+    위쪽 법선은 ∝ (c·sinθ·x/ρ, c·sinθ·y/ρ, cosθ). 따라서 반경 성분 부호는 +c.
+    (2026-07 리뷰 수정: 기존 −c 는 outward 가 inward 레이어를 계산하는 부호
+    오류였다. 기본 load="z" 경로는 cosθ 성분만 쓰므로 기존 결과에는 영향 없음.)
     angle_deg 는 스칼라(균일) 또는 면마다 다른 배열(구간별) 모두 가능.
     """
     th = np.radians(np.asarray(angle_deg, dtype=float)) * np.ones(len(mesh.faces))
@@ -44,8 +46,8 @@ def layer_normals(mesh, angle_deg, cone_type):
     x, y = fc[:, 0], fc[:, 1]
     rho = np.sqrt(x**2 + y**2)
     safe = np.where(rho > 1e-9, rho, 1.0)
-    nlx = np.where(rho > 1e-9, -c * np.sin(th) * x / safe, 0.0)
-    nly = np.where(rho > 1e-9, -c * np.sin(th) * y / safe, 0.0)
+    nlx = np.where(rho > 1e-9, c * np.sin(th) * x / safe, 0.0)
+    nly = np.where(rho > 1e-9, c * np.sin(th) * y / safe, 0.0)
     nlz = np.cos(th)
     n = np.column_stack([nlx, nly, nlz])
     return n / np.linalg.norm(n, axis=1, keepdims=True)
