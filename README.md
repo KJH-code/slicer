@@ -61,6 +61,10 @@ python3 compare_prediction_vs_toolpath.py        # 본편 실험: 메시 예측 
 팽창이라는 "이상적 추정"의 결함을 실측으로 잡아냈다.
 
 출력 G-code는 `tools/slicing_simulator.html`(브라우저)에서 재생·확인할 수 있다.
+시뮬레이터의 **검증 탭**은 Python 과 독립적으로 수식을 재구현해 점 단위로
+대조한다(오프라인 동작): G-code + (선택) `toolpath_check.py --export-json`
+정답지를 로드 → 층간격 히트맵·프로필 인스펙터·손계산 검산·자체테스트 4종.
+자세한 검증 계층은 [`docs/verification.md`](docs/verification.md) 참고.
 예시 입력/출력은 `examples/` 참고.
 
 ## 구조
