@@ -32,10 +32,33 @@ STL 경로를 안 주면 데모용 구(sphere)로 실행된다.
 ```
 python3 conical_slice.py model.stl                       # 각도 자동 (J 기준, --k 로 조정)
 python3 conical_slice.py model.stl --angle 30 --direction outward   # 수동 지정
+python3 conical_slice.py model.stl --profile "0:15,10:15,14:35,30:35"  # 가변각 θ(Z′) 수동
+python3 conical_slice.py model.stl --auto-bands 2        # 밴드 자동 탐색 → 가변각 프로필
 python3 conical_slice.py model.stl --mode open5x         # Open5x 5축 기계좌표 [실험적]
 python3 conical_slice.py model.stl \
   --slicer-cmd "prusa-slicer -g --load profiles/conical_pipeline.ini --dont-arrange -o {gcode} {stl}"
 ```
+
+가변각 프로필은 tanθ 를 Z′에 조각별 선형으로 보간하고(가역성 조건
+`c·r_max·s < 1`, 블렌드 최소 폭 `w_min = c·r_max·Δtanθ` 자동 검증),
+상수 프로필은 기존 고정각과 수치적으로 동일하다(회귀 테스트로 강제).
+
+### 툴패스 가상 검증기 (하드웨어 없이)
+
+```
+python3 toolpath_check.py out.gcode              # 검사기 A: 압출 지지 (미지지 %, 산점 PNG)
+python3 toolpath_check.py out.gcode --nozzle     # + 검사기 B: 3축 노즐 간섭
+python3 find_max_safe_angle.py [model.stl]       # 각도 스윕 → 이 모델·기계의 3축 MAX_ANGLE
+python3 compare_prediction_vs_toolpath.py        # 본편 실험: 메시 예측 vs 툴패스 (순위상관)
+```
+
+`find_max_safe_angle.py` 는 config 의 전역 상수 `MAX_ANGLE_DEG` 를 모델별
+계산값으로 대체할 수 있게 한다 (HotendProfile 은 실측 전 추정값 — 캘리퍼스 필수).
+
+**검증 계층**: 메시 예측(해석식, 초 단위) → 툴패스 검증(검사기 A/B, 분 단위)
+→ (향후) 실물 출력. 각 층이 아래층의 가정을 검사한다 — 실제로 툴패스 검사기가
+메시 예측의 순위를 재현(스피어만 ρ=1.0)하면서, 동시에 가변각 블렌드의 층간격
+팽창이라는 "이상적 추정"의 결함을 실측으로 잡아냈다.
 
 출력 G-code는 `tools/slicing_simulator.html`(브라우저)에서 재생·확인할 수 있다.
 예시 입력/출력은 `examples/` 참고.

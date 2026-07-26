@@ -8,3 +8,4 @@
 
 `tools/slicing_simulator.html` 의 "G-code 실행" 탭에서 STL과 G-code를 함께
 로드하면 분석(빨간 오버행) → 왜곡 → 출력 재생을 한 화면에서 볼 수 있다.
+| `funnel_profile2band.gcode` | 가변각 2밴드(`--profile "0:26,2.5:26,3.5:10,5:10"`) 출력 — θ(Z′) 파이프라인 예시 |
