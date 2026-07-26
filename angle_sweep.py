@@ -14,7 +14,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from conical.sweep import support_fraction, sweep_table
+# 판정 기준 통일(2026-07 리뷰): sweep(변환공간 근사) → analytic(해석식).
+from conical.analytic import support_fraction, sweep_table
 
 
 if __name__ == "__main__":

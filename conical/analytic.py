@@ -60,6 +60,13 @@ def support_fraction(mesh, angle_deg, direction, threshold_deg=THRESHOLD_DEG):
     return areas[need].sum() / areas.sum() * 100.0
 
 
+def sweep_table(mesh, angles, direction, threshold_deg=THRESHOLD_DEG):
+    """각도 리스트를 훑어 각 각도의 남은 서포트(%) 리스트 (sweep.sweep_table 의
+    해석식 대체 — 판정 기준 통일)."""
+    return [support_fraction(mesh, float(a), direction, threshold_deg)
+            for a in angles]
+
+
 def face_support_and_staircase(mesh, angle_deg, direction,
                                threshold_deg=THRESHOLD_DEG):
     """해석식 버전 (metrics.face_support_and_staircase 의 대체):
