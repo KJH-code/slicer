@@ -75,9 +75,10 @@ CONICAL_PLOT_FONT="Malgun Gothic" python3 compare_bands.py   # 폰트 직접 지
                                    # (matplotlib 이름이라 "맑은 고딕"이 아니라 영문명)
 ```
 
-윈도우는 `Malgun Gothic`, macOS 는 `AppleGothic` 이 기본 설치돼 있어 별도 작업이
-필요 없다. 리눅스에서는 `sudo apt install fonts-nanum` 후
-`rm -rf ~/.cache/matplotlib` 로 폰트 캐시를 지우면 잡힌다.
+`requirements.txt` 에 `koreanize-matplotlib`(나눔고딕 번들)이 들어 있어서
+`pip install -r requirements.txt` 만 하면 어느 환경에서든 한글로 나온다.
+윈도우(`Malgun Gothic`)·macOS(`AppleGothic`)는 시스템 폰트가 먼저 잡힌다.
+한글 폰트에 없는 기호(⟨ ⟩ 등)는 폰트 폴백으로 DejaVu Sans 가 대신 그린다.
 
 `find_max_safe_angle.py` 는 config 의 전역 상수 `MAX_ANGLE_DEG` 를 모델별
 계산값으로 대체할 수 있게 한다 (HotendProfile 은 실측 전 추정값 — 캘리퍼스 필수).

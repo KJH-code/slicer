@@ -13,6 +13,7 @@ import trimesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from conical.plotstyle import L
 
 # 판정 기준 통일(2026-07 리뷰): sweep(변환공간 근사) → analytic(해석식).
 from conical.analytic import support_fraction, sweep_table
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     angles = np.arange(0, 46, 2)   # 0° ~ 44°
     for cone_type in ["inward", "outward"]:
         frac = sweep_table(mesh, angles, cone_type)
-        plt.plot(angles, frac, marker="o", label=f"{cone_type} cone")
+        plt.plot(angles, frac, marker="o", label=L(f"{cone_type} cone", f"{cone_type} 원뿔"))
         # 표로도 출력
         print(f"\n[{cone_type}]  angle -> remaining support (%)")
         for a, f in zip(angles, frac):

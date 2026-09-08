@@ -102,27 +102,37 @@ def main():
             print(f"  ✓ J가 N에 대해 비감소 (증분 "
                   f"{', '.join(f'{g:+.3f}' for g in gaps)})")
 
+    # 축 범위는 모델 간 공유한다 — 값이 전부 같은 패널(구)에서 축이 확대되면
+    # 평평한 선이 구조가 있는 것처럼 보인다.
+    all_peri = [r["peri"] for rows in results.values() for r in rows]
+    all_J = [r["J"] for rows in results.values() for r in rows]
+    ylim_p = (0, max(all_peri) * 1.30)
+    ylim_J = (min(0, min(all_J)) * 1.1, max(all_J) * 1.15)
+
     fig, axes = plt.subplots(1, len(results), figsize=(6.4 * len(results), 4.4),
                              squeeze=False)
     for ax, (name, rows) in zip(axes[0], results.items()):
         ns = [r["n"] for r in rows]
-        ax.plot(ns, [r["peri"] for r in rows], "o-", color="#2e7d32",
-                label=L("unsupported perimeter (%)", "페리미터 미지지 (%)"))
+        l1, = ax.plot(ns, [r["peri"] for r in rows], "o-", color="#2e7d32",
+                      label=L("unsupported perimeter (%)", "페리미터 미지지 (%)"))
         for r in rows:
             ax.annotate(f"⟨|θ|⟩={r['angle']:.0f}°", (r["n"], r["peri"]),
-                        textcoords="offset points", xytext=(0, 9),
-                        ha="center", fontsize=7)
+                        textcoords="offset points", xytext=(0, 10),
+                        ha="center", fontsize=8)
         ax2 = ax.twinx()
-        ax2.plot(ns, [r["J"] for r in rows], "s--", color="#4a7ebb", alpha=.75,
-                 label=L("J (objective)", "J (평가함수)"))
-        ax2.set_ylabel("J", color="#4a7ebb")
+        l2, = ax2.plot(ns, [r["J"] for r in rows], "s--", color="#4a7ebb", alpha=.75,
+                       label=L("J (objective, higher is better)",
+                               "J (평가함수, 클수록 좋음)"))
+        ax2.set_ylabel(L("J (objective)", "J (평가함수)"), color="#4a7ebb")
+        ax2.set_ylim(*ylim_J)
         ax.set_xlabel(L("number of bands N", "밴드 수 N"))
         ax.set_ylabel(L("unsupported perimeter (%)", "페리미터 미지지 (%)"),
                       color="#2e7d32")
         ax.set_xticks(ns)
+        ax.set_ylim(*ylim_p)
         ax.set_title(L("sphere (no waist)", "구 (허리 없음)") if "구" in name
                      else L("lamp (with waist)", "램프 (허리 있음)"), fontsize=10)
-        ax.margins(y=.22)
+        ax.legend(handles=[l1, l2], loc="lower left", fontsize=8, framealpha=.9)
     fig.suptitle(L("complexity (bands) vs performance — measured on the toolpath, "
                    "not the ideal estimate",
                    "복잡도(밴드 수) vs 성능 — 이상적 추정이 아니라 툴패스 실측"),

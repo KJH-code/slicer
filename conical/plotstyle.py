@@ -33,9 +33,24 @@ CANDIDATES = [
 ]
 
 
+def _register_bundled():
+    """koreanize_matplotlib 가 설치돼 있으면 import 해서 번들 폰트를 등록시킨다.
+
+    이 패키지는 나눔고딕 TTF 를 site-packages 안에 넣고 import 시점에
+    matplotlib 폰트 목록에 등록한다. site-packages 는 시스템 폰트 경로가 아니라
+    import 를 해야만 잡힌다 — 그래서 감지 전에 한 번 불러준다.
+    시스템에 한글 폰트가 이미 있으면 굳이 필요 없다(없어도 조용히 넘어간다).
+    """
+    try:
+        import koreanize_matplotlib          # noqa: F401
+    except Exception:
+        pass
+
+
 def find_korean_font():
     """설치된 한글 폰트 이름 (없으면 None). 환경변수가 있으면 그것을 우선."""
     forced = os.environ.get("CONICAL_PLOT_FONT")
+    _register_bundled()
     available = {f.name for f in font_manager.fontManager.ttflist}
     if forced:
         return forced if forced in available else None
@@ -50,7 +65,9 @@ def use_korean():
     name = find_korean_font()
     if not name:
         return False
-    matplotlib.rcParams["font.family"] = name
+    # 폰트 '폴백 체인': 한글 폰트에 없는 글리프(⟨ ⟩ 같은 기호)는 뒤 폰트가 그린다.
+    # 나눔고딕엔 각괄호가 없어 두부(□)로 나오던 것을 이렇게 막는다. (matplotlib ≥3.6)
+    matplotlib.rcParams["font.family"] = [name, "DejaVu Sans"]
     matplotlib.rcParams["axes.unicode_minus"] = False   # 한글 폰트는 −(U+2212)가 없다
     return True
 

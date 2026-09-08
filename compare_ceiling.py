@@ -22,6 +22,7 @@ import trimesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from conical.plotstyle import L
 
 from conical import analytic
 from conical.meshio import center_on_axis
@@ -104,8 +105,9 @@ if __name__ == "__main__":
         ax.bar(xpos + (i - 1.5) * w, [r[key] for r in rows], w, label=label, color=color)
     ax.set_xticks(xpos)
     ax.set_xticklabels(names, fontsize=9)
-    ax.set_ylabel("remaining support area (%)")
-    ax.set_title("Support vs strategy: realizable band plan vs idealized ceiling")
+    ax.set_ylabel(L("remaining support area (%)", "남은 서포트 면적 (%)"))
+    ax.set_title(L("Support vs strategy: realizable band plan vs idealized ceiling",
+                   "전략별 서포트: 실현 가능한 밴드 계획 vs 이상적 천장"))
     ax.legend(fontsize=8)
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()

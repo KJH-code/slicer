@@ -22,6 +22,7 @@ import trimesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from conical.plotstyle import L
 
 from conical.varangle import select_uniform, select_banded
 # 판정 기준 통일(2026-07 리뷰): metrics → analytic (해석식)
@@ -90,12 +91,12 @@ def analyze(name, mesh, ax=None):
     if ax is not None:
         ks_arr = [r[0] for r in rows]
         gain = [r[3] for r in rows]
-        ax.plot(ks_arr, gain, marker="o", ms=3, label="banding gain")
+        ax.plot(ks_arr, gain, marker="o", ms=3, label=L("banding gain", "밴딩 이득"))
         ax.axvline(kscale, color="tab:red", ls="--", lw=1,
-                   label=f"natural k≈{kscale:.2f}")
+                   label=L(f"natural k≈{kscale:.2f}", f"자연 스케일 k≈{kscale:.2f}"))
         ax.set_title(name)
-        ax.set_xlabel("k (angle cost weight)")
-        ax.set_ylabel("banding gain (support %p)")
+        ax.set_xlabel(L("k (angle cost weight)", "k (각도 비용 가중치)"))
+        ax.set_ylabel(L("banding gain (support %p)", "밴딩 이득 (서포트 %p)"))
         ax.grid(alpha=0.3)
         ax.legend(fontsize=8)
     return rows, kscale
@@ -122,7 +123,8 @@ if __name__ == "__main__":
     fig, axes = plt.subplots(1, len(models), figsize=(6 * len(models), 4), squeeze=False)
     for ax, (name, mesh) in zip(axes[0], models.items()):
         analyze(name, mesh, ax)
-    fig.suptitle("Banding advantage vs angle-cost k  (gain>0 only in a middle window)")
+    fig.suptitle(L("Banding advantage vs angle-cost k  (gain>0 only in a middle window)",
+                   "각도 비용 k에 따른 밴딩 이득  (이득>0 구간이 중간에만 있다)"))
     fig.tight_layout()
     fig.savefig("analyze_k.png", dpi=130)
     print("\nsaved: analyze_k.png")
