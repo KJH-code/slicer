@@ -62,6 +62,23 @@ python3 analyze_blend_k.py                       # J의 블렌드 비용 가중�
 python3 compare_bands.py                         # 복잡도(밴드 수 N=1~4) vs 성능, 툴패스 실측
 ```
 
+### 그림 라벨 언어 (발표 자료용)
+
+실험 스크립트의 그림은 **한글 폰트가 설치돼 있으면 한글, 없으면 영문**으로 나온다
+(`conical/plotstyle.py`). 개발용 리눅스 컨테이너엔 한글 폰트가 없어 두부(□)로 깨지기
+때문이고, 발표 자료를 만들 때 라벨을 손으로 고치지 않으려는 것이다.
+
+```
+python3 -m conical.plotstyle       # 이 환경에서 한글이 되는지 + 쓸 폰트 확인
+python3 compare_waist.py           # 폰트가 있으면 그대로 한글 그림이 나온다
+CONICAL_PLOT_FONT="Malgun Gothic" python3 compare_bands.py   # 폰트 직접 지정
+                                   # (matplotlib 이름이라 "맑은 고딕"이 아니라 영문명)
+```
+
+윈도우는 `Malgun Gothic`, macOS 는 `AppleGothic` 이 기본 설치돼 있어 별도 작업이
+필요 없다. 리눅스에서는 `sudo apt install fonts-nanum` 후
+`rm -rf ~/.cache/matplotlib` 로 폰트 캐시를 지우면 잡힌다.
+
 `find_max_safe_angle.py` 는 config 의 전역 상수 `MAX_ANGLE_DEG` 를 모델별
 계산값으로 대체할 수 있게 한다 (HotendProfile 은 실측 전 추정값 — 캘리퍼스 필수).
 
@@ -102,6 +119,7 @@ conical/
   backtransform.py   역변환 + 적응 현 분할 L=2√(2rε)
   open5x.py          Open5x 5축 기계좌표 변환 [실험적]
   meshio.py          STL 로드 / 축 센터링 / 높이별 반경 프로필 / 데모 구
+  plotstyle.py       그림 라벨 한글/영문 자동 선택 (한글 폰트 감지)
 profiles/            외부 슬라이서(PrusaSlicer) 파이프라인 프리셋
 tools/               시뮬레이터(html)·G-code 진단·엑셀 생성기
 examples/            예시 입력(STL)과 출력(G-code)

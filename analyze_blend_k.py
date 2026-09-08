@@ -25,6 +25,7 @@ import trimesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from conical.plotstyle import L
 
 from conical.meshio import center_on_axis, RadiusProfile
 from conical.varangle import select_banded_j
@@ -87,14 +88,18 @@ def main():
     for (name, (rows, want)), mark in zip(table.items(), ["o", "s"]):
         xs = [r["k_blend"] for r in rows]
         ys = [r["gain"] for r in rows]
-        lbl = "sphere (no waist)" if "구" in name else "lamp (with waist)"
+        lbl = (L("sphere (no waist)", "구 (허리 없음)") if "구" in name
+               else L("lamp (with waist)", "램프 (허리 있음)"))
         ax.plot(xs, ys, marker=mark, label=lbl)
     ax.axhline(0, color="#888", lw=1, ls="--")
     ax.axvline(BLEND_COST_K, color="#d9534f", lw=1,
-               label=f"default k_blend={BLEND_COST_K}")
-    ax.set_xlabel("k_blend (blend-cost weight in J)")
-    ax.set_ylabel("J(banded) − J(best uniform)")
-    ax.set_title("above 0 = banding chosen;  below 0 = falls back to uniform")
+               label=L(f"default k_blend={BLEND_COST_K}",
+                       f"기본값 k_blend={BLEND_COST_K}"))
+    ax.set_xlabel(L("k_blend (blend-cost weight in J)",
+                    "k_blend (J의 블렌드 비용 가중치)"))
+    ax.set_ylabel(L("J(banded) − J(best uniform)", "J(부위별) − J(최선 균일)"))
+    ax.set_title(L("above 0 = banding chosen;  below 0 = falls back to uniform",
+                   "0보다 위 = 부위별 선택,  아래 = 균일로 수렴"))
     ax.legend(fontsize=8)
     fig.tight_layout()
     fig.savefig("analyze_blend_k.png", dpi=130)

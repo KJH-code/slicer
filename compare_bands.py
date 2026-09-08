@@ -24,6 +24,7 @@ import trimesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from conical.plotstyle import L
 
 from conical.config import (MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K)
 from conical.meshio import center_on_axis, RadiusProfile
@@ -106,23 +107,26 @@ def main():
     for ax, (name, rows) in zip(axes[0], results.items()):
         ns = [r["n"] for r in rows]
         ax.plot(ns, [r["peri"] for r in rows], "o-", color="#2e7d32",
-                label="unsupported perimeter (%)")
+                label=L("unsupported perimeter (%)", "페리미터 미지지 (%)"))
         for r in rows:
             ax.annotate(f"⟨|θ|⟩={r['angle']:.0f}°", (r["n"], r["peri"]),
                         textcoords="offset points", xytext=(0, 9),
                         ha="center", fontsize=7)
         ax2 = ax.twinx()
         ax2.plot(ns, [r["J"] for r in rows], "s--", color="#4a7ebb", alpha=.75,
-                 label="J (objective)")
+                 label=L("J (objective)", "J (평가함수)"))
         ax2.set_ylabel("J", color="#4a7ebb")
-        ax.set_xlabel("number of bands N")
-        ax.set_ylabel("unsupported perimeter (%)", color="#2e7d32")
+        ax.set_xlabel(L("number of bands N", "밴드 수 N"))
+        ax.set_ylabel(L("unsupported perimeter (%)", "페리미터 미지지 (%)"),
+                      color="#2e7d32")
         ax.set_xticks(ns)
-        ax.set_title("sphere (no waist)" if "구" in name else "lamp (with waist)",
-                     fontsize=10)
+        ax.set_title(L("sphere (no waist)", "구 (허리 없음)") if "구" in name
+                     else L("lamp (with waist)", "램프 (허리 있음)"), fontsize=10)
         ax.margins(y=.22)
-    fig.suptitle("complexity (bands) vs performance — measured on the toolpath, "
-                 "not the ideal estimate", fontsize=11)
+    fig.suptitle(L("complexity (bands) vs performance — measured on the toolpath, "
+                   "not the ideal estimate",
+                   "복잡도(밴드 수) vs 성능 — 이상적 추정이 아니라 툴패스 실측"),
+                 fontsize=11)
     fig.tight_layout()
     fig.savefig("compare_bands.png", dpi=130)
     print("\n그림 저장: compare_bands.png")

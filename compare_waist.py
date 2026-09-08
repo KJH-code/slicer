@@ -29,6 +29,7 @@ import trimesh
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from conical.plotstyle import L
 
 from conical.meshio import center_on_axis, RadiusProfile
 from conical.transform import transform_cone, transform_cone_profile
@@ -152,10 +153,14 @@ def main():
             print(f"  {'':<28} └ {note}")
         results[name] = rows
 
-    # 그림: 모델별 페리미터 미지지 막대 (시스템에 한글 폰트가 없어 라벨은 영문 —
-    # 저장소의 다른 PNG 들과 같은 관례)
-    en = ["planar 0°", "uniform (J)", "banded-2\n(no spacing limit)",
-          "banded-2\n(spacing limit)", "banded-2\n(+ blend cost in J)"]
+    # 그림: 모델별 페리미터 미지지 막대.
+    # 라벨은 conical.plotstyle 의 L() 이 고른다 — 한글 폰트가 있으면 한글,
+    # 없으면 영문 (개발 컨테이너엔 한글 폰트가 없어 두부(□)로 깨지기 때문).
+    xlabels = [L("planar 0°", "평면 0°"),
+          L("uniform (J)", "균일각 (J)"),
+          L("banded-2\n(no spacing limit)", "밴드2\n(층간격 제약 없음)"),
+          L("banded-2\n(spacing limit)", "밴드2\n(층간격 제약)"),
+          L("banded-2\n(+ blend cost in J)", "밴드2\n(+ J에 블렌드비용)")]
     fig, axes = plt.subplots(1, len(results), figsize=(6.6 * len(results), 4.4))
     axes = np.atleast_1d(axes)
     for ax, (name, rows) in zip(axes, results.items()):
@@ -164,16 +169,18 @@ def main():
         colors = ["#9aa7c4", "#4a7ebb", "#d9534f", "#8bc34a", "#2e7d32"][:len(rows)]
         ax.bar(range(len(vals)), vals, color=colors)
         ax.set_xticks(range(len(vals)))
-        ax.set_xticklabels(en[:len(vals)], fontsize=7)
-        ax.set_ylabel("unsupported perimeter (%)")
-        ax.set_title("sphere (no waist)" if "구" in name else "lamp (with waist)",
-                     fontsize=10)
+        ax.set_xticklabels(xlabels[:len(vals)], fontsize=7)
+        ax.set_ylabel(L("unsupported perimeter (%)", "페리미터 미지지 (%)"))
+        ax.set_title(L("sphere (no waist)", "구 (허리 없음)") if "구" in name
+                     else L("lamp (with waist)", "램프 (허리 있음)"), fontsize=10)
         for i, (v, a) in enumerate(zip(vals, angs)):
             ax.text(i, v, f"{v:.2f}\n⟨|θ|⟩={a:.0f}°", ha="center", va="bottom",
                     fontsize=7)
         ax.set_ylim(0, max(vals) * 1.25)
-    fig.suptitle("per-band angles vs uniform cone — banding wins only where the "
-                 "model has a waist  (⟨|θ|⟩ = mean distortion angle)", fontsize=11)
+    fig.suptitle(L("per-band angles vs uniform cone — banding wins only where the "
+                   "model has a waist  (⟨|θ|⟩ = mean distortion angle)",
+                   "부위별 각도 vs 균일 원뿔 — '허리'가 있어야 밴드가 이긴다  "
+                   "(⟨|θ|⟩ = 면적가중 평균 왜곡각)"), fontsize=11)
     fig.tight_layout()
     fig.savefig("compare_waist.png", dpi=130)
     print("\n그림 저장: compare_waist.png")

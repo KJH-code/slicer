@@ -23,6 +23,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.stats import spearmanr
+from conical.plotstyle import L
 
 from conical import analytic
 from conical.meshio import center_on_axis
@@ -101,9 +102,11 @@ def main():
         ax.annotate(f"{a}°", (x, y), fontsize=8,
                     textcoords="offset points", xytext=(4, 4))
     ax.scatter([p_b], [m_b], c="#55a868", marker="s", label="banded-2")
-    ax.set_xlabel("mesh prediction: analytic support (%)")
-    ax.set_ylabel("toolpath unsupported (%)")
-    ax.set_title(f"prediction vs toolpath (Spearman ρ={rho:.2f})")
+    ax.set_xlabel(L("mesh prediction: analytic support (%)",
+                    "메시 예측: 해석식 서포트 (%)"))
+    ax.set_ylabel(L("toolpath unsupported (%)", "툴패스 미지지 (%)"))
+    ax.set_title(L(f"prediction vs toolpath (Spearman ρ={rho:.2f})",
+                   f"예측 vs 툴패스 (스피어만 ρ={rho:.2f})"))
     ax.grid(alpha=0.3)
     ax.legend(fontsize=8)
     fig.tight_layout()
