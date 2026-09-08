@@ -60,6 +60,8 @@ python3 compare_prediction_vs_toolpath.py        # 본편 실험: 메시 예측 
 python3 compare_waist.py                         # 핵심 실험: 밴드 vs 균일 — '허리'가 있어야 이긴다
 python3 analyze_blend_k.py                       # J의 블렌드 비용 가중치 k_blend 창 분석
 python3 compare_bands.py                         # 복잡도(밴드 수 N=1~4) vs 성능, 툴패스 실측
+python3 compare_kappa_rules.py                   # 임계 κ 규칙(고정 45° vs 형상 의존) 실측 판정
+python3 compare_with_teammate.py --teammate ./find_conical_angle   # 팀메 독립 구현과 면 단위 대조
 ```
 
 ### 그림 라벨 언어 (발표 자료용)
@@ -83,10 +85,15 @@ CONICAL_PLOT_FONT="Malgun Gothic" python3 compare_bands.py   # 폰트 직접 지
 `find_max_safe_angle.py` 는 config 의 전역 상수 `MAX_ANGLE_DEG` 를 모델별
 계산값으로 대체할 수 있게 한다 (HotendProfile 은 실측 전 추정값 — 캘리퍼스 필수).
 
-**검증 계층**: 메시 예측(해석식, 초 단위) → 툴패스 검증(검사기 A/B, 분 단위)
-→ (향후) 실물 출력. 각 층이 아래층의 가정을 검사한다 — 실제로 툴패스 검사기가
-메시 예측의 순위를 재현(스피어만 ρ=1.0)하면서, 동시에 가변각 블렌드의 층간격
-팽창이라는 "이상적 추정"의 결함을 실측으로 잡아냈다.
+**검증 계층**: 단위테스트 → 툴패스 검증(검사기 A/B) → 브라우저 독립 재구현 →
+사람 손계산 → **팀메 독립 구현 대조**. 각 층이 아래층의 가정을 검사한다 —
+실제로 툴패스 검사기가 메시 예측의 순위를 재현(ρ=1.0)하면서, 동시에 가변각
+블렌드의 층간격 팽창이라는 "이상적 추정"의 결함을 실측으로 잡아냈다.
+
+⚠ **실물 출력은 이 연구에서 불가능하다**(장비·여건). 그래서 마지막 층은
+'프린트해 봤다'가 아니라 '같은 수식을 다른 사람이 따로 구현한 코드와 맞다'이다
+(22,000면, 최대 차이 1.42e-14°). 물리(브리징·수축·접착)는 끝내 검증되지 않으므로
+모든 결론을 '증명'이 아니라 '시뮬레이션 경향'으로만 쓴다.
 
 출력 G-code는 `tools/slicing_simulator.html`(브라우저)에서 재생·확인할 수 있다.
 시뮬레이터의 **검증 탭**은 Python 과 독립적으로 수식을 재구현해 점 단위로
@@ -121,6 +128,7 @@ conical/
   open5x.py          Open5x 5축 기계좌표 변환 [실험적]
   meshio.py          STL 로드 / 축 센터링 / 높이별 반경 프로필 / 데모 구
   plotstyle.py       그림 라벨 한글/영문 자동 선택 (한글 폰트 감지)
+  kappa.py           임계 κ 규칙 둘 (고정 45° / 팀메 형상 의존) — 실측 비교용
 profiles/            외부 슬라이서(PrusaSlicer) 파이프라인 프리셋
 tools/               시뮬레이터(html)·G-code 진단·엑셀 생성기
 examples/            예시 입력(STL)과 출력(G-code)
@@ -218,4 +226,7 @@ from conical import analyze_overhangs, support_fraction, select_cone, config
 ## 참고 (선행연구, 인용 전제)
 
 RotBot/ZHAW, slicer4rtn, Open5x, S³ DeformFDM, S4, Fractal Cortex.
+팀메 저장소: `26037-arch/find_conical_angle`(성분 분석·κ 규칙),
+`conical-slice-viewer`(교선 시각화) — 대조 결과는
+[`docs/teammate_comparison.md`](docs/teammate_comparison.md).
 현재 결과는 **시뮬레이션 경향**이며 '증명'이 아니다.
