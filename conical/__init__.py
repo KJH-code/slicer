@@ -23,7 +23,8 @@ from .analytic import support_fraction, sweep_table
 from .selector import evaluate_J, select_cone, k_sensitivity
 from .meshio import load_mesh_or_demo, center_on_axis
 from .analytic import face_support_and_staircase
-from .varangle import select_uniform, select_banded, select_fine
+from .varangle import (select_uniform, select_banded, select_fine,
+                       select_banded_j, profile_objective, blend_penalty)
 from .strength import face_strength, part_strength
 from . import analytic
 
@@ -36,6 +37,7 @@ __all__ = [
     "load_mesh_or_demo", "center_on_axis",
     "face_support_and_staircase",
     "select_uniform", "select_banded", "select_fine",
+    "select_banded_j", "profile_objective", "blend_penalty",
     "face_strength", "part_strength",
     "analytic",
 ]

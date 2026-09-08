@@ -35,7 +35,7 @@ from conical.transform import transform_cone, transform_cone_profile
 from conical.planar_slicer import slice_mesh
 from conical.backtransform import backtransform
 from conical.profile import AngleProfile
-from conical.varangle import select_banded
+from conical.varangle import select_banded, select_banded_j
 from conical.selector import select_cone
 from conical.toolpath import sample_extrusions, check_support
 from conical.config import MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K
@@ -58,6 +58,15 @@ def waisted_model():
     m.merge_vertices()
     m.fix_normals()
     return center_on_axis(m)
+
+
+def mean_abs_angle(mesh, spec):
+    """면적가중 평균 |θ| (왜곡 비용 축). 고정각이면 그 각도 그대로."""
+    if not isinstance(spec, AngleProfile):
+        return abs(float(spec))
+    areas = mesh.area_faces
+    fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
+    return float((np.abs(spec.theta_at(fz)) * areas).sum() / areas.sum())
 
 
 def run_pipeline(mesh, angle_or_profile, direction="outward"):
@@ -94,18 +103,28 @@ def strategies(mesh, k=DEFAULT_K):
     new = AngleProfile.from_banded_result(
         banded, r_max, radius_profile=rp, spacing_limit=MAX_SPACING_FACTOR,
         max_shift=BLEND_SHIFT_RATIO * h / 2)
+    jr = select_banded_j(mesh, k, 2, r_max, rp, MAX_SPACING_FACTOR,
+                         BLEND_SHIFT_RATIO * h / 2)
 
-    (a0, b0), = old.blend_intervals()
-    (a1, b1), = new.blend_intervals()
+    def blend_note(p):
+        iv = p.blend_intervals()
+        if not iv:
+            return "블렌드 없음(균일로 수렴)"
+        (a, b), = iv
+        return (f"블렌드 {b-a:.1f}mm, 배율 "
+                f"{p.max_spacing_factor(r_max, 'outward', rp):.2f}배")
+
     return [
         ("평면 (0°)", 0.0, "기준선"),
         (f"균일 {best['angle']:.0f}° (J 자동)", float(best["angle"]),
          f"RotBot식 균일 원뿔, k={k}"),
         ("밴드2 (층간격 제약 없음)", old,
-         f"블렌드 {b0-a0:.1f}mm, 배율 {old.max_spacing_factor(r_max, 'outward', rp):.1f}배"),
+         f"블렌드 {old.blend_intervals()[0][1]-old.blend_intervals()[0][0]:.1f}mm, "
+         f"배율 {old.max_spacing_factor(r_max, 'outward', rp):.1f}배"),
         ("밴드2 (층간격 제약)", new,
-         f"블렌드 {b1-a1:.1f}mm, 배율 {new.max_spacing_factor(r_max, 'outward', rp):.2f}배"
-         + (f"; {new.notes[0]}" if new.notes else "")),
+         blend_note(new) + (f"; {new.notes[0]}" if new.notes else "")),
+        ("밴드2 (제약 + J에 블렌드비용)", jr["profile_obj"],
+         f"각도 {jr['thetas']}, " + blend_note(jr["profile_obj"])),
     ], rp
 
 
@@ -127,31 +146,35 @@ def main():
         for label, spec, note in strats:
             t0 = time.time()
             peri, total, fill = run_pipeline(mesh, spec)
-            rows.append((label, peri, total, fill, note))
-            print(f"  {label:<26} 페리미터 {peri:6.2f}%   전체 {total:6.2f}%   "
-                  f"인필 {fill:6.2f}%   ({time.time()-t0:.0f}s)")
-            print(f"  {'':<26} └ {note}")
+            ma = mean_abs_angle(mesh, spec)
+            rows.append((label, peri, total, fill, note, ma))
+            print(f"  {label:<28} 페리미터 {peri:6.2f}%   평균|θ| {ma:5.1f}°   "
+                  f"전체 {total:6.2f}%   ({time.time()-t0:.0f}s)")
+            print(f"  {'':<28} └ {note}")
         results[name] = rows
 
     # 그림: 모델별 페리미터 미지지 막대 (시스템에 한글 폰트가 없어 라벨은 영문 —
     # 저장소의 다른 PNG 들과 같은 관례)
     en = ["planar 0°", "uniform (J)", "banded-2\n(no spacing limit)",
-          "banded-2\n(spacing limit)"]
-    fig, axes = plt.subplots(1, len(results), figsize=(6 * len(results), 4.2))
+          "banded-2\n(spacing limit)", "banded-2\n(+ blend cost in J)"]
+    fig, axes = plt.subplots(1, len(results), figsize=(6.6 * len(results), 4.4))
     axes = np.atleast_1d(axes)
     for ax, (name, rows) in zip(axes, results.items()):
         vals = [r[1] for r in rows]
-        colors = ["#9aa7c4", "#4a7ebb", "#d9534f", "#4caf50"][:len(rows)]
+        angs = [r[5] for r in rows]
+        colors = ["#9aa7c4", "#4a7ebb", "#d9534f", "#8bc34a", "#2e7d32"][:len(rows)]
         ax.bar(range(len(vals)), vals, color=colors)
         ax.set_xticks(range(len(vals)))
         ax.set_xticklabels(en[:len(vals)], fontsize=7)
         ax.set_ylabel("unsupported perimeter (%)")
         ax.set_title("sphere (no waist)" if "구" in name else "lamp (with waist)",
                      fontsize=10)
-        for i, v in enumerate(vals):
-            ax.text(i, v, f"{v:.2f}", ha="center", va="bottom", fontsize=8)
+        for i, (v, a) in enumerate(zip(vals, angs)):
+            ax.text(i, v, f"{v:.2f}\n⟨|θ|⟩={a:.0f}°", ha="center", va="bottom",
+                    fontsize=7)
+        ax.set_ylim(0, max(vals) * 1.25)
     fig.suptitle("per-band angles vs uniform cone — banding wins only where the "
-                 "model has a waist", fontsize=11)
+                 "model has a waist  (⟨|θ|⟩ = mean distortion angle)", fontsize=11)
     fig.tight_layout()
     fig.savefig("compare_waist.png", dpi=130)
     print("\n그림 저장: compare_waist.png")

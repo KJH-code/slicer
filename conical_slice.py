@@ -39,9 +39,9 @@ from conical.backtransform import backtransform
 from conical import gcode as gc
 from conical.selector import select_cone
 from conical.profile import AngleProfile
-from conical.varangle import select_banded
+from conical.varangle import select_banded, select_banded_j
 from conical.config import (THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP, DEFAULT_K,
-                            MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO)
+                            MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, BLEND_COST_K)
 
 
 def auto_select(mesh, k=DEFAULT_K):
@@ -82,6 +82,12 @@ def main():
                          '(예 "0:15,10:15,14:35,30:35"; 음수=inward)')
     ap.add_argument("--auto-bands", type=int, default=None,
                     help="밴드 N개 자동 탐색(select_banded) → 가변각 프로필")
+    ap.add_argument("--k-blend", type=float, default=BLEND_COST_K,
+                    help=f"J의 블렌드 비용 가중치 (기본 {BLEND_COST_K}; "
+                         f"analyze_blend_k.py 참조). 0=블렌드 비용 무시")
+    ap.add_argument("--band-select", choices=["j", "independent"], default="j",
+                    help="j=프로필 J로 공동 선택(블렌드 비용 포함) / "
+                         "independent=밴드별 독립 선택(옛 방식, 비교용)")
     ap.add_argument("--spacing-limit", type=float, default=MAX_SPACING_FACTOR,
                     help=f"블렌드 층간격 배율 상한 (기본 {MAX_SPACING_FACTOR}; "
                          f"config.MAX_SPACING_FACTOR). 0=제약 끄기(옛 동작)")
@@ -127,13 +133,21 @@ def main():
                 profile = AngleProfile(list(zip(profile.zs, -profile.thetas_deg)))
             why = "수동 프로필"
         else:
-            banded_info = select_banded(mesh, args.k, args.auto_bands)
             band_h = (mesh.bounds[1][2] - mesh.bounds[0][2]) / args.auto_bands
-            profile = AngleProfile.from_banded_result(
-                banded_info, r_max, radius_profile=rprof,
-                spacing_limit=spacing_limit,
-                max_shift=BLEND_SHIFT_RATIO * band_h)
-            why = f"--auto-bands {args.auto_bands} (J, k={args.k})"
+            shift = BLEND_SHIFT_RATIO * band_h
+            if args.band_select == "j":
+                banded_info = select_banded_j(
+                    mesh, args.k, args.auto_bands, r_max, rprof,
+                    spacing_limit, shift, args.k_blend)
+                profile = banded_info["profile_obj"]
+                why = (f"--auto-bands {args.auto_bands} "
+                       f"(프로필 J, k={args.k}, k_blend={args.k_blend})")
+            else:
+                banded_info = select_banded(mesh, args.k, args.auto_bands)
+                profile = AngleProfile.from_banded_result(
+                    banded_info, r_max, radius_profile=rprof,
+                    spacing_limit=spacing_limit, max_shift=shift)
+                why = f"--auto-bands {args.auto_bands} (밴드 독립 J, k={args.k})"
         profile.validate(r_max, "outward")
         direction = "outward"          # 부호 있는 각도 규약 (음수=inward)
         angle = None
@@ -162,7 +176,16 @@ def main():
                 print(f"  ⚠ 층간격 위반: [{bad['lo']:.2f},{bad['hi']:.2f}] "
                       f"θ {bad['theta1']:.0f}°→{bad['theta2']:.0f}° r={bad['r']:.1f} "
                       f"→ 배율 {bad['factor']:.1f}배 (레이어가 떠서 지지가 사라짐)")
-        if banded_info is not None:
+        if banded_info is not None and "thetas" in banded_info:
+            uni = banded_info["uniform_best"]
+            print(f"  밴드 선택   : 독립선택 {banded_info['start_thetas']} → "
+                  f"프로필 J {banded_info['thetas']}  "
+                  f"(J={banded_info['J']:.2f}, 블렌드비용 {banded_info['blend_penalty']:.1f})")
+            print(f"  균일 대조   : 최선 균일 {uni:.0f}° J={banded_info['uniform_J']:.2f}"
+                  + ("  → 균일이 더 나아 균일로 수렴"
+                     if banded_info["J"] <= banded_info["uniform_J"] + 1e-9
+                     else f"  → 부위별이 {banded_info['J'] - banded_info['uniform_J']:.2f} 만큼 이득"))
+        elif banded_info is not None:
             print(f"  밴드 서포트 추정: {banded_info['support_pct']:.1f}% "
                   f"(select_banded, 이상적 추정)")
     else:
