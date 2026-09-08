@@ -105,7 +105,7 @@
             </article>
             <article class="verify-layer" data-tilt>
               <span class="layer-no">③</span>
-              <div><h3>브라우저 독립 재구현</h3><p>26,727점 <strong>100.0000%</strong> 일치</p>
+              <div><h3>브라우저 독립 재구현</h3><p><strong data-countup="26727" data-comma>0</strong>점 <strong data-countup="100" data-decimals="4" data-suffix="%">0%</strong> 일치</p>
                 <small>못 하는 것 — 둘 다 같은 AI 도구로 작성</small></div>
             </article>
             <article class="verify-layer" data-tilt>
@@ -115,15 +115,15 @@
             </article>
             <article class="verify-layer" data-tilt>
               <span class="layer-no">⑤</span>
-              <div><h3>팀원 독립 구현 대조</h3><p>22,000면 · 차이 <strong>1.4×10⁻¹⁴°</strong></p>
+              <div><h3>팀원 독립 구현 대조</h3><p><strong data-countup="22000" data-comma>0</strong>면 · 차이 <strong>1.4×10⁻¹⁴°</strong></p>
                 <small>못 하는 것 — 둘이 같은 오해를 했을 가능성</small></div>
             </article>
           </div>
           <aside class="verify-proof" data-tilt>
             <h3>②층이 실제로 일했다</h3>
             <figure>
-              <img src="assets/images/prediction_vs_toolpath.png" alt="예측과 툴패스 실측의 상관 산점도">
-              <figcaption>초록 점 하나만 예측 0.5% ↔ 실측 <strong>25.5%</strong></figcaption>
+              <img data-wipe src="assets/images/prediction_vs_toolpath.png" alt="예측과 툴패스 실측의 상관 산점도">
+              <figcaption>초록 점 하나만 예측 0.5% ↔ 실측 <strong data-countup="25.5" data-decimals="1" data-suffix="%">0%</strong></figcaption>
             </figure>
             <div class="verify-callout">
               각 층이 <em>보증 못 하는 것</em>을 같이 적는다.<br>안 적으면 그냥 테스트를 많이 짠 것이다.
@@ -140,11 +140,11 @@
         </header>
         <div class="angle-check-layout">
           <figure class="angle-figure" data-tilt>
-            <img src="assets/images/compare_waist.png" alt="구와 램프에서 전략별 페리미터 미지지 비율">
+            <img data-wipe src="assets/images/compare_waist.png" alt="구와 램프에서 전략별 페리미터 미지지 비율">
             <figcaption>구 · 램프에서 전략별 <strong>페리미터 미지지 %</strong></figcaption>
           </figure>
           <figure class="angle-figure" data-tilt>
-            <img src="assets/images/compare_bands.png" alt="밴드 수에 따른 성능 곡선">
+            <img data-wipe src="assets/images/compare_bands.png" alt="밴드 수에 따른 성능 곡선">
             <figcaption>구간을 늘려도 <strong>구는 그대로</strong>, 램프만 좋아진다</figcaption>
           </figure>
           <div class="angle-findings">
@@ -291,10 +291,10 @@
           <aside class="design-spec" data-tilt>
             <h3>우리가 얻은 숫자</h3>
             <ul class="spec-list">
-              <li><b>B 틸트</b><span>±135°</span></li>
-              <li><b>C 요</b><span>±360°, 슬립링으로 연속</span></li>
-              <li><b>작업 영역</b><span>200 × 200 × 174.6 mm</span></li>
-              <li><b>피벗 LB</b><span>47.9 mm (노즐 끝 → B축)</span></li>
+              <li><b>B 틸트</b><span data-countup="135" data-prefix="±" data-suffix="°">±0°</span></li>
+              <li><b>C 요</b><span><b data-countup="360" data-prefix="±" data-suffix="°">±0°</b>, 슬립링으로 연속</span></li>
+              <li><b>작업 영역</b><span>200 × 200 × <b data-countup="174.6" data-decimals="1">0</b> mm</span></li>
+              <li><b>피벗 LB</b><span><b data-countup="47.9" data-decimals="1">0</b> mm (노즐 끝 → B축)</span></li>
               <li><b>제어</b><span>Marlin 2.1.x · Octopus V1.1</span></li>
             </ul>
             <p class="spec-note">전부 <strong>가정값이던 것</strong>이 실제 값이 됐다.</p>
@@ -403,13 +403,6 @@ emit(f"G1 X{x} Y{y} Z{z} B{B} C{C} E{e}")</code></pre>
                 <button id="kin-toggle" type="button" class="kin-toggle" aria-pressed="true">일시정지</button>
               </div>
               <figcaption>위 코드를 그대로 계산한 자세. θ(z)가 변하면 <strong>B가 따라 변한다</strong>.</figcaption>
-            </figure>
-            <figure class="code-video" aria-label="실제 출력 영상 자리">
-              <div class="video-placeholder">
-                <span class="video-icon" aria-hidden="true">▶</span>
-                <strong>실제 출력 영상</strong>
-                <span>제작 여건이 생기면 이 자리에</span>
-              </div>
             </figure>
           </div>
         </div>
@@ -533,5 +526,6 @@ emit(f"G1 X{x} Y{y} Z{z} B{B} C{C} E{e}")</code></pre>
   <script src="rep5x-parts.js"></script>
   <script src="rep5x-motion.js"></script>
   <script src="rep5x-fx.js"></script>
+  <script src="rep5x-live.js"></script>
 </body>
 </html>

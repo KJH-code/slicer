@@ -202,41 +202,158 @@
       ];
     }
 
+    /** 아이소메트릭 투영: 부품좌표 mm → 캔버스 px (오른쪽 패널용) */
+    projectIso(x, y, z) {
+      const s = this.isoScale;
+      return [
+        this.isoCx + (x - y) * 0.866 * s,
+        this.isoCy - (x + y) * 0.5 * s - z * s
+      ];
+    }
+
     draw() {
       const ctx = this.ctx;
       if (!ctx || !this.state) return;
-      const { x, y, z, r, phi, theta } = this.state;
-
-      this.scale = Math.min(this.w / 84, this.h / 72);
-      this.cx = this.w * 0.47;
-      this.cy = this.h * 0.68;
-
+      // 레이아웃이 잡히기 전(높이 0 부근)에는 그리지 않는다 — 반지름이 음수가 된다
+      if (this.w < 80 || this.h < 90) return;
       ctx.clearRect(0, 0, this.w, this.h);
 
-      // 베드 (z=0)
-      ctx.strokeStyle = "rgba(99,179,255,.34)";
+      const split = Math.round(this.w * 0.38);
+      this.drawSide(0, split);          // 왼쪽: 옆에서 본 단면 — B 가 무엇인지
+      this.drawIso(split, this.w);      // 오른쪽: 비스듬히 본 모습 — C 가 무엇인지
+
+      // 두 패널 사이 구분선
+      ctx.strokeStyle = "rgba(171,203,226,.16)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(split + 0.5, 14);
+      ctx.lineTo(split + 0.5, this.h - 14);
+      ctx.stroke();
+    }
+
+    /** 왼쪽 패널 — r·z 단면. 노즐이 수직에서 얼마나 기울었는지(B)를 각도로 보인다. */
+    drawSide(x0, x1) {
+      const ctx = this.ctx;
+      const { r, z, theta } = this.state;
+      const w = x1 - x0;
+      const s = Math.max(0.6, Math.min(w / 74, (this.h - 56) / 46));
+      const cx = x0 + w * 0.34;         // 회전축 위치
+      const cy = this.h - 40;           // 베드 높이
+
+      const P = (rr, zz) => [cx + rr * s, cy - zz * s];
+
+      // 베드
+      ctx.strokeStyle = "rgba(99,179,255,.4)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      let p = P(-4, 0); ctx.moveTo(p[0], p[1]);
+      p = P(34, 0); ctx.lineTo(p[0], p[1]);
+      ctx.stroke();
+
+      // 회전축 (C)
+      ctx.strokeStyle = "rgba(255,157,69,.5)";
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      p = P(0, 0); ctx.moveTo(p[0], p[1]);
+      p = P(0, 40); ctx.lineTo(p[0], p[1]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 원뿔 레이어 단면: z = 26 − r·tanθ
+      ctx.strokeStyle = "rgba(45,226,197,.85)";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      p = P(0, 26); ctx.moveTo(p[0], p[1]);
+      p = P(30, 26 - 30 * Math.tan(theta)); ctx.lineTo(p[0], p[1]);
+      ctx.stroke();
+
+      const tip = P(r, z);
+
+      // 수직 기준선
+      ctx.strokeStyle = "rgba(214,237,248,.38)";
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(tip[0], tip[1]);
+      ctx.lineTo(tip[0], tip[1] - 21 * s);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 노즐 축: 수직에서 θ 만큼 바깥으로 기운다 = B
+      const L = 21 * s;
+      const bx = tip[0] + Math.sin(theta) * L;
+      const by = tip[1] - Math.cos(theta) * L;
+      ctx.strokeStyle = "#ff9d45";
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(tip[0], tip[1]);
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255,157,69,.34)";
+      ctx.beginPath();
+      ctx.arc(bx, by, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffd9b0";
+      ctx.beginPath();
+      ctx.arc(tip[0], tip[1], 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // B 각 호
+      const rad = 15 * s;
+      ctx.strokeStyle = "rgba(255,157,69,.9)";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(tip[0], tip[1], rad, -Math.PI / 2, -Math.PI / 2 + theta);
+      ctx.stroke();
+
+      ctx.font = "700 13px Consolas, monospace";
+      ctx.fillStyle = "rgba(255,157,69,.95)";
+      const la = -Math.PI / 2 + theta / 2;
+      ctx.fillText("B", tip[0] + Math.cos(la) * (rad + 11) - 4,
+                        tip[1] + Math.sin(la) * (rad + 11) + 4);
+
+      // 라벨은 왼쪽 위 수치 칩 아래에 둔다 (겹치지 않게)
+      ctx.font = "600 11.5px Consolas, monospace";
+      ctx.fillStyle = "rgba(150,180,200,.85)";
+      ctx.fillText("옆에서 본 단면 — B", x0 + 14, 52);
+    }
+
+    /** 오른쪽 패널 — 비스듬히 본 모습. C 가 방위각을 따라 도는 것을 보인다. */
+    drawIso(x0, x1) {
+      const ctx = this.ctx;
+      const { x, y, z, r, phi, theta } = this.state;
+      const w = x1 - x0;
+
+      this.isoScale = Math.max(0.6, Math.min(w / 84, this.h / 72));
+      this.isoCx = x0 + w * 0.5;
+      this.isoCy = this.h * 0.72;
+
+      // 베드
+      ctx.strokeStyle = "rgba(99,179,255,.3)";
       ctx.lineWidth = 1;
       for (const rr of [26, 17, 9]) {
         ctx.beginPath();
         for (let i = 0; i <= 48; i += 1) {
           const t = (i / 48) * Math.PI * 2;
-          const p = this.project(rr * Math.cos(t), rr * Math.sin(t), 0);
+          const p = this.projectIso(rr * Math.cos(t), rr * Math.sin(t), 0);
           if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
         }
         ctx.stroke();
       }
 
-      // 회전축 (C 축)
+      // 회전축 (C)
       ctx.strokeStyle = "rgba(255,157,69,.55)";
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      let a = this.project(0, 0, 0);
-      let b = this.project(0, 0, 34);
-      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      const a0 = this.projectIso(0, 0, 0);
+      const a1 = this.projectIso(0, 0, 34);
+      ctx.moveTo(a0[0], a0[1]); ctx.lineTo(a1[0], a1[1]);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // 원뿔 레이어면: 반경별 링을 겹쳐 그린다 (바깥일수록 낮다 = outward)
+      // 원뿔 레이어면 (반경별 링)
       for (let rr = 6; rr <= 26; rr += 4) {
         const near = Math.abs(rr - r) < 2.4;
         ctx.strokeStyle = near ? "rgba(45,226,197,.95)" : "rgba(45,226,197,.2)";
@@ -244,8 +361,8 @@
         ctx.beginPath();
         for (let i = 0; i <= 48; i += 1) {
           const t = (i / 48) * Math.PI * 2;
-          const p = this.project(rr * Math.cos(t), rr * Math.sin(t),
-                                 26 - rr * Math.tan(theta));
+          const p = this.projectIso(rr * Math.cos(t), rr * Math.sin(t),
+                                    26 - rr * Math.tan(theta));
           if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
         }
         ctx.stroke();
@@ -258,8 +375,8 @@
         for (let i = 1; i < this.trail.length; i += 1) {
           const fade = i / this.trail.length;
           ctx.strokeStyle = `rgba(255,157,69,${(0.08 + 0.62 * fade).toFixed(3)})`;
-          const p0 = this.project(...this.trail[i - 1]);
-          const p1 = this.project(...this.trail[i]);
+          const p0 = this.projectIso(...this.trail[i - 1]);
+          const p1 = this.projectIso(...this.trail[i]);
           ctx.beginPath();
           ctx.moveTo(p0[0], p0[1]);
           ctx.lineTo(p1[0], p1[1]);
@@ -267,23 +384,14 @@
         }
       }
 
-      const tip = this.project(x, y, z);
+      const tip = this.projectIso(x, y, z);
 
-      // 압출점에서의 수직 기준선 — 이것과 노즐 사이의 벌어짐이 B 다
-      ctx.strokeStyle = "rgba(214,237,248,.34)";
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      const up = this.project(x, y, z + 17);
-      ctx.moveTo(tip[0], tip[1]); ctx.lineTo(up[0], up[1]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // 노즐 축 n̂ = sinθ·r̂(φ) + cosθ·ẑ  — 코드와 같은 식
+      // 노즐 축 n̂ = sinθ·r̂(φ) + cosθ·ẑ — 코드와 같은 식
       const nx = Math.sin(theta) * Math.cos(phi);
       const ny = Math.sin(theta) * Math.sin(phi);
       const nz = Math.cos(theta);
       const L = 17;
-      const back = this.project(x + nx * L, y + ny * L, z + nz * L);
+      const back = this.projectIso(x + nx * L, y + ny * L, z + nz * L);
 
       ctx.strokeStyle = "#ff9d45";
       ctx.lineWidth = 5;
@@ -292,39 +400,38 @@
       ctx.moveTo(tip[0], tip[1]); ctx.lineTo(back[0], back[1]);
       ctx.stroke();
 
-      // 노즐 팁
+      ctx.fillStyle = "rgba(255,157,69,.34)";
+      ctx.beginPath();
+      ctx.arc(back[0], back[1], 6.4, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.fillStyle = "#ffd9b0";
       ctx.beginPath();
       ctx.arc(tip[0], tip[1], 3.6, 0, Math.PI * 2);
       ctx.fill();
 
-      // 히트블록 (B 축이 무엇을 통째로 기울이는지 보이도록)
-      ctx.fillStyle = "rgba(255,157,69,.34)";
-      const hb = this.project(x + nx * L * 1.02, y + ny * L * 1.02, z + nz * L * 1.02);
-      ctx.beginPath();
-      ctx.arc(hb[0], hb[1], 6.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 라벨 — 화면 좌표에 고정해 잘리지 않게 한다
-      ctx.font = "600 10.5px Consolas, monospace";
+      // 라벨
+      ctx.font = "600 11.5px Consolas, monospace";
       ctx.fillStyle = "rgba(255,157,69,.85)";
-      ctx.fillText("C축", b[0] + 5, b[1] + 3);
+      ctx.fillText("C축", a1[0] + 5, a1[1] + 3);
+      ctx.fillStyle = "rgba(150,180,200,.85)";
+      ctx.fillText("비스듬히 본 모습 — C", x0 + 16, 22);
 
       const ly = this.h - 46;
       ctx.strokeStyle = "rgba(45,226,197,.85)";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(10, ly); ctx.lineTo(24, ly);
+      ctx.moveTo(x0 + 16, ly); ctx.lineTo(x0 + 30, ly);
       ctx.stroke();
       ctx.fillStyle = "rgba(45,226,197,.85)";
-      ctx.fillText("원뿔 레이어면", 28, ly + 3.5);
+      ctx.fillText("원뿔 레이어면", x0 + 34, ly + 3.5);
 
       ctx.strokeStyle = "rgba(255,157,69,.85)";
       ctx.beginPath();
-      ctx.moveTo(10, ly - 14); ctx.lineTo(24, ly - 14);
+      ctx.moveTo(x0 + 16, ly - 14); ctx.lineTo(x0 + 30, ly - 14);
       ctx.stroke();
       ctx.fillStyle = "rgba(255,157,69,.85)";
-      ctx.fillText("압출 경로 · 노즐", 28, ly - 10.5);
+      ctx.fillText("압출 경로 · 노즐", x0 + 34, ly - 10.5);
     }
 
     dispose() {

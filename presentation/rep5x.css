@@ -1010,7 +1010,7 @@
 .code-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 330px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 296px) minmax(0, 1fr);
   gap: 16px;
   height: 646px;
 }
@@ -1087,8 +1087,7 @@
 
 .demo-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
 }
@@ -1168,45 +1167,6 @@
 
 .kin-demo figcaption { color: var(--muted); font-size: 17px; }
 .kin-demo figcaption strong { color: var(--orange-soft); }
-
-.code-video {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  min-width: 0;
-  min-height: 0;
-}
-
-.video-placeholder {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  min-height: 0;
-  padding: 16px;
-  text-align: center;
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 157, 69, .05) 0 12px, transparent 12px 24px),
-    rgba(7, 17, 31, .6);
-  border: 2px dashed rgba(255, 157, 69, .45);
-}
-
-.video-icon {
-  display: grid;
-  place-items: center;
-  width: 50px;
-  height: 50px;
-  color: var(--orange);
-  border: 2px solid var(--orange);
-  border-radius: 50%;
-  font-size: 19px !important;
-  animation: chipPulse 2.8s ease-in-out infinite;
-}
-
-.video-placeholder strong { color: var(--orange); font-size: 21px; }
-.video-placeholder > span:last-child { color: var(--muted); font-size: 17px; }
 
 /* ==========================================================================
    11. 남은 문제
@@ -1364,4 +1324,175 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* ==========================================================================
+   내용이 움직이는 것들 (rep5x-live.js)
+   ========================================================================== */
+
+/* --- 헤더의 단계 표시기: 해결 · 지금 · 다음 ----------------------------- */
+.slide-header { position: relative; }
+
+.phase-track {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.phase-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #5d7286;
+  font-size: 14px;
+  font-weight: 700;
+  transition: color .3s ease;
+}
+
+.phase-step i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  background: #3c4c5e;
+  border-radius: 50%;
+  transition: background .3s ease, box-shadow .3s ease;
+}
+
+.phase-step.is-done { color: #7f9bad; }
+.phase-step.is-done i { background: var(--green); }
+
+.phase-step.is-active { color: var(--teal); }
+.phase-step.is-active i {
+  background: var(--teal);
+  animation: phasePulse 2.2s ease-in-out infinite;
+}
+
+@keyframes phasePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 226, 197, .6); }
+  60%      { box-shadow: 0 0 0 9px rgba(45, 226, 197, 0); }
+}
+
+/* --- 2쪽: 답이 오른쪽에서 밀려 들어오고 칩이 찍힌다 --------------------- */
+.slide.anim-in .spine-row .spine-a {
+  animation: spineSlide .5s cubic-bezier(.2, .7, .3, 1) both;
+  animation-delay: calc(var(--i, 0) * 62ms + .22s);
+}
+
+@keyframes spineSlide {
+  from { opacity: 0; transform: translateX(26px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.slide.anim-in .spine-row .chip {
+  animation: chipStamp .34s cubic-bezier(.2, 1.5, .4, 1) both;
+  animation-delay: calc(var(--i, 0) * 62ms + .42s);
+}
+
+@keyframes chipStamp {
+  from { opacity: 0; transform: scale(1.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.slide.anim-in .spine-row .spine-p {
+  animation: rep5xRise .4s ease both;
+  animation-delay: calc(var(--i, 0) * 62ms + .5s);
+}
+
+/* --- 3·4쪽: 그래프가 왼쪽부터 그려지듯 드러난다 ------------------------- */
+[data-wipe] { clip-path: inset(0 0 0 0); }
+
+.slide.anim-in [data-wipe] {
+  animation: figureWipe 1.05s cubic-bezier(.35, .1, .2, 1) both;
+  animation-delay: calc(var(--i, 0) * 62ms + .26s);
+}
+
+@keyframes figureWipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+/* --- 5쪽: 01→07 로 신호가 지나간다 -------------------------------------- */
+.pipeline-flow li {
+  transition: border-top-color .25s ease, background .35s ease, transform .25s ease;
+}
+
+.pipeline-flow li.is-lit {
+  background: linear-gradient(155deg, rgba(45, 226, 197, .22), rgba(11, 25, 42, .7));
+  border-top-color: var(--teal-soft);
+  transform: translateY(-4px);
+}
+
+.pipeline-flow li.is-lit > span { color: var(--teal-soft); }
+
+.pipeline-flow li.is-lit::after {
+  color: var(--teal-soft);
+  opacity: 1;
+}
+
+/* --- 7쪽: 화면 재현이 실제로 열리는 것처럼 ------------------------------ */
+.browser-bar .url { position: relative; overflow: hidden; }
+
+.browser-mock.is-loading .url::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(45, 226, 197, .45), rgba(45, 226, 197, .12));
+  transform-origin: left;
+  animation: urlLoad .72s ease-out both;
+}
+
+@keyframes urlLoad {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); opacity: 0; }
+}
+
+.browser-mock.is-loading .browser-page > * {
+  opacity: 0;
+}
+
+.browser-mock.is-loaded .browser-page > * {
+  animation: rep5xRise .46s cubic-bezier(.22, .68, .3, 1) both;
+}
+
+.browser-mock.is-loaded .mock-cards { animation-delay: .12s; }
+
+/* --- 11쪽: 아직 안 풀린 것이라는 표시 ----------------------------------- */
+#slide-11 .problem-grid article {
+  animation: unresolved 3.4s ease-in-out infinite;
+}
+
+#slide-11 .problem-grid article:nth-child(2n) { animation-delay: .5s; }
+#slide-11 .problem-grid article:nth-child(3n) { animation-delay: 1s; }
+
+@keyframes unresolved {
+  0%, 100% { border-top-color: rgba(255, 157, 69, .45); }
+  50%      { border-top-color: rgba(255, 157, 69, .95); }
+}
+
+/* --- 12쪽: 계획선이 그어진다 -------------------------------------------- */
+.next-grid { position: relative; }
+
+.next-grid::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--teal), var(--orange) 72%, #59697a);
+  transform-origin: left;
+}
+
+.slide.anim-in .next-grid::before {
+  animation: planLine 1.5s cubic-bezier(.3, .1, .2, 1) both;
+  animation-delay: .3s;
+}
+
+@keyframes planLine {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
