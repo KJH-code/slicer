@@ -28,18 +28,40 @@ from scipy.spatial import cKDTree
 # ─────────────────────────────────────────────────────────────
 # 샘플링
 # ─────────────────────────────────────────────────────────────
-def sample_extrusions(items, width=0.45):
+EXTRUSION_TYPES = ("perimeter", "infill", "other")
+
+
+def _type_of(comment):
+    """`;TYPE:...` 주석 → 우리 분류. Slic3r/PrusaSlicer·Cura 표기 모두 수용."""
+    t = comment.split(":", 1)[1].strip().upper() if ":" in comment else ""
+    if "PERIMETER" in t or "WALL" in t or "SKIRT" in t or "BRIM" in t:
+        return 0                       # perimeter
+    if "FILL" in t or "SKIN" in t or "SUPPORT" in t:
+        return 1                       # infill
+    return 2                           # other
+
+
+def sample_extrusions(items, width=0.45, return_types=False):
     """압출(dE>0) 세그먼트를 간격 width/2 로 점 샘플링 (G-code 순서 유지).
 
     반환: pts (N,3), move_id (N,), weight (N,)  — weight = 각 점이 대표하는 경로 길이(mm)
+    return_types=True 면 kinds (N,) 도 함께 반환한다 (0=페리미터, 1=인필, 2=기타).
+
+    왜 종류를 나누나: 희소 인필은 레이어마다 방향이 바뀌어 '아래에 아무것도 없는'
+    구간이 원래 많다(브리징으로 정상 출력됨). 이걸 오버행 미지지와 같이 세면
+    우리가 재려던 표면 지지가 인필 브리징에 묻힌다 — 실제로 램프 모델에서
+    상단부 수치를 좌우한 것이 인필이었다.
     """
     spacing = width / 2.0
-    pts, mids, wts = [], [], []
+    pts, mids, wts, kinds = [], [], [], []
     x = y = z = None
     e_prev = 0.0
     mid = 0
+    cur_type = 2
     for kind, p in items:
         if kind != "move":
+            if isinstance(p, str) and p.lstrip().upper().startswith(";TYPE:"):
+                cur_type = _type_of(p.lstrip())
             continue
         nx = p.x if p.x is not None else x
         ny = p.y if p.y is not None else y
@@ -55,12 +77,16 @@ def sample_extrusions(items, width=0.45):
                                 z + (nz - z) * t))
                     mids.append(mid)
                     wts.append(L / n)
+                    kinds.append(cur_type)
         if p.e is not None:
             e_prev = p.e
         x, y, z = nx, ny, nz
         mid += 1
-    return (np.array(pts) if pts else np.zeros((0, 3)),
-            np.array(mids, dtype=int), np.array(wts))
+    out = (np.array(pts) if pts else np.zeros((0, 3)),
+           np.array(mids, dtype=int), np.array(wts))
+    if return_types:
+        return out + (np.array(kinds, dtype=int),)
+    return out
 
 
 # ─────────────────────────────────────────────────────────────

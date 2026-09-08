@@ -84,6 +84,7 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
         infill_region = []
         for poly in polys:
             # 페리미터: 바깥에서 안으로 (w/2, 3w/2, ...) 오프셋
+            items.append(("raw", ";TYPE:PERIMETER"))   # Slic3r/PrusaSlicer 관례
             for k in range(perimeters):
                 off = poly.buffer(-(extrusion_width * (0.5 + k)))
                 if off.is_empty:
@@ -101,6 +102,7 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
 
         # 희소 인필: 레이어마다 0/90도 교차 직선
         if infill_region and infill_spacing > 0:
+            items.append(("raw", ";TYPE:FILL"))        # Slic3r/PrusaSlicer 관례
             region = unary_union(infill_region)
             minx, miny, maxx, maxy = region.bounds
             vertical = i % 2 == 0

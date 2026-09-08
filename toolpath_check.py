@@ -50,15 +50,29 @@ def main():
     lines = open(args.gcode).readlines()
     lh = args.layer_height or detect_layer_height(lines)
     items = gc.parse(lines)
-    pts, mid, w = sample_extrusions(items, width=args.width)
+    pts, mid, w, kinds = sample_extrusions(items, width=args.width,
+                                           return_types=True)
     if len(pts) == 0:
         raise SystemExit("압출 세그먼트 없음")
 
+    # 지지 판정은 '퇴적된 모든 재료'로 한다(인필도 실제로 받쳐준다).
+    # 종류 구분은 '무엇을 보고할지'에만 쓴다.
     sup, st = check_support(pts, mid, w, layer_height=lh, width=args.width)
     print("=" * 62)
     print(f"[toolpath_check] {args.gcode}  (layer_h={lh}, width={args.width})")
     print(f"  샘플점        : {len(pts):,}  (압출 경로 {w.sum()/1000:.2f} m)")
-    print(f"  미지지 압출   : {st['unsupported_pct']:.2f} %  (길이 가중)")
+    print(f"  미지지 압출   : {st['unsupported_pct']:.2f} %  (길이 가중, 전체)")
+
+    def pct(mask):
+        tot = w[mask].sum()
+        return (w[mask & ~sup].sum() / tot * 100.0) if tot > 0 else float("nan")
+
+    peri, fill = kinds == 0, kinds == 1
+    if peri.any() or fill.any():
+        print(f"    ├ 페리미터  : {pct(peri):.2f} %  "
+              f"(전체 길이의 {w[peri].sum()/w.sum()*100:.0f}%)  ← 표면 지지 지표")
+        print(f"    └ 인필      : {pct(fill):.2f} %  "
+              f"(희소 인필은 층마다 방향이 바뀌어 원래 브리징 — 참고용)")
     worst = sorted(st["layers"].items(), key=lambda kv: -kv[1])[:5]
     if worst and worst[0][1] > 0:
         print("  최악 층(z bin → 미지지%): " +
