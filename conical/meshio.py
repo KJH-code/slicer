@@ -6,7 +6,58 @@ meshio.py — STL 파일을 읽거나, 없으면 데모용 구(sphere)를 만든
 보기에 좋은 기본 테스트 모델이다.
 """
 
+import numpy as np
 import trimesh
+
+
+class RadiusProfile:
+    """높이 구간별 최대 반경 r_max(z). 블렌드 폭·전이 높이 결정에 쓴다.
+
+    왜 필요한가: 블렌드(각도가 변하는 구간)에서 층간격 배율은 1 − c·r·s 라
+    '그 높이의 반경'에 비례해 커진다. 지금까지는 전 모델 최대 반경(r_max)만 써서
+    ⓐ 가는 부분에서 필요 이상으로 넓은 블렌드를 잡고 ⓑ '어느 높이에 경계를 두면
+    유리한가'를 아예 못 봤다. 높이별 반경을 알면 둘 다 해결된다.
+
+    ⚠ 정직: 정점 기준 구간별 최댓값이다(면 내부는 보간하지 않음). 정점이 없는
+      구간은 양 이웃의 큰 값으로 채워 보수적으로 잡는다.
+    """
+
+    def __init__(self, mesh, n_bins=120):
+        v = np.asarray(mesh.vertices, dtype=float)
+        r = np.hypot(v[:, 0], v[:, 1])
+        z = v[:, 2]
+        self.z0, self.z1 = float(z.min()), float(z.max())
+        self.global_max = float(r.max())
+        n = max(1, int(n_bins))
+        self.n = n
+        self.h = max((self.z1 - self.z0) / n, 1e-9)
+        idx = np.clip(((z - self.z0) / self.h).astype(int), 0, n - 1)
+        rmax = np.full(n, -1.0)
+        np.maximum.at(rmax, idx, r)
+        # 빈 칸(정점 없는 높이) 채우기: 양쪽 최근접 유효값 중 큰 쪽 (보수적)
+        left = rmax.copy()
+        for i in range(1, n):
+            if left[i] < 0:
+                left[i] = left[i - 1]
+        right = rmax.copy()
+        for i in range(n - 2, -1, -1):
+            if right[i] < 0:
+                right[i] = right[i + 1]
+        filled = np.maximum(left, right)
+        filled[filled < 0] = self.global_max
+        self.rmax = filled
+
+    def max_between(self, lo, hi):
+        """높이 구간 [lo, hi] 에서의 최대 반경 (구간 밖은 가장 가까운 끝값)."""
+        if hi < lo:
+            lo, hi = hi, lo
+        i0 = int(np.clip(np.floor((lo - self.z0) / self.h), 0, self.n - 1))
+        i1 = int(np.clip(np.floor((hi - self.z0) / self.h), 0, self.n - 1))
+        return float(self.rmax[i0:i1 + 1].max())
+
+    def at(self, z):
+        """높이 z 의 최대 반경."""
+        return self.max_between(z, z)
 
 
 def center_on_axis(mesh):

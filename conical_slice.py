@@ -32,7 +32,7 @@ import numpy as np
 import trimesh
 
 from conical import analytic
-from conical.meshio import center_on_axis
+from conical.meshio import center_on_axis, RadiusProfile
 from conical.transform import transform_cone, transform_cone_profile
 from conical.planar_slicer import slice_mesh
 from conical.backtransform import backtransform
@@ -40,7 +40,8 @@ from conical import gcode as gc
 from conical.selector import select_cone
 from conical.profile import AngleProfile
 from conical.varangle import select_banded
-from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP, DEFAULT_K
+from conical.config import (THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP, DEFAULT_K,
+                            MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO)
 
 
 def auto_select(mesh, k=DEFAULT_K):
@@ -81,6 +82,9 @@ def main():
                          '(예 "0:15,10:15,14:35,30:35"; 음수=inward)')
     ap.add_argument("--auto-bands", type=int, default=None,
                     help="밴드 N개 자동 탐색(select_banded) → 가변각 프로필")
+    ap.add_argument("--spacing-limit", type=float, default=MAX_SPACING_FACTOR,
+                    help=f"블렌드 층간격 배율 상한 (기본 {MAX_SPACING_FACTOR}; "
+                         f"config.MAX_SPACING_FACTOR). 0=제약 끄기(옛 동작)")
     ap.add_argument("--layer-height", type=float, default=0.3)
     ap.add_argument("--perimeters", type=int, default=2)
     ap.add_argument("--infill-spacing", type=float, default=2.5,
@@ -115,6 +119,8 @@ def main():
             raise SystemExit("가변각 + open5x 는 향후 과제 (틸트 U가 상수라는 "
                              "가정이 깨짐) — xyz 모드만 지원")
         r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
+        rprof = RadiusProfile(mesh)
+        spacing_limit = args.spacing_limit if args.spacing_limit > 1.0 else None
         if args.profile is not None:
             profile = AngleProfile.parse(args.profile)
             if (args.direction or "outward") == "inward":
@@ -122,7 +128,11 @@ def main():
             why = "수동 프로필"
         else:
             banded_info = select_banded(mesh, args.k, args.auto_bands)
-            profile = AngleProfile.from_banded_result(banded_info, r_max)
+            band_h = (mesh.bounds[1][2] - mesh.bounds[0][2]) / args.auto_bands
+            profile = AngleProfile.from_banded_result(
+                banded_info, r_max, radius_profile=rprof,
+                spacing_limit=spacing_limit,
+                max_shift=BLEND_SHIFT_RATIO * band_h)
             why = f"--auto-bands {args.auto_bands} (J, k={args.k})"
         profile.validate(r_max, "outward")
         direction = "outward"          # 부호 있는 각도 규약 (음수=inward)
@@ -142,6 +152,16 @@ def main():
     if profile is not None:
         print(f"  각도 결정   : 가변각 프로필 ({why}, 가역성 검증 통과)")
         print(profile.describe())
+        for note in getattr(profile, "notes", []):
+            print(f"    ↳ {note}")
+        mf = profile.max_spacing_factor(r_max, "outward", rprof)
+        print(f"  층간격 배율 : 최대 {mf:.2f}배 "
+              f"(상한 {spacing_limit if spacing_limit else '없음'})")
+        if spacing_limit is not None:
+            for bad in profile.check_spacing(r_max, "outward", spacing_limit, rprof):
+                print(f"  ⚠ 층간격 위반: [{bad['lo']:.2f},{bad['hi']:.2f}] "
+                      f"θ {bad['theta1']:.0f}°→{bad['theta2']:.0f}° r={bad['r']:.1f} "
+                      f"→ 배율 {bad['factor']:.1f}배 (레이어가 떠서 지지가 사라짐)")
         if banded_info is not None:
             print(f"  밴드 서포트 추정: {banded_info['support_pct']:.1f}% "
                   f"(select_banded, 이상적 추정)")
