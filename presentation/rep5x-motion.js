@@ -23,8 +23,7 @@
   const STAGGER_SELECTORS = [
     ".spine-row:not(.spine-head)",
     ".verify-layer",
-    ".verify-proof",
-    ".angle-figure",
+    // 그래프가 들어 있는 판(.verify-proof, .angle-figure)은 움직이지 않는다
     ".angle-findings article",
     ".pipeline-flow li",
     ".pipeline-notes article",

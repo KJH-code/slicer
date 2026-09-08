@@ -1,10 +1,9 @@
 /**
  * 발표 화면의 지속 효과.
  *
- * reactbits.dev 의 컴포넌트들(Galaxy, Ballpit, Fuzzy Text, ASCII Text,
- * Tilted Card, Magnet Lines, Fluid Glass, Splash Cursor)을 React 없이
- * Canvas2D + CSS 로 다시 구현한 것이다. 유리 질감(Fluid Glass)만 CSS
- * 쪽(rep5x.css)에 있고 나머지는 여기 있다.
+ * 표지의 별밭(Galaxy), 6쪽 배경 글자(ASCII Text), 표지 제목(Fuzzy Text),
+ * 13쪽 배경(Ballpit). 전부 마우스와 무관하게 스스로 움직이는 배경 질감이다.
+ * 유리 질감은 CSS 쪽(rep5x.css)에 있다.
  *
  * 배경 효과는 그 슬라이드가 화면에 있을 때만 돈다.
  * prefers-reduced-motion 이면 전부 켜지 않는다.
@@ -136,14 +135,7 @@
   class Ballpit extends CanvasEffect {
     constructor(host) {
       super(host);
-      this.pointer = { x: -9999, y: -9999 };
       this.balls = [];
-      this.onPointer = (e) => {
-        const rect = this.host.getBoundingClientRect();
-        this.pointer.x = e.clientX - rect.left;
-        this.pointer.y = e.clientY - rect.top;
-      };
-      window.addEventListener("pointermove", this.onPointer, { passive: true });
       this.mount();
     }
 
@@ -165,15 +157,6 @@
       ctx.clearRect(0, 0, this.w, this.h);
 
       for (const b of balls) {
-        // 커서에서 밀려난다
-        const dx = b.x - this.pointer.x;
-        const dy = b.y - this.pointer.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < 150 && dist > 0.01) {
-          const push = (150 - dist) / 150 * 260 * dt;
-          b.vx += (dx / dist) * push;
-          b.vy += (dy / dist) * push;
-        }
         b.x += b.vx * dt;
         b.y += b.vy * dt;
         if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); }
@@ -224,64 +207,6 @@
       }
     }
 
-    dispose() {
-      window.removeEventListener("pointermove", this.onPointer);
-      super.dispose();
-    }
-  }
-
-  /* ================================================================== *
-   * Magnet Lines — 커서를 가리키는 선 격자
-   * ================================================================== */
-  class MagnetLines extends CanvasEffect {
-    constructor(host) {
-      super(host);
-      this.target = { x: 0, y: 0 };
-      this.t = 0;
-      this.hasPointer = false;
-      this.onPointer = (e) => {
-        const rect = this.host.getBoundingClientRect();
-        this.target.x = e.clientX - rect.left;
-        this.target.y = e.clientY - rect.top;
-        this.hasPointer = true;
-      };
-      window.addEventListener("pointermove", this.onPointer, { passive: true });
-      this.mount();
-    }
-
-    render(dt) {
-      const ctx = this.ctx;
-      this.t += dt;
-      ctx.clearRect(0, 0, this.w, this.h);
-
-      // 커서가 없으면 천천히 도는 가상의 목표를 따라간다
-      const tx = this.hasPointer ? this.target.x
-        : this.w * (0.5 + 0.34 * Math.cos(this.t * 0.35));
-      const ty = this.hasPointer ? this.target.y
-        : this.h * (0.5 + 0.3 * Math.sin(this.t * 0.27));
-
-      const step = 58;
-      const len = 17;
-      for (let y = step * 0.5; y < this.h; y += step) {
-        for (let x = step * 0.5; x < this.w; x += step) {
-          const a = Math.atan2(ty - y, tx - x);
-          const d = Math.hypot(tx - x, ty - y);
-          const alpha = 0.06 + 0.2 * Math.max(0, 1 - d / (this.w * 0.55));
-          ctx.strokeStyle = `rgba(45,226,197,${alpha.toFixed(3)})`;
-          ctx.lineWidth = 2;
-          ctx.lineCap = "round";
-          ctx.beginPath();
-          ctx.moveTo(x - Math.cos(a) * len, y - Math.sin(a) * len);
-          ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
-          ctx.stroke();
-        }
-      }
-    }
-
-    dispose() {
-      window.removeEventListener("pointermove", this.onPointer);
-      super.dispose();
-    }
   }
 
   /* ================================================================== *
@@ -440,118 +365,9 @@
     dispose() { this.setActive(false); }
   }
 
-  /* ================================================================== *
-   * Tilted Card — 커서 쪽으로 기울고 광택이 따라온다
-   * ================================================================== */
-  function initTilt() {
-    if (reduceMotion.matches) return;
-    let current = null;
-
-    document.addEventListener("pointermove", (event) => {
-      const card = event.target.closest?.("[data-tilt]");
-      if (card !== current) {
-        if (current) {
-          current.classList.remove("is-tilting");
-          current.style.transform = "";
-        }
-        current = card;
-        if (card) card.classList.add("is-tilting");
-      }
-      if (!card) return;
-      const r = card.getBoundingClientRect();
-      const px = (event.clientX - r.left) / r.width;
-      const py = (event.clientY - r.top) / r.height;
-      const max = Math.min(6, 900 / Math.max(r.width, r.height) * 3.4);
-      card.style.transform =
-        `perspective(1100px) rotateX(${((0.5 - py) * max).toFixed(2)}deg) ` +
-        `rotateY(${((px - 0.5) * max).toFixed(2)}deg) translateZ(6px)`;
-      card.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
-      card.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
-    }, { passive: true });
-
-    document.addEventListener("pointerleave", () => {
-      if (!current) return;
-      current.classList.remove("is-tilting");
-      current.style.transform = "";
-      current = null;
-    });
-  }
-
-  /* ================================================================== *
-   * Splash Cursor — 커서를 따라 번지는 자국 (발표 중 포인팅용)
-   * ================================================================== */
-  function initSplashCursor() {
-    const canvas = document.getElementById("fx-cursor");
-    if (!canvas || reduceMotion.matches) return;
-    const ctx = canvas.getContext("2d");
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    const parts = [];
-    let px = null;
-    let py = null;
-
-    const resize = () => {
-      canvas.width = Math.round(window.innerWidth * ratio);
-      canvas.height = Math.round(window.innerHeight * ratio);
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    window.addEventListener("pointermove", (e) => {
-      const vx = px === null ? 0 : e.clientX - px;
-      const vy = py === null ? 0 : e.clientY - py;
-      px = e.clientX;
-      py = e.clientY;
-      const speed = Math.min(Math.hypot(vx, vy), 60);
-      if (speed < 1.5) return;
-      const n = 1 + Math.floor(speed / 14);
-      for (let i = 0; i < n; i += 1) {
-        parts.push({
-          x: e.clientX + rand(-4, 4),
-          y: e.clientY + rand(-4, 4),
-          vx: vx * rand(0.06, 0.2) + rand(-14, 14),
-          vy: vy * rand(0.06, 0.2) + rand(-14, 14),
-          life: 1,
-          r: rand(16, 40) + speed * 0.5,
-          hue: Math.random() < 0.35 ? "255,157,69" : "45,226,197"
-        });
-      }
-      if (parts.length > 260) parts.splice(0, parts.length - 260);
-    }, { passive: true });
-
-    let last = performance.now();
-    const tick = (now) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "rgba(0,0,0,.13)";
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-      ctx.globalCompositeOperation = "lighter";
-      for (let i = parts.length - 1; i >= 0; i -= 1) {
-        const p = parts[i];
-        p.life -= dt * 1.5;
-        if (p.life <= 0) { parts.splice(i, 1); continue; }
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vx *= 0.94;
-        p.vy *= 0.94;
-        const a = p.life * 0.16;
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * p.life);
-        g.addColorStop(0, `rgba(${p.hue},${a.toFixed(3)})`);
-        g.addColorStop(1, `rgba(${p.hue},0)`);
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      window.requestAnimationFrame(tick);
-    };
-    window.requestAnimationFrame(tick);
-  }
-
   /* ================================================================== */
 
-  const FACTORIES = { galaxy: Galaxy, ballpit: Ballpit, magnet: MagnetLines };
+  const FACTORIES = { galaxy: Galaxy, ballpit: Ballpit };
 
   window.addEventListener("DOMContentLoaded", () => {
     const bound = [];   // [슬라이드 id, 효과]
@@ -578,9 +394,6 @@
     const first = document.querySelector(".slides > section.present")
       || document.querySelector(".slides > section.is-active");
     apply(first?.id || "slide-1");
-
-    initTilt();
-    initSplashCursor();
 
     window.addEventListener("pagehide",
       () => bound.forEach(([, fx]) => fx.dispose()), { once: true });

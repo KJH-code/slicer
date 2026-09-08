@@ -97,30 +97,6 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 14px 34px rgba(0, 0, 0, .26);
 }
 
-/* --- 기울어지는 카드 + 광택 --------------------------------------------- */
-[data-tilt] {
-  transform-style: preserve-3d;
-  transition: transform .18s ease, box-shadow .18s ease;
-}
-
-[data-tilt]::before {
-  content: "";
-  position: absolute;
-  z-index: 3;
-  inset: 0;
-  opacity: 0;
-  background: radial-gradient(320px circle at var(--gx, 50%) var(--gy, 50%),
-              rgba(255, 255, 255, .14), transparent 62%);
-  transition: opacity .2s ease;
-  pointer-events: none;
-}
-
-[data-tilt].is-tilting::before { opacity: 1; }
-
-[data-tilt].is-tilting {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 22px 46px rgba(0, 0, 0, .4);
-}
-
 /* --- 배경 효과 레이어 ---------------------------------------------------- */
 .fx-layer {
   position: absolute;
@@ -137,16 +113,6 @@
 }
 
 .slide > *:not(.fx-layer) { position: relative; z-index: 1; }
-
-.fx-cursor {
-  position: fixed;
-  z-index: 900;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
 
 /* 6쪽 배경 ASCII 워터마크 */
 .fx-ascii {
@@ -1310,10 +1276,8 @@
 
 /* --- 인쇄 --------------------------------------------------------------- */
 @media print {
-  .fx-layer,
-  .fx-cursor { display: none !important; }
+  .fx-layer { display: none !important; }
   .slide::after { display: none !important; }
-  [data-tilt] { transform: none !important; }
 }
 
 /* 퍼지 제목의 원본 글자는 화면에서만 감춘다(스크린 리더용으로 남긴다) */
@@ -1401,19 +1365,6 @@
   animation-delay: calc(var(--i, 0) * 62ms + .5s);
 }
 
-/* --- 3·4쪽: 그래프가 왼쪽부터 그려지듯 드러난다 ------------------------- */
-[data-wipe] { clip-path: inset(0 0 0 0); }
-
-.slide.anim-in [data-wipe] {
-  animation: figureWipe 1.05s cubic-bezier(.35, .1, .2, 1) both;
-  animation-delay: calc(var(--i, 0) * 62ms + .26s);
-}
-
-@keyframes figureWipe {
-  from { clip-path: inset(0 100% 0 0); }
-  to   { clip-path: inset(0 0 0 0); }
-}
-
 /* --- 5쪽: 01→07 로 신호가 지나간다 -------------------------------------- */
 .pipeline-flow li {
   transition: border-top-color .25s ease, background .35s ease, transform .25s ease;
@@ -1470,29 +1421,4 @@
 @keyframes unresolved {
   0%, 100% { border-top-color: rgba(255, 157, 69, .45); }
   50%      { border-top-color: rgba(255, 157, 69, .95); }
-}
-
-/* --- 12쪽: 계획선이 그어진다 -------------------------------------------- */
-.next-grid { position: relative; }
-
-.next-grid::before {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  top: -1px;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, var(--teal), var(--orange) 72%, #59697a);
-  transform-origin: left;
-}
-
-.slide.anim-in .next-grid::before {
-  animation: planLine 1.5s cubic-bezier(.3, .1, .2, 1) both;
-  animation-delay: .3s;
-}
-
-@keyframes planLine {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
 }
