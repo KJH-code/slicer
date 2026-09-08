@@ -831,69 +831,87 @@
 .spec-note strong { color: var(--orange-soft); }
 
 /* ==========================================================================
-   9. 부품 탐색기
+   9. 설계에서 코드가 읽는 것 — 부품 셋
    ========================================================================== */
 .parts-explorer {
   display: grid;
-  grid-template-columns: minmax(0, 250px) minmax(0, 1fr) minmax(0, 420px);
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr) minmax(0, 400px);
   grid-template-rows: minmax(0, 1fr);
   gap: 16px;
   height: 646px;
 }
 
 .parts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
   min-width: 0;
-  padding: 14px;
-  overflow: hidden;
-}
-
-.parts-group-label {
-  margin: 6px 0 3px !important;
-  color: var(--teal) !important;
-  font-size: 15px !important;
-  font-weight: 800;
-  letter-spacing: .06em;
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 0;
+  box-shadow: none;
 }
 
 .parts-list button {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 8px 14px;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 18px 22px;
   color: var(--muted);
   text-align: left;
-  background: rgba(9, 24, 39, .7);
-  border: 1px solid var(--line);
-  border-left: 3px solid transparent;
   cursor: pointer;
-  font-size: 18px;
-  transition: transform .14s ease, background .14s ease, color .14s ease;
+  background: linear-gradient(155deg, rgba(24, 46, 72, .58), rgba(11, 25, 42, .66));
+  backdrop-filter: blur(13px) saturate(1.25);
+  -webkit-backdrop-filter: blur(13px) saturate(1.25);
+  border: 1px solid rgba(171, 203, 226, .17);
+  border-left: 4px solid var(--line-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 14px 34px rgba(0, 0, 0, .26);
+  transition: border-left-color .18s ease, color .18s ease;
+}
+
+.parts-list button b {
+  color: var(--text);
+  font-size: 25px;
+  font-weight: 780;
+  line-height: 1.15;
+}
+
+.parts-list button span {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.4;
 }
 
 .parts-list button em {
-  color: #7f94a6;
-  font-family: Consolas, monospace;
-  font-size: 12px;
+  color: var(--teal-soft);
   font-style: normal;
+  font-weight: 700;
 }
 
-.parts-list button:hover {
-  color: var(--text);
-  border-left-color: var(--line-strong);
-  transform: translateX(3px);
-}
+.parts-list button:hover { border-left-color: var(--teal-soft); }
 
 .parts-list button.active {
-  color: #06111e;
-  background: var(--teal);
   border-left-color: var(--orange);
-  font-weight: 800;
+  background: linear-gradient(155deg, rgba(45, 226, 197, .16), rgba(11, 25, 42, .72));
 }
 
-.parts-list button.active em { color: rgba(6, 17, 30, .72); }
+.parts-list button.active b { color: var(--teal); }
+
+.parts-caveat {
+  margin: 0 !important;
+  padding: 14px 18px;
+  color: var(--muted) !important;
+  font-size: 17px !important;
+  line-height: 1.45 !important;
+  background: rgba(255, 157, 69, .1);
+  border-left: 3px solid var(--orange);
+}
+
+.parts-caveat strong { color: var(--orange-soft); }
 
 .part-stage { display: flex; flex-direction: column; min-width: 0; }
 
@@ -912,50 +930,51 @@
 .part-detail {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
-  padding: 20px 24px;
+  padding: 22px 26px;
   overflow: hidden;
   border-top: 3px solid var(--orange);
 }
 
 .part-detail-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
 
-.part-detail-head h3 { margin: 0; font-size: 26px; }
+.part-detail-head h3 { margin: 0; font-size: 27px; }
 
 .part-version {
   flex: none;
   color: var(--orange);
   font-family: Consolas, monospace;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
 }
 
-#part-role { margin: 0; font-size: 19px; }
+#part-role { margin: 0; font-size: 20px; }
+#part-role b { color: var(--teal-soft); }
 
 .part-points { margin: 0; padding-left: 20px; }
-.part-points li { margin-bottom: 7px; font-size: 18px; }
+.part-points li { margin-bottom: 9px; font-size: 18px; }
 .part-points li::marker { color: var(--teal); }
 .part-points b { color: var(--teal-soft); font-weight: 700; }
 
 .part-photo {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   margin: auto 0 0;
   min-height: 0;
 }
 
 .part-photo img {
   width: 100%;
-  height: 160px;
+  height: 150px;
   object-fit: cover;
   border: 1px solid var(--line);
 }

@@ -300,26 +300,28 @@
         <aside class="slide-takeaway">XYZ는 그대로 두고 <strong>핫엔드 쪽만</strong> 바꾼다. 기종 의존은 마운트 하나에 모여 있다.</aside>
       </section>
 
-      <!-- 9. 부품 3D -->
+      <!-- 9. 설계에서 코드가 읽는 것 -->
       <section id="slide-9" class="slide interactive-slide" aria-labelledby="slide-9-title">
         <header class="slide-header">
           <p class="section-label"><i class="chip chip--now">지금</i> 설계 읽기</p>
-          <h2 id="slide-9-title">부품을 3D 모델로 하나씩</h2>
+          <h2 id="slide-9-title">설계에서 우리 코드가 읽어야 할 것</h2>
         </header>
         <div class="parts-explorer">
-          <nav class="parts-list interactive-zone" role="tablist" aria-label="Rep5x 출력 부품 선택">
-            <p class="parts-group-label">공용</p>
-            <button type="button" class="active" data-part="b-arm" role="tab">B암<em>b-arm</em></button>
-            <button type="button" data-part="c-driven-pulley" role="tab">C축 풀리<em>C-driven-pulley</em></button>
-            <button type="button" data-part="b-driven-pulley" role="tab">B축 풀리<em>b-driven-pulley</em></button>
-            <button type="button" data-part="slip-ring-holder" role="tab">슬립링 홀더<em>slip-ring-holder</em></button>
-            <button type="button" data-part="hotend-spacer" role="tab">핫엔드 스페이서<em>hotend-spacer</em></button>
-            <button type="button" data-part="spacer-3mm" role="tab">3 mm 스페이서<em>spacer-3mm</em></button>
-            <p class="parts-group-label">기종 전용</p>
-            <button type="button" data-part="e3v3se-carriage-mount" role="tab">캐리지 마운트<em>carriage-mount</em></button>
-            <button type="button" data-part="e3v3se-extruder-mount" role="tab">압출기 마운트<em>extruder-mount</em></button>
-            <button type="button" data-part="e3v3se-x-endstop" role="tab">X 엔드스톱<em>x-endstop</em></button>
-            <button type="button" data-part="e3v3se-z-endstop" role="tab">Z 엔드스톱<em>z-endstop</em></button>
+          <nav class="parts-list interactive-zone" role="tablist" aria-label="부품 선택">
+            <button type="button" class="active" data-part="b-arm" role="tab">
+              <b>B암</b>
+              <span>충돌 검사기가 <em>무엇을</em> 검사해야 하나</span>
+            </button>
+            <button type="button" data-part="slip-ring-holder" role="tab">
+              <b>슬립링 홀더</b>
+              <span>C를 <em>계속 누적해도</em> 되나</span>
+            </button>
+            <button type="button" data-part="e3v3se-carriage-mount" role="tab">
+              <b>캐리지 마운트</b>
+              <span>기종을 바꾸면 <em>무엇이</em> 바뀌나</span>
+            </button>
+            <p class="parts-caveat">출력할 부품 목록이 아니다.<br>
+              공개된 설계에서 <strong>우리 코드가 쓸 값</strong>을 읽는 것이다.</p>
           </nav>
           <div class="part-stage">
             <div id="part-viewer" class="stl-viewer interactive-zone" aria-label="선택한 부품의 3D 모델 뷰어">
