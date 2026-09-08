@@ -20,7 +20,7 @@ varangle.py — 높이 구간별 '변수각 원뿔' 전략 (부위별 각도의 
 import numpy as np
 
 from .config import (THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP,
-                     BLEND_COST_K, MAX_SPACING_FACTOR)
+                     BLEND_COST_K, MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO)
 # 판정 기준 통일(2026-07 리뷰): metrics(변환공간 근사) → analytic(해석식).
 # α=0 에서 두 정의는 일치, α>0 에서 해석식이 물리 기준이다.
 from .analytic import face_support_and_staircase, support_fraction, \
@@ -187,7 +187,7 @@ def _merge_bands(edges, thetas):
 
 
 def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
-                    spacing_limit=MAX_SPACING_FACTOR, max_shift=0.0,
+                    spacing_limit=MAX_SPACING_FACTOR, max_shift=None,
                     k_blend=BLEND_COST_K, max_angle=MAX_ANGLE_DEG,
                     step=ANGLE_STEP, threshold_deg=THRESHOLD_DEG,
                     max_sweeps=4):
@@ -212,6 +212,8 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
     labels, edges = assign_height_bands(mesh, n_bands)
     areas = mesh.area_faces
     base_pct = support_fraction(mesh, 0.0, "outward", threshold_deg)
+    if max_shift is None:      # 모델 높이 기준 (밴드 수와 무관 — config 주석 참조)
+        max_shift = BLEND_SHIFT_RATIO * float(mesh.bounds[1][2] - mesh.bounds[0][2])
 
     # 후보 각도(부호 있음: 음수=inward). 0 은 한 번만.
     cands = sorted({float(sgn * a)
@@ -228,27 +230,45 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
             prof = build(thetas)
         except ValueError:
             return None, {"J": -1e9}
+        # 안전망: 층간격 제약을 어긴 프로필은 J 가 아무리 좋아도 채택하지 않는다.
+        #   계획기가 자리를 못 찾으면 각도를 깎아 넣게 돼 있지만, 그 경로에 버그가
+        #   있으면 '예측은 최고인데 실제로는 못 찍는' 프로필이 뽑힌다 —
+        #   실제로 그랬다(램프 N=4, 폭 0.14mm 에 42°→0°, 배율 53.7배, J=5.72인데
+        #   툴패스 미지지 5.74%). 평가 단계에서 한 번 더 막는다.
+        if spacing_limit is not None and \
+                prof.check_spacing(r_max, "outward", spacing_limit, radius_profile):
+            return None, {"J": -1e9}
         return prof, profile_objective(mesh, prof, base_pct, k, k_blend,
                                        radius_profile, spacing_limit,
                                        threshold_deg)
+
+    # 이웃(neighborhood)은 '연속한 밴드 덩어리'다 — 한 밴드씩이 아니라.
+    #   블렌드 비용은 '이웃한 밴드의 각도가 다른 자리'에 붙으므로, 한 칸씩 바꾸는
+    #   이웃으로는 밴드 두 개를 함께 내리는 수를 못 둔다(중간 상태가 비용을 다 문다).
+    #   실측: N=4 램프에서 [24,24,24,24] → [24,24,0,0] 이 단일 좌표로는 도달 불가라
+    #   J가 N에 대해 단조가 아니었다(N=2: 3.30 > N=4: 2.33).
+    #   덩어리 이동은 크기 1 블록을 포함하므로 기존 좌표하강의 상위집합이고,
+    #   전체 범위 블록이 곧 균일해라 '균일보다 나쁠 수 없다'가 구조적으로 보장된다.
+    blocks = [(i, j) for i in range(n_bands) for j in range(i, n_bands)]
 
     def descend(thetas):
         thetas = list(thetas)
         prof, met = score(thetas)
         for _ in range(max_sweeps):
             changed = False
-            for i in range(n_bands):
-                best_t, best_m, best_p = thetas[i], met, prof
+            for i, j in blocks:
+                best_tr, best_m, best_p = None, met, prof
                 for t in cands:
-                    if t == thetas[i]:
+                    if all(thetas[b] == t for b in range(i, j + 1)):
                         continue
                     trial = list(thetas)
-                    trial[i] = t
+                    for b in range(i, j + 1):
+                        trial[b] = t
                     p, m = score(trial)
                     if m["J"] > best_m["J"] + 1e-9:
-                        best_t, best_m, best_p = t, m, p
-                if best_t != thetas[i]:
-                    thetas[i] = best_t
+                        best_tr, best_m, best_p = trial, m, p
+                if best_tr is not None:
+                    thetas = best_tr
                     met, prof = best_m, best_p
                     changed = True
             if not changed:

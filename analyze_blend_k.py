@@ -42,7 +42,7 @@ def analyze(mesh, k=DEFAULT_K, n_bands=2):
     out = []
     for kb in K_BLENDS:
         r = select_banded_j(mesh, k, n_bands, r_max, rp, MAX_SPACING_FACTOR,
-                            BLEND_SHIFT_RATIO * h / n_bands, k_blend=kb)
+                            k_blend=kb)
         uniform = len(set(r["thetas"])) == 1
         out.append({"k_blend": kb, "thetas": r["thetas"], "uniform": uniform,
                     "J": r["J"], "gain": r["J"] - r["uniform_J"],

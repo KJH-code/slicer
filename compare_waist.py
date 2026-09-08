@@ -102,9 +102,8 @@ def strategies(mesh, k=DEFAULT_K):
     old = AngleProfile.from_banded_result(banded, r_max)            # 층간격 제약 없음
     new = AngleProfile.from_banded_result(
         banded, r_max, radius_profile=rp, spacing_limit=MAX_SPACING_FACTOR,
-        max_shift=BLEND_SHIFT_RATIO * h / 2)
-    jr = select_banded_j(mesh, k, 2, r_max, rp, MAX_SPACING_FACTOR,
-                         BLEND_SHIFT_RATIO * h / 2)
+        max_shift=BLEND_SHIFT_RATIO * h)
+    jr = select_banded_j(mesh, k, 2, r_max, rp, MAX_SPACING_FACTOR)
 
     def blend_note(p):
         iv = p.blend_intervals()

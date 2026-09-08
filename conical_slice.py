@@ -133,8 +133,8 @@ def main():
                 profile = AngleProfile(list(zip(profile.zs, -profile.thetas_deg)))
             why = "수동 프로필"
         else:
-            band_h = (mesh.bounds[1][2] - mesh.bounds[0][2]) / args.auto_bands
-            shift = BLEND_SHIFT_RATIO * band_h
+            # 이동 예산은 모델 높이 기준 — 밴드 수와 무관 (config 주석 참조)
+            shift = BLEND_SHIFT_RATIO * (mesh.bounds[1][2] - mesh.bounds[0][2])
             if args.band_select == "j":
                 banded_info = select_banded_j(
                     mesh, args.k, args.auto_bands, r_max, rprof,

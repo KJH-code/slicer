@@ -92,26 +92,28 @@ def max_dtan_for_width(r_blend, w, sign, direction="outward",
 
 
 def _required_width(zc, dtan, r_global, radius_profile, safety, min_blend,
-                    spacing_limit, max_w=None):
-    """중심 zc 에 놓을 블렌드의 필요 폭과 그때의 블렌드 반경 r_b.
+                    spacing_limit):
+    """중심 zc 에 놓을 블렌드의 '진짜 필요 폭'과 그때의 블렌드 반경 r_b.
 
     r_b 는 블렌드가 덮는 높이 구간의 최대 반경인데, 그 구간이 '폭에 따라' 달라진다
     (넓힐수록 더 뚱뚱한 높이까지 덮을 수 있다). 그래서 (폭 → 구간 → 반경 → 폭)을
-    수렴할 때까지 반복한다. w 는 단조증가하므로 반경 상한(전 모델 r_max)에서 멈춘다.
+    수렴할 때까지 반복한다. w 는 단조증가하고 반경이 r_global 에서 포화하므로 수렴한다.
     ⚠ 2회만 돌리면 구처럼 위로 갈수록 뚱뚱해지는 모델에서 과소평가된다(실측으로 발견).
+
+    ⚠ 자리(가용 폭)로 잘라서 반환하면 안 된다(실측으로 발견): 자리가 거의 없는 중심이
+      '폭이 작아서 싸다'고 잘못 평가되고, 게다가 w == avail 이 되어 호출부의
+      '자리 부족 → 각도 삭감' 검사가 안 걸린다. 램프 N=4 에서 0.14mm 폭에 42°→0° 가
+      들어가 층간격 배율 53.7배짜리 프로필이 나왔다. 자를지 말지는 호출부가 정한다.
     """
     w_inv = r_global * dtan                        # c=+1 규약, 불안정 방향만 >0
     w = max(min_blend, safety * w_inv if w_inv > 0 else min_blend)
     r_b = r_global
     if spacing_limit is None:
         return w, r_b
-    cap = max_w if max_w is not None else float("inf")
     for _ in range(40):
         r_b = (radius_profile.max_between(zc - w / 2.0, zc + w / 2.0)
                if radius_profile is not None else r_global)
         w_new = max(w, blend_width_for_spacing(r_b, dtan, "outward", spacing_limit))
-        if w_new > cap:
-            return cap, r_b
         if w_new <= w * (1 + 1e-4):
             return w_new, r_b
         w = w_new
@@ -136,31 +138,41 @@ def _plan_blend(zb, th1, th2, room_lo, room_hi, r_global, radius_profile,
     # ① 후보 중심들 (원위치 우선, max_shift 안에서 반경이 작은 높이 탐색)
     centers = [zb]
     if max_shift > 0 and radius_profile is not None:
-        centers += list(np.linspace(zb - max_shift, zb + max_shift, 21))
+        # 이동 범위가 넓어져도 해상도(~0.5mm)를 유지한다 — 고정 21점이면 넓은 범위에서
+        # 표본 간격이 벌어져 좁은 '허리'를 통째로 건너뛴다.
+        n_c = int(np.clip(round(2 * max_shift / 0.5) + 1, 21, 81))
+        centers += list(np.linspace(zb - max_shift, zb + max_shift, n_c))
     cands = []
     for zc in centers:
         if available(zc) <= 0:
             continue
         w, r_b = _required_width(zc, dtan, r_global, radius_profile,
-                                 safety, min_blend, spacing_limit, available(zc))
+                                 safety, min_blend, spacing_limit)
         cands.append((zc, w, r_b, available(zc)))
     if not cands:                                   # 자리가 아예 없음 → 원위치 강행
         w, r_b = _required_width(zb, dtan, r_global, radius_profile,
                                  safety, min_blend, spacing_limit)
         cands = [(zb, w, r_b, max(available(zb), min_blend))]
 
-    # ② 후보 선택: 비용 = (블렌드가 잡아먹는 높이 w) + (경계를 옮긴 거리).
-    #    둘 다 mm 라 그냥 더할 수 있다 — 튜닝 상수 없음. '허리'가 있으면 그쪽으로
-    #    옮기는 게 이득이고(폭이 확 줄어듦), 없으면 제자리를 지킨다.
+    # ② 후보 선택: 비용 = 블렌드의 겉넓이 proxy  w · r_b.
+    #    평가함수 J 가 물리는 블렌드 비용은 '블렌드 구간의 표면적 × risk' 인데,
+    #    회전체에서 높이 w·반경 r_b 구간의 옆넓이가 ∝ r_b·w 다. 즉 계획기가
+    #    최소화하는 양을 J 가 재는 양과 맞춘 것이다.
+    #    ⚠ 예전에는 (w + |경계 이동거리|) 였다(실측으로 교체): 폭만 보면 '같은 폭이라도
+    #      뚱뚱한 높이에서는 표면적이 훨씬 크다'를 놓치고, 이동거리 항은 J 에 대응물이
+    #      아예 없는 임의 항이었다. 그 탓에 램프 N=3 에서 계획기가 목(허리) 대신
+    #      제자리를 지켜 J 가 N 에 대해 단조가 아니었다.
+    #    이동거리는 동점 처리에만 쓴다 — 이득이 같으면 안 옮긴다.
     ok = [c for c in cands if c[1] <= c[3] + 1e-9]
     pool = ok if ok else cands
-    zc, w, r_b, avail = min(pool, key=lambda c: (c[1] + abs(c[0] - zb),
-                                                 abs(c[0] - zb)))
+    best_area = min(c[1] * max(c[2], 1e-9) for c in pool)
+    near = [c for c in pool if c[1] * max(c[2], 1e-9) <= best_area * 1.01 + 1e-12]
+    zc, w, r_b, avail = min(near, key=lambda c: abs(c[0] - zb))
 
     note = None
     if abs(zc - zb) > 1e-6:
-        note = (f"경계 {zb:.2f} → {zc:.2f} mm 로 이동 (그 높이 반경 {r_b:.1f}mm 가 "
-                f"작아 블렌드 폭이 줄어듦)")
+        note = (f"경계 {zb:.2f} → {zc:.2f} mm 로 이동 "
+                f"(그 높이 반경 {r_b:.1f}mm, 블렌드 폭 {w:.2f}mm)")
 
     # ③ 폭이 모자라면 각도 차를 깎는다 (깨진 프로필 대신 출력 가능한 최선)
     th2_used = th2
