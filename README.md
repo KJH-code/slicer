@@ -43,6 +43,13 @@ python3 conical_slice.py model.stl \
 `c·r_max·s < 1`, 블렌드 최소 폭 `w_min = c·r_max·Δtanθ` 자동 검증),
 상수 프로필은 기존 고정각과 수치적으로 동일하다(회귀 테스트로 강제).
 
+블렌드에는 **층간격 제약**도 걸린다: 변환공간에서 층고 간격으로 자른 레이어가
+실공간에서 `m = 1 − c·r·s` 배로 벌어지므로, 배율을 `MAX_SPACING_FACTOR`
+(기본 1.5) 이내로 두는 최소 폭 `w ≥ r_b·|Δtanθ|/(limit−1)` 을 강제한다.
+반경 `r_b` 는 **그 높이의 최대 반경**이라(`meshio.RadiusProfile`) 경계를 반경이
+작은 높이로 옮기면 블렌드가 싸진다 — 자동으로 그렇게 옮긴다(`--spacing-limit 0`
+으로 끄면 옛 동작). 이 제약은 툴패스 검사기가 실측으로 잡아낸 결함에서 나왔다.
+
 ### 툴패스 가상 검증기 (하드웨어 없이)
 
 ```
@@ -50,6 +57,7 @@ python3 toolpath_check.py out.gcode              # 검사기 A: 압출 지지 (�
 python3 toolpath_check.py out.gcode --nozzle     # + 검사기 B: 3축 노즐 간섭
 python3 find_max_safe_angle.py [model.stl]       # 각도 스윕 → 이 모델·기계의 3축 MAX_ANGLE
 python3 compare_prediction_vs_toolpath.py        # 본편 실험: 메시 예측 vs 툴패스 (순위상관)
+python3 compare_waist.py                         # 핵심 실험: 밴드 vs 균일 — '허리'가 있어야 이긴다
 ```
 
 `find_max_safe_angle.py` 는 config 의 전역 상수 `MAX_ANGLE_DEG` 를 모델별
@@ -91,7 +99,7 @@ conical/
   planar_slicer.py   내장 미니 평면 슬라이서 (연구용)
   backtransform.py   역변환 + 적응 현 분할 L=2√(2rε)
   open5x.py          Open5x 5축 기계좌표 변환 [실험적]
-  meshio.py          STL 로드 / 축 센터링 / 데모 구
+  meshio.py          STL 로드 / 축 센터링 / 높이별 반경 프로필 / 데모 구
 profiles/            외부 슬라이서(PrusaSlicer) 파이프라인 프리셋
 tools/               시뮬레이터(html)·G-code 진단·엑셀 생성기
 examples/            예시 입력(STL)과 출력(G-code)
@@ -116,6 +124,18 @@ tests/               회귀 테스트
 구간별은 '각도 예산'을 오버행 심한 구간에만 몰아써서 더 적은 왜곡으로 서포트를
 더 줄인다. `compare_complexity.py`가 균일/구간2/구간3/세밀을 **서포트·강도proxy·
 평균각·계산시간**으로 비교한다(복잡도 vs 성능 가성비 곡선).
+
+**단, 툴패스로 실측해 보니 조건부다** (`compare_waist.py`, 페리미터 미지지 %):
+
+| 모델 | 평면 0° | 균일(J) | 밴드2 |
+|---|---|---|---|
+| 구 (허리 없음) | 7.51% | **1.08%** | 4.93% ← 균일에 진다 |
+| 램프 (허리 있음) | 4.49% | 3.01% | **0.84%** ← 3.6배 이긴다 |
+
+각도를 바꾸려면 블렌드가 필요하고 그 폭은 **그 높이의 반경에 비례**한다
+(층간격 제약). 그래서 각도 변경은 '가는 곳에서 싸고 뚱뚱한 곳에서 비싸다' —
+구처럼 어디나 뚱뚱하면 블렌드가 모델 높이의 73%를 잡아먹어 균일각이 낫다.
+이 조건은 우리가 가정한 게 아니라 검사기가 실측으로 알려준 것이다.
 
 > 강도는 실측이 아니라 '레이어-표면 정렬' 기반 가벼운 proxy다 (증명 아닌 경향).
 > '세밀(면마다)'은 이론적 바닥일 뿐 물리적으로 못 찍는다(유효한 θ(z) 아님).
@@ -142,6 +162,8 @@ from conical import analyze_overhangs, support_fraction, select_cone, config
 - `THRESHOLD_DEG` : 오버행 판정 임계각 (기본 45°)
 - `MAX_ANGLE_DEG` : 하드웨어가 허용하는 최대 원뿔 각도 (하드코딩 금지, 여기서 조정)
 - `ANGLE_STEP`   : 각도 탐색 간격
+- `MAX_SPACING_FACTOR` : 블렌드 층간격 배율 상한 (기본 1.5)
+- `BLEND_SHIFT_RATIO`  : 밴드 경계를 '허리'로 옮겨보는 최대 거리 비율 (기본 0.25)
 
 ## 참고 (선행연구, 인용 전제)
 
