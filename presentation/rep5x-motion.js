@@ -21,8 +21,7 @@
 
   // 순서대로 등장시킬 대상. 슬라이드마다 '읽는 순서'와 같게 둔다.
   const STAGGER_SELECTORS = [
-    ".recap-layout > *",
-    ".recap-issues li",
+    ".spine-row:not(.spine-head)",
     ".verify-layer",
     ".verify-proof",
     ".angle-figure",
@@ -30,7 +29,7 @@
     ".pipeline-flow li",
     ".pipeline-notes article",
     ".core-shift > *",
-    ".why-cards article",
+    ".core-why",
     ".site-layout > *",
     ".mock-cards article",
     ".design-hero",
@@ -41,8 +40,7 @@
     ".code-map",
     ".demo-row > *",
     ".problem-grid article",
-    ".validation-loop > *",
-    ".goal-card",
+    ".next-card",
     ".source-column"
   ].join(",");
 
