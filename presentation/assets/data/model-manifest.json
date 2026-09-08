@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "arch-01",
+      "label": "아치형 1",
+      "stl": "arch-01.stl",
+      "components": "arch-01.components.json",
+      "available": true
+    },
+    {
+      "id": "arch-02",
+      "label": "아치형 2",
+      "stl": "arch-02.stl",
+      "components": "arch-02.components.json",
+      "available": true
+    },
+    {
+      "id": "arch-03",
+      "label": "아치형 3",
+      "stl": "arch-03.stl",
+      "components": "arch-03.components.json",
+      "available": true
+    },
+    {
+      "id": "l-shape-01",
+      "label": "ㄱ자형 1",
+      "stl": "l-shape-01.stl",
+      "components": "l-shape-01.components.json",
+      "available": true
+    },
+    {
+      "id": "l-shape-02",
+      "label": "ㄱ자형 2",
+      "stl": "l-shape-02.stl",
+      "components": "l-shape-02.components.json",
+      "available": true
+    },
+    {
+      "id": "l-shape-03",
+      "label": "ㄱ자형 3",
+      "stl": "l-shape-03.stl",
+      "components": "l-shape-03.components.json",
+      "available": true
+    }
+  ]
+}

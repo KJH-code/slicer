@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="4축 3D 프린터의 적응형 원뿔 슬라이싱 — 2026 R&E 중간 성과공유회 발표 자료">
+  <title>적응형 원뿔 슬라이싱 · 중간 성과공유회</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307111f'/%3E%3Cpath d='M16 5 L27 25 H5 Z' fill='none' stroke='%232de2c5' stroke-width='2.5'/%3E%3Cpath d='M9.5 17 H22.5' stroke='%23ff9d45' stroke-width='2.5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/vendor/reveal/reveal.css">
+  <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="rep5x.css">
+</head>
+<body>
+  <a class="skip-link" href="#slide-1">첫 슬라이드로 이동</a>
+  <div id="presentation-status" class="presentation-status" role="status" aria-live="polite" hidden></div>
+
+  <main class="reveal" aria-label="적응형 원뿔 슬라이싱 중간 성과공유회 발표">
+    <div class="slides">
+
+      <!-- 1. 표지 -->
+      <section id="slide-1" class="slide title-slide" aria-labelledby="slide-1-title">
+        <div class="title-copy">
+          <p class="eyebrow">2026 과학영재 창의연구(R&amp;E) 중간 성과공유회 · 서울과학고등학교</p>
+          <h1 id="slide-1-title">4축 3D 프린터의<br><span>적응형 원뿔 슬라이싱</span></h1>
+          <p class="subtitle">검증 체계를 세운 상반기에서, <strong>실물 5축 프린터 설계</strong>로 넘어가는 단계</p>
+          <div class="presenter-placeholder" aria-label="발표자 정보">
+            <span>발표자: 김재혁, 나준우, 김진우</span>
+            <span>지도교사: 김주성</span>
+            <span>팀번호: AI-017</span>
+          </div>
+        </div>
+        <div class="cover-geometry" aria-hidden="true">
+          <div class="cover-axis"></div>
+          <div class="cover-ring ring-1"></div>
+          <div class="cover-ring ring-2"></div>
+          <div class="cover-ring ring-3"></div>
+          <div class="cover-path path-1"></div>
+          <div class="cover-path path-2"></div>
+          <div class="cover-path path-3"></div>
+          <div class="cover-nozzle"></div>
+        </div>
+        <p class="cover-pipeline">검증 계층 → 다중 모델 원뿔각 검증 → 통합 파이프라인 → <strong>5축 프린터 설계</strong> → 실물 출력</p>
+      </section>
+
+      <!-- 2. 이전까지의 문제점과 요약 -->
+      <section id="slide-2" class="slide" aria-labelledby="slide-2-title">
+        <header class="slide-header">
+          <p class="section-label">01 · 지난 발표 이후</p>
+          <h2 id="slide-2-title">지난 발표가 남긴 문제와, 그 뒤 해결한 것</h2>
+        </header>
+        <div class="recap-layout">
+          <div class="progress-table" role="table" aria-label="지난 발표 과제 대비 현재 상태">
+            <div class="progress-row progress-head" role="row"><span>영역</span><span>지난 발표에서 남은 과제</span><span>현재</span></div>
+            <div class="progress-row" role="row"><strong>형상·각도 분석</strong><span>선택 각도를 평가할 기준이 없었다</span><span class="cell-done">완료 — 툴패스 실측을 지표로 확정</span></div>
+            <div class="progress-row" role="row"><strong>공간 분할</strong><span>구간 경계·전환 규칙 미검증</span><span class="cell-done">완료 — 블렌드 폭 닫힌 식, 경계 자동 이동</span></div>
+            <div class="progress-row" role="row"><strong>경로·시각화</strong><span>구간별 G-code 생성 형식 미통합</span><span class="cell-done">완료 — θ(Z′) 단일 파이프라인</span></div>
+            <div class="progress-row" role="row"><strong>물리·운동학</strong><span>축 제약·충돌을 각도 평가에 반영</span><span class="cell-part">일부 — 3축 노즐 간섭 검사기까지</span></div>
+            <div class="progress-row" role="row"><strong>실험 검증</strong><span>실제 출력 데이터 확보</span><span class="cell-open">미해결 — <strong>이번 발표의 주제</strong></span></div>
+          </div>
+          <aside class="recap-issues">
+            <h3>가장 컸던 문제 세 가지</h3>
+            <ol>
+              <li>
+                <strong>판정 기준이 두 개였다</strong>
+                <p>왜곡공간에서 45°로 재는 방식과 해석식이 <em>서로 반대 결론</em>을 냈다. 원뿔 변환은 등각이 아니므로 왜곡공간 각도는 물리 각도가 아니다 — 해석식으로 통일하고 옛 결론은 철회했다.</p>
+              </li>
+              <li>
+                <strong>예측을 검증할 수단이 없었다</strong>
+                <p>메시 예측만 있고 독립 지표가 없었다. 예측이 “서포트 0.5%”라던 프로필을 나중에 툴패스 검사기가 <em>미지지 25.5%</em>로 잡아냈다.</p>
+              </li>
+              <li>
+                <strong>비교 대상을 잘못 잡고 있었다</strong>
+                <p>“평면 대비 감소”는 원뿔 슬라이싱의 성과이지 우리 것이 아니다. 넘어야 할 선은 <em>균일 원뿔(RotBot식 고정각)</em>이라고 다시 정의했다.</p>
+              </li>
+            </ol>
+          </aside>
+        </div>
+        <aside class="slide-takeaway">상반기에 고친 것은 대부분 <strong>‘무엇으로 판정하는가’</strong>였다. 남은 하나가 물리 검증이고, 그것이 이번 발표의 출발점이다.</aside>
+      </section>
+
+      <!-- 3. 검증용 코드 설계 -->
+      <section id="slide-3" class="slide" aria-labelledby="slide-3-title">
+        <header class="slide-header">
+          <p class="section-label">02 · 검증용 코드 설계</p>
+          <h2 id="slide-3-title">하드웨어 없이 “맞다”를 세우는 검증 계층 설계</h2>
+        </header>
+        <div class="verify-layout">
+          <div class="verify-layers">
+            <article class="verify-layer">
+              <span class="layer-no">①</span>
+              <div>
+                <h3>단위 테스트 12종</h3>
+                <p>수식 구현의 자기 일관성. 상수 프로필 = 고정각임을 회귀로 강제.</p>
+                <small>보증 못 함: 수식이 <em>물리적으로</em> 맞는지</small>
+              </div>
+            </article>
+            <article class="verify-layer verify-layer--key">
+              <span class="layer-no">②</span>
+              <div>
+                <h3>툴패스 가상 검사기 A·B</h3>
+                <p>예측과 <strong>측정 대상이 다른</strong> 독립 지표. A는 압출 세그먼트를 점 샘플링해 지지 여부를, B는 노즐·히트블록 기하로 간섭을 본다.</p>
+                <small>보증 못 함: 검사기와 예측기가 같은 가정으로 함께 틀릴 가능성</small>
+              </div>
+            </article>
+            <article class="verify-layer">
+              <span class="layer-no">③</span>
+              <div>
+                <h3>브라우저 독립 재구현</h3>
+                <p>문서 수식만 보고 JS로 다시 짠 구현이 Python과 점 단위 일치 — <strong>26,727점 100.0000%</strong>.</p>
+                <small>보증 못 함: 둘 다 같은 AI 도구로 작성 — 완전 독립 아님</small>
+              </div>
+            </article>
+            <article class="verify-layer">
+              <span class="layer-no">④</span>
+              <div>
+                <h3>사람 손계산</h3>
+                <p>점 하나를 클릭하면 숫자가 대입된 식이 나오고 계산기로 따라칠 수 있다. AI를 거치지 않는 유일한 경로.</p>
+                <small>보증 못 함: 전수 검사가 아님</small>
+              </div>
+            </article>
+            <article class="verify-layer">
+              <span class="layer-no">⑤</span>
+              <div>
+                <h3>팀원 독립 구현 대조</h3>
+                <p>같은 수식을 다른 사람이 따로 구현한 코드와 <strong>약 22,000면</strong> 대조 — 임계각 최대 차이 <strong>1.42×10⁻¹⁴°</strong>, 도달 불가 면 집합까지 일치.</p>
+                <small>보증 못 함: 두 사람이 같은 오해를 했을 가능성</small>
+              </div>
+            </article>
+          </div>
+          <aside class="verify-proof">
+            <h3>②층이 실제로 일했다</h3>
+            <figure>
+              <img src="assets/images/prediction_vs_toolpath.png" alt="메시 예측과 툴패스 실측의 상관 산점도, 스피어만 ρ=1.00">
+              <figcaption>균일각 6종은 순위상관 ρ=1.00으로 일치하지만, 초록 점(밴드2)만 예측 0.5% ↔ 실측 25.5%로 크게 어긋난다.</figcaption>
+            </figure>
+            <div class="verify-callout">
+              <strong>설계 원칙</strong>
+              <p>각 층이 <em>보증하지 못하는 것</em>을 같이 적는다. 안 적으면 층을 쌓은 게 아니라 테스트를 많이 짠 것일 뿐이다.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 4. 다양한 3D 모델에 대한 원뿔각 설정 검증 -->
+      <section id="slide-4" class="slide" aria-labelledby="slide-4-title">
+        <header class="slide-header">
+          <p class="section-label">03 · 다중 모델 검증</p>
+          <h2 id="slide-4-title">여러 형상에서 원뿔각 선택을 검증하다 — 조건을 찾았다</h2>
+        </header>
+        <div class="angle-check-layout">
+          <figure class="angle-figure">
+            <img src="assets/images/compare_waist.png" alt="구와 램프 모델에서 평면·균일각·밴드 전략별 페리미터 미지지 비율 비교">
+            <figcaption>구(허리 없음)와 램프(허리 있음)에서 전략별 페리미터 미지지 %. ⟨|θ|⟩는 면적가중 평균 왜곡각.</figcaption>
+          </figure>
+          <figure class="angle-figure">
+            <img src="assets/images/compare_bands.png" alt="밴드 수 N에 따른 성능 곡선">
+            <figcaption>복잡도(밴드 수 N) 대 성능. 구는 N을 늘려도 스스로 균일각으로 수렴하고, 램프만 N≥2에서 이득이 난다.</figcaption>
+          </figure>
+          <div class="angle-findings">
+            <article>
+              <h3>검증한 형상</h3>
+              <p>구 · 램프 · funnel 세 모델 × outward/inward 두 방향, 그리고 각 모델에서 원뿔각 0°~44°를 스윕했다.</p>
+            </article>
+            <article class="finding-key">
+              <h3>결론은 조건부다</h3>
+              <p>부위별 각도가 균일 원뿔을 이기려면 모델에 <strong>‘허리’</strong>가 있어야 한다. 각도를 바꾸려면 전이 구간이 필요하고 그 폭은 <em>그 높이의 반경에 비례</em>하기 때문이다. 구는 어디나 뚱뚱해 전이가 모델 높이의 73%를 먹는다.</p>
+            </article>
+            <article>
+              <h3>임계 규칙도 눈금 문제였다</h3>
+              <p>팀 안의 두 κ 규칙(고정 45° vs 형상 의존)을 토론 대신 실측 순위상관으로 판정했다. κ<sub>max</sub>≈0.85에서 두 규칙이 만나고(ρ=+0.943), 1.0에서는 형상 의존 쪽이 오히려 낫다(+0.986).</p>
+            </article>
+            <article class="finding-guard">
+              <h3>안전판</h3>
+              <p>균일각 후보를 전수 평가해 탐색에 섞었다. 그래서 <strong>결과가 최선 균일 원뿔보다 나쁠 수 없다</strong>는 성질이 구조적으로 보장되고, 회귀 테스트로 강제된다.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 통합 파이프라인 설계 완료 -->
+      <section id="slide-5" class="slide" aria-labelledby="slide-5-title">
+        <header class="slide-header">
+          <p class="section-label">04 · 통합 파이프라인</p>
+          <h2 id="slide-5-title">STL 한 개를 넣으면 G-code까지 — 통합 파이프라인 완성</h2>
+        </header>
+        <ol class="pipeline-flow" aria-label="슬라이싱 파이프라인 단계">
+          <li><span>01</span><h3>축 센터링</h3><p>XY 바운딩박스 중심을 0으로, 바닥을 z=0으로. 축 밖 모델은 변환이 균일 이동으로 수렴해 각도가 무의미해진다.</p></li>
+          <li><span>02</span><h3>각도 결정</h3><p>해석식 <span class="mono">g(θ)=n<sub>z</sub>cosθ + d·n<sub>r</sub>sinθ</span> 로 서포트를 예측하고, 평가함수 J로 균일·밴드 후보를 고른다.</p></li>
+          <li><span>03</span><h3>정변환(왜곡)</h3><p>θ(Z′)를 tanθ의 조각별 선형으로 두면 정변환이 이분법 없이 <strong>정확해</strong>로 풀린다.</p></li>
+          <li><span>04</span><h3>평면 슬라이싱</h3><p>PrusaSlicer CLI를 감싼다. 서포트·arc fitting·자동배치를 끄고 절대 E로 고정한 프리셋을 못박았다.</p></li>
+          <li><span>05</span><h3>역변환</h3><p>직선이 곡선이 되므로 허용 현오차 ε에서 <span class="mono">L=2√(2rε)</span> 로 적응 분할한다. 고정 분할은 100만 줄을 만들었다.</p></li>
+          <li><span>06</span><h3>G-code 출력</h3><p><span class="mono">;CONICAL_META</span> 자기기술 헤더와 <span class="mono">;TYPE:</span> 압출 종류 태그를 함께 내보낸다.</p></li>
+          <li><span>07</span><h3>검사·시각화</h3><p>툴패스 검사기와 브라우저 시뮬레이터가 같은 G-code를 읽어 독립적으로 평가한다.</p></li>
+        </ol>
+        <div class="pipeline-notes">
+          <article>
+            <h3>재발명하지 않은 것</h3>
+            <p>슬라이서를 새로 짜지 않는다. 왜곡한 STL을 외부 슬라이서에 넘기고 결과를 역변환한다 — 우리가 만드는 것은 앞뒤(각도 결정·왜곡·역변환)뿐이다.</p>
+          </article>
+          <article>
+            <h3>튜닝 값은 한 곳에</h3>
+            <p>임계각·최대각·탐색 간격·k·k<sub>blend</sub>·층간격 상한이 전부 <span class="mono">config.py</span>에 있고 주석에 근거가 달려 있다.</p>
+          </article>
+          <article>
+            <h3>가중치는 ‘창’으로 정한다</h3>
+            <p>값을 찍는 대신 <strong>답이 바뀌는 구간</strong>을 측정했다. k<sub>blend</sub>는 두 모델의 정답을 동시에 맞히는 구간이 0.1~1.0이고 기본값 0.5는 그 안이다.</p>
+          </article>
+        </div>
+        <aside class="slide-takeaway">일곱 단계 각각이 <strong>한 번씩 실제로 터진 뒤에</strong> 지금 모양이 되었다. 파이프라인 설계는 그 실패 목록이기도 하다.</aside>
+      </section>
+
+      <!-- 6. 이번 핵심: 3D 프린터 설계 -->
+      <section id="slide-6" class="slide" aria-labelledby="slide-6-title">
+        <header class="slide-header">
+          <p class="section-label">05 · 이번 단계의 핵심</p>
+          <h2 id="slide-6-title">남은 한 층은 실물이다 — 이번 핵심은 3D 프린터 설계</h2>
+        </header>
+        <div class="core-shift">
+          <article class="shift-before">
+            <span class="shift-tag">지난 발표까지</span>
+            <h3>“실물 출력은 범위 밖”</h3>
+            <p>장비·여건상 실물 출력이 불가능하다고 판단해 검증 계층의 마지막 자리를 <em>독립 구현 대조</em>로 대체했다. 그래서 모든 결론을 ‘증명’이 아니라 <strong>‘경향’</strong>으로만 썼다.</p>
+            <ul>
+              <li>브리징·수축·층간 접착은 끝내 검증되지 않는다</li>
+              <li>노즐 간섭 검사기는 <strong>3축 가정</strong>에 머물러 있다</li>
+              <li>5축 모드(<span class="mono">open5x.py</span>)는 돌릴 기계가 없어 [실험적] 딱지를 못 뗀다</li>
+            </ul>
+          </article>
+          <div class="shift-arrow" aria-hidden="true">→</div>
+          <article class="shift-after">
+            <span class="shift-tag shift-tag--now">이번 단계</span>
+            <h3>기성 프린터를 5축으로 개조한다</h3>
+            <p>5축 프린터를 처음부터 설계하는 것은 이 연구의 범위를 넘는다. 슬라이서를 재발명하지 않았던 것과 같은 이유로, <strong>프린터도 재발명하지 않는다</strong>.</p>
+            <p>오픈소스 5축 레트로핏 <strong>Rep5x</strong>(GPL v3)를 기반으로, 보유 기종인 <strong>Ender 3 V3 SE</strong>용 개조를 설계·제작한다.</p>
+            <ul>
+              <li>CAD·BOM·펌웨어·조립 문서가 전부 공개되어 있다</li>
+              <li>개조 부품 대부분을 <em>기존 3D 프린터로 직접 출력</em>할 수 있다</li>
+              <li>연속 회전(C)과 &gt;90° 틸트(B) — 원뿔 슬라이싱에 필요한 자유도를 그대로 준다</li>
+            </ul>
+          </article>
+        </div>
+        <div class="core-why">
+          <h3>왜 이것이 알고리즘 연구의 일부인가</h3>
+          <div class="why-cards">
+            <article><span>①</span><p>검사기와 예측기가 <strong>같은 가정으로 함께 틀릴 가능성</strong>은 시뮬레이션 안에서는 원리적으로 못 지운다. 실물만이 다른 종류의 증거다.</p></article>
+            <article><span>②</span><p>지금의 지표는 <em>기하학적 지지</em>다. 층간 접착·브리징 품질은 재료 물성이라 출력 없이 값이 생기지 않는다.</p></article>
+            <article><span>③</span><p>기계가 정해져야 <strong>MAX_ANGLE·충돌 기하·축 속도 한계</strong>가 실제 숫자가 된다. 지금은 전부 가정값이다.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Rep5x 공개 홈페이지 미리보기 -->
+      <section id="slide-7" class="slide" aria-labelledby="slide-7-title">
+        <header class="slide-header">
+          <p class="section-label">05 · 기반 프로젝트</p>
+          <h2 id="slide-7-title">Rep5x — 공개된 5축 레트로핏 프로젝트</h2>
+        </header>
+        <div class="site-layout">
+          <figure class="browser-mock" aria-label="Rep5x 공개 홈페이지 화면 재현">
+            <div class="browser-bar" aria-hidden="true">
+              <i class="dot dot-r"></i><i class="dot dot-y"></i><i class="dot dot-g"></i>
+              <span class="url">rep5x.com</span>
+              <span class="browser-tag">화면 재현</span>
+            </div>
+            <div class="browser-page">
+              <div class="mock-hero">
+                <div>
+                  <p class="mock-badge">Open Source · GPL v3</p>
+                  <h3>Rep5x: Open-Source 5-Axis Printing</h3>
+                  <p class="mock-lead">Research project developing affordable retrofit systems to add 5-axis capabilities to consumer 3D printers, with complete documentation and community collaboration.</p>
+                  <div class="mock-buttons"><span>Join Discord</span><span class="ghost">Star on GitHub</span></div>
+                </div>
+                <div class="mock-hero-art" aria-hidden="true">
+                  <img src="assets/images/rep5x/printer-complete.jpg" alt="">
+                </div>
+              </div>
+              <p class="mock-section-title">How Rep5x Works</p>
+              <div class="mock-cards">
+                <article><strong>Retrofit Design</strong><span>기존 프린터에 요(yaw)·피치(pitch) 회전축을 더한다. 연속 요 회전, 90° 초과 피치 틸트.</span></article>
+                <article><strong>Reduced Support</strong><span>회전으로 복잡한 형상을 서포트 없이 출력한다.</span></article>
+                <article><strong>Better Strength</strong><span>레이어 방향을 하중 방향에 맞춰 부품 강도를 높인다.</span></article>
+                <article><strong>Material Efficiency</strong><span>서포트 재료와 후처리 시간을 줄인다.</span></article>
+                <article><strong>Modular</strong><span>Ender 5 Pro·Ender 3 V3 SE에 구현. 다른 기종으로 확장 가능한 모듈 설계.</span></article>
+                <article><strong>Open Development</strong><span>CAD·BOM·펌웨어·조립 문서 전부 GitHub 공개.</span></article>
+              </div>
+            </div>
+          </figure>
+          <aside class="site-facts">
+            <h3>프로젝트 사실 확인</h3>
+            <dl>
+              <div><dt>만든 사람</dt><dd>Dennis Klappe (University of Twente, 산업디자인공학 석사과정)</dd></div>
+              <div><dt>라이선스</dt><dd>GPL v3 — CAD·펌웨어·문서 전부 공개</dd></div>
+              <div><dt>상태</dt><dd>Beta. Ender 5 Pro / Ender 3 V3 SE 동작 프로토타입</dd></div>
+              <div><dt>선행 연구</dt><dd>Janis Andersons(U. Twente)의 다축 프린팅 연구 위에 세워짐</dd></div>
+              <div><dt>제어</dt><dd>Marlin 2.1.x 개조판 · BTT Octopus V1.1 · TMC2208 ×6</dd></div>
+              <div><dt>공개 도구</dt><dd>펌웨어 빌더, IK 캘리브레이터, LC/LB 측정, G-code 뷰어</dd></div>
+            </dl>
+            <div class="site-note">
+              <strong>왜 이 프로젝트인가</strong>
+              <p>Open5x는 Prusa 개조 <em>베드 틸트</em> 방식이라 펌웨어가 회전 기구학을 하지 않는다. Rep5x는 <em>헤드 회전</em> 방식이고 펌웨어가 역기구학을 직접 처리해, 슬라이서가 낼 G-code가 훨씬 단순해진다. → 9쪽</p>
+            </div>
+            <div class="site-note site-note--split">
+              <strong>가져오는 것 / 우리가 하는 것</strong>
+              <p><b>가져온다</b> — 기구 설계·CAD·BOM·조립 절차·Marlin 5축 기구학.<br>
+              <b>우리가 한다</b> — 원뿔각 결정, θ(z) 프로필, 역변환, 이 기계용 G-code 생성과 그 검증.</p>
+            </div>
+            <p class="site-caption">위 화면은 링크 없이 <span class="mono">Rep5x/website/</span> 저장소의 실제 문구를 그대로 옮겨 재현한 것이다.</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 8. 실물 사진과 5축 설계 -->
+      <section id="slide-8" class="slide" aria-labelledby="slide-8-title">
+        <header class="slide-header">
+          <p class="section-label">06 · 프린터 설계</p>
+          <h2 id="slide-8-title">우리가 만들 기계 — Ender 3 V3 SE + Rep5x 5축 헤드</h2>
+        </header>
+        <div class="design-layout">
+          <figure class="design-hero">
+            <img src="assets/images/rep5x/printer-complete.jpg" alt="Rep5x 개조가 완료된 5축 3D 프린터 전체 모습">
+            <figcaption>완성된 Rep5x 개조기 — 기존 XYZ 위에 회전 헤드가 얹힌다</figcaption>
+          </figure>
+          <div class="design-gallery">
+            <figure><img src="assets/images/rep5x/final-assembly-complete.jpg" alt="배선 정리 전 최종 조립 상태"><figcaption>최종 조립 (배선 정리 전)</figcaption></figure>
+            <figure><img src="assets/images/rep5x/hotend-b-arm-assembly.jpg" alt="핫엔드가 B암에 장착된 모습"><figcaption>핫엔드 + B암</figcaption></figure>
+            <figure><img src="assets/images/rep5x/a-axis-stepper-installed.jpg" alt="C축 스테퍼와 벨트가 설치된 캐리지 마운트"><figcaption>C축 스테퍼·벨트</figcaption></figure>
+            <figure><img src="assets/images/rep5x/cable-management-progress.jpg" alt="배선 정리가 진행 중인 헤드"><figcaption>배선 정리</figcaption></figure>
+          </div>
+          <aside class="design-spec">
+            <h3>설계 구성</h3>
+            <ul class="spec-list">
+              <li><b>C축(요)</b><span>Z축 둘레 <strong>연속 회전</strong>. 슬립링(12채널·2A)이 배선 꼬임을 없앤다.</span></li>
+              <li><b>B축(틸트)</b><span>노즐을 기울인다. 펌웨어 소프트 한계 <strong>±135°</strong>.</span></li>
+              <li><b>구동</b><span>NEMA17 ×2 + GT2 20T 풀리 · 벨트 188 / 158 mm</span></li>
+              <li><b>베어링</b><span>61804 ×2 (C 회전) · 608 ×2 (B 회전)</span></li>
+              <li><b>원점</b><span>C = 광학 센서 · B = 마이크로스위치 + 트리거 볼트</span></li>
+              <li><b>압출</b><span>직결 → <strong>보우덴</strong> 전환 (헤드 질량·회전 반경 축소)</span></li>
+              <li><b>제어</b><span>BTT Octopus V1.1 · TMC2208 ×6 · Marlin 2.1.x</span></li>
+              <li><b>작업 영역</b><span>200 × 200 × 174.6 mm (Z는 헤드 높이만큼 줄어든다)</span></li>
+            </ul>
+            <div class="design-cost">
+              <span>예상 소요</span>
+              <p>출력 12~16h · 기계 조립 6~8h · 전장 4~6h · 펌웨어 2~3h · 캘리브레이션 2~4h</p>
+            </div>
+          </aside>
+        </div>
+        <aside class="slide-takeaway">기존 프린터의 XYZ는 그대로 두고 <strong>핫엔드 쪽만 교체</strong>한다. 기종 의존은 캐리지 마운트와 엔드스톱 몇 개로 격리되어 있다.</aside>
+      </section>
+
+      <!-- 9. 부품별 설명 + 3D 모델 -->
+      <section id="slide-9" class="slide interactive-slide" aria-labelledby="slide-9-title">
+        <header class="slide-header">
+          <p class="section-label">06 · 프린터 설계</p>
+          <h2 id="slide-9-title">직접 출력할 부품 — 3D 모델로 하나씩 확인</h2>
+        </header>
+        <div class="parts-explorer">
+          <nav class="parts-list interactive-zone" role="tablist" aria-label="Rep5x 출력 부품 선택">
+            <p class="parts-group-label">공용 부품 <span>universal-parts</span></p>
+            <button type="button" class="active" data-part="b-arm" role="tab">B암 <em>b-arm</em></button>
+            <button type="button" data-part="c-driven-pulley" role="tab">C축 종동 풀리 <em>C-driven-pulley</em></button>
+            <button type="button" data-part="b-driven-pulley" role="tab">B축 종동 풀리 <em>b-driven-pulley</em></button>
+            <button type="button" data-part="slip-ring-holder" role="tab">슬립링 홀더 <em>slip-ring-holder</em></button>
+            <button type="button" data-part="hotend-spacer" role="tab">핫엔드 스페이서 <em>hotend-spacer</em></button>
+            <button type="button" data-part="spacer-3mm" role="tab">3 mm 스페이서 <em>spacer-3mm</em></button>
+            <p class="parts-group-label">기종 전용 <span>ender-3-v3-se</span></p>
+            <button type="button" data-part="e3v3se-carriage-mount" role="tab">캐리지 마운트 <em>carriage-mount</em></button>
+            <button type="button" data-part="e3v3se-extruder-mount" role="tab">외부 압출기 마운트 <em>extruder-mount</em></button>
+            <button type="button" data-part="e3v3se-x-endstop" role="tab">X 엔드스톱 마운트 <em>x-endstop</em></button>
+            <button type="button" data-part="e3v3se-z-endstop" role="tab">Z 엔드스톱 마운트 <em>z-endstop</em></button>
+          </nav>
+          <div class="part-stage">
+            <div id="part-viewer" class="stl-viewer interactive-zone" aria-label="선택한 부품의 3D 모델 뷰어">
+              <div class="stl-canvas"></div>
+              <div class="viewer-placeholder">
+                <strong id="part-expected-name">b-arm.stl</strong>
+                <span>부품 3D 모델을 불러오는 중…</span>
+              </div>
+              <div class="viewer-status" aria-live="polite">마우스 드래그: 회전 · 휠: 확대/축소</div>
+            </div>
+            <div class="viewer-controls interactive-zone">
+              <button id="part-camera-reset" type="button">카메라 초기화</button>
+              <button id="part-reload" type="button">모델 다시 불러오기</button>
+              <span class="part-dims" id="part-dims">—</span>
+            </div>
+          </div>
+          <article class="part-detail">
+            <div class="part-detail-head">
+              <h3 id="part-title">B암 (B_arm)</h3>
+              <span class="part-version" id="part-version">v1.1.0</span>
+            </div>
+            <p id="part-role">역할</p>
+            <ul class="part-points" id="part-points"></ul>
+            <figure class="part-photo">
+              <img id="part-photo-img" src="assets/images/rep5x/b-arm-bearings-microswitch.jpg" alt="선택한 부품의 조립 사진">
+              <figcaption id="part-photo-cap">조립 사진</figcaption>
+            </figure>
+            <p class="part-source" id="part-source"></p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 10. 실제 프린터 모델 기반 코드 -->
+      <section id="slide-10" class="slide" aria-labelledby="slide-10-title">
+        <header class="slide-header">
+          <p class="section-label">07 · 코드 연결</p>
+          <h2 id="slide-10-title">기계가 정해지자 코드가 달라졌다 — 5축 출력 경로 설계</h2>
+        </header>
+        <div class="code-layout">
+          <div class="code-compare">
+            <article class="machine-card machine-card--old">
+              <span class="machine-tag">기존 구현 · <span class="mono">conical/open5x.py</span></span>
+              <h3>Open5x — 베드가 움직인다</h3>
+              <p>노즐은 수직 고정. 베드를 U로 기울이고 V로 돌려 압출점의 레이어면을 수평으로 만든다.</p>
+              <ul>
+                <li>펌웨어가 회전 기구학을 하지 않는다(<span class="mono">M669 K0</span> 항등) → <strong>슬라이서가 기계좌표를 직접 계산</strong></li>
+                <li>V가 한 방향으로 계속 누적 — 구 데모 기준 <strong>약 149회전</strong>, 배선 감김 대책 필수</li>
+                <li>축 근처 트래블에서 V가 한 이동에 ±180° 급회전</li>
+                <li>피벗 깊이·부호는 문서에 없어 실기 보정 필요</li>
+              </ul>
+            </article>
+            <article class="machine-card machine-card--new">
+              <span class="machine-tag machine-tag--now">설계 중 · <span class="mono">conical/rep5x.py</span></span>
+              <h3>Rep5x — 헤드가 회전한다</h3>
+              <p>베드는 고정. 노즐 자체를 B(틸트)·C(요)로 돌려 원뿔 레이어 법선에 맞춘다.</p>
+              <ul>
+                <li>Marlin이 <span class="mono">PENTA_AXIS_HH</span> 역기구학을 <strong>펌웨어에서</strong> 수행 → 슬라이서는 <strong>노즐 끝 좌표 + 각도</strong>만 내면 된다</li>
+                <li><span class="mono">G43.4</span>로 IK 켜고 <span class="mono">G49</span>로 끈다. 피벗 보정은 <span class="mono">M424 Y&lt;LC&gt; Z&lt;LB&gt;</span> (기본 LB=47.9 mm)</li>
+                <li><strong>슬립링</strong>이 있어 C 연속 누적이 배선 문제를 일으키지 않는다 — Open5x의 최대 난점이 사라진다</li>
+                <li>기계 한계가 가정값이 아닌 실제 값이 된다: B ±135°, C ±360°</li>
+              </ul>
+            </article>
+          </div>
+          <div class="code-map">
+            <h3>원뿔 레이어 → 5축 명령 대응</h3>
+            <p class="code-lead">outward 원뿔 레이어의 국소 법선은 <span class="mono">n̂ = sinθ·r̂(φ) + cosθ·ẑ</span>. 노즐 축을 n̂에 맞추면 두 각이 바로 떨어진다.</p>
+            <pre class="code-block"><code># 부품좌표 (x, y, z) 와 그 높이의 원뿔각 θ(z) 로부터
+phi = degrees(atan2(y, x))        # 압출점의 방위각
+B   = theta_at(z)                 # 틸트 = 그 높이의 원뿔각
+C   = unwrap(phi, C_prev)         # 요 = 방위각, 연속 누적 (슬립링)
+
+# 노즐 끝 좌표를 그대로 쓴다 — TCP 보정은 G43.4 가 펌웨어에서 처리
+emit(f"G1 X{x:.3f} Y{y:.3f} Z{z:.3f} "
+     f"B{B:.3f} C{C:.3f} E{e:.5f} F{f_adj:.0f}")</code></pre>
+            <ul class="code-notes">
+              <li><strong>가변각이 그대로 실린다.</strong> θ(z)가 변하면 B도 층마다 변한다 — 우리 프로필 파이프라인이 이미 만드는 값이다.</li>
+              <li><strong>피드레이트 재조정</strong>은 남는다. 회전축이 이송 norm에 어떻게 들어가는지는 기계에서 재야 한다.</li>
+              <li><strong>부호는 실기 보정 대상.</strong> B의 양의 방향과 C의 0점은 조립 결과에 달려 있다.</li>
+            </ul>
+          </div>
+          <figure class="code-video" aria-label="실제 출력 영상 자리">
+            <div class="video-placeholder">
+              <span class="video-icon" aria-hidden="true">▶</span>
+              <strong>실제 5축 출력 영상</strong>
+              <span>조립·캘리브레이션 후 촬영 예정 — 발표 시 이 자리에 삽입</span>
+            </div>
+            <figcaption>이 슬라이드의 코드가 실제로 이 기계를 움직이는지는 영상으로 보인다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 11. 현재까지의 문제점 -->
+      <section id="slide-11" class="slide" aria-labelledby="slide-11-title">
+        <header class="slide-header">
+          <p class="section-label">08 · 현재까지의 문제점</p>
+          <h2 id="slide-11-title">지금 남아 있는 문제 — 알고리즘·기계·검증</h2>
+        </header>
+        <div class="problem-grid">
+          <article><span>01</span><h3>물리 검증은 아직 0건</h3><p>조립 전이므로 브리징·수축·층간 접착은 여전히 미검증이다. 모든 결론은 지금도 ‘증명’이 아니라 <strong>경향</strong>으로만 쓴다.</p></article>
+          <article><span>02</span><h3>Rep5x 기구학 모듈 미구현</h3><p><span class="mono">open5x.py</span>는 베드 틸트 전제라 재사용할 수 없다. 헤드 회전용 <span class="mono">rep5x.py</span>는 설계만 되어 있고 검증 테스트가 없다.</p></article>
+          <article><span>03</span><h3>노즐 간섭 검사기가 3축 가정</h3><p>검사기 B는 노즐이 수직이라고 가정한다. 헤드가 기울면 히트블록·B암 전체가 충돌 기하에 들어와야 한다.</p></article>
+          <article><span>04</span><h3>가변각 × 5축이 미결</h3><p>고정각이면 B가 상수라 단순하지만, θ(z)가 변하면 B도 계속 변한다. 현재 가변각은 3축 소각도 모드에서만 지원된다.</p></article>
+          <article><span>05</span><h3>모델 표본이 두 개</h3><p>k<sub>blend</sub> 창도 κ<sub>max</sub> 결론도 구·램프 두 모델로 정한 값이다. 표본이 늘면 재검토 대상이라고 코드에 적어 두었다.</p></article>
+          <article><span>06</span><h3>블렌드 비용이 휴리스틱</h3><p>J의 <span class="mono">(m−1)/(limit−1)</span> 선형 가중은 유도된 물리가 아니다. 근거를 더 세우거나 실측으로 형태를 정해야 한다.</p></article>
+          <article><span>07</span><h3>기종 개조에 딸린 제약</h3><p>V3 SE는 스톡 핫엔드가 보우덴 비호환이고 순정 스크린이 Marlin에서 동작하지 않는다. 부품 조달과 개조 시간(24~34h)이 일정 위험이다.</p></article>
+          <article><span>08</span><h3>기계 파라미터가 전부 미측정</h3><p>LC/LB 피벗 오프셋, 축 원점, 최대 안전 원뿔각, 축 속도 한계 — 지금은 문서 기본값뿐이고 실기 캘리브레이션이 있어야 값이 생긴다.</p></article>
+        </div>
+      </section>
+
+      <!-- 12. 앞으로의 목표 -->
+      <section id="slide-12" class="slide" aria-labelledby="slide-12-title">
+        <header class="slide-header">
+          <p class="section-label">09 · 앞으로의 목표</p>
+          <h2 id="slide-12-title">실물로 검증 계층을 하나 더 쌓는다</h2>
+        </header>
+        <div class="validation-loop" aria-label="실물 검증 계획">
+          <article><span>1</span><h3>부품 출력·조달</h3><p>공용 6종 + V3 SE 전용 4종 PETG 출력, BOM 발주</p></article>
+          <i>→</i>
+          <article><span>2</span><h3>조립·펌웨어</h3><p>Marlin 2.1.x 빌드, 축 방향·엔드스톱 확인</p></article>
+          <i>→</i>
+          <article><span>3</span><h3>캘리브레이션</h3><p>LC/LB 측정, B·C 원점, 스텝/도 보정</p></article>
+          <i>→</i>
+          <article><span>4</span><h3>기구학 모듈 검증</h3><p><span class="mono">rep5x.py</span> 출력을 저속 공주행으로 대조</p></article>
+          <i>→</i>
+          <article><span>5</span><h3>실물 출력 비교</h3><p>평면 · 균일 원뿔 · 밴드 세 조건을 같은 모델로</p></article>
+        </div>
+        <div class="goal-grid">
+          <article class="goal-card">
+            <span class="status status--doing">1순위</span>
+            <h3>예측 → 검사기 → <strong>실측</strong> 3단 대조</h3>
+            <p>지금까지 예측과 툴패스 검사기의 순위상관(ρ=1.00)까지만 확인했다. 같은 모델을 실제로 출력해 <strong>서포트 필요 면적·표면 품질·실패 구간</strong>을 재면, 검사기가 예측기와 함께 틀리고 있었는지를 처음으로 밖에서 확인할 수 있다.</p>
+          </article>
+          <article class="goal-card">
+            <span class="status status--planning">2순위</span>
+            <h3>5축 충돌·안전각을 실제 기하로</h3>
+            <p>B암과 핫엔드의 실제 치수로 충돌 검사기를 다시 쓰고, <span class="mono">find_max_safe_angle.py</span>가 내는 MAX_ANGLE을 이 기계의 값으로 바꾼다.</p>
+          </article>
+          <article class="goal-card">
+            <span class="status status--planning">3순위</span>
+            <h3>모델 표본 확대</h3>
+            <p>허리 있는 형상·없는 형상을 더 모아 k<sub>blend</sub>와 κ<sub>max</sub> 창을 다시 잰다. 두 모델로 정한 상수라는 한계를 표본으로 지운다.</p>
+          </article>
+          <article class="goal-card goal-card--note">
+            <span class="status status--hold">지키는 것</span>
+            <h3>정직성 규약은 그대로</h3>
+            <p>실물이 생겨도 ①결과는 경향, ②선행연구의 것을 우리 것이라 하지 않는다, ③학생이 설명 못 하는 코드는 넣지 않는다 — 세 줄은 유지한다.</p>
+          </article>
+        </div>
+        <aside class="slide-takeaway">최종 보고서(11월 11일)까지의 목표는 “더 좋은 각도”가 아니라 <strong>“출력해서 확인한 각도”</strong>다.</aside>
+      </section>
+
+      <!-- 13. 출처 -->
+      <section id="slide-13" class="slide reference-slide" aria-labelledby="slide-13-title">
+        <header class="slide-header">
+          <h2 id="slide-13-title">출처 및 사용한 오픈소스</h2>
+        </header>
+        <div class="source-grid">
+          <article class="source-column">
+            <div class="reference-column-header">
+              <span class="reference-type-badge paper-badge">HARDWARE</span>
+              <h3>이번 발표의 프린터 자료</h3>
+            </div>
+            <ol class="reference-list">
+              <li><span class="reference-number">H1</span><div><cite>Rep5x — Open-source 5-axis 3D printer retrofit</cite><p>Dennis Klappe. GPL v3. github.com/dennisklappe/Rep5x · rep5x.com</p><p class="use-note">7·8·9쪽의 홈페이지 문구, 조립 사진, 3D 부품 모델(3MF→STL 변환), BOM·펌웨어 수치</p></div></li>
+              <li><span class="reference-number">H2</span><div><cite>Marlin 2.1.x <span class="mono">PENTA_AXIS_HH</span> 5축 기구학</cite><p>DerAndere, Marlin2ForPipetBot 포크 → Rep5x-Marlin에 통합</p><p class="use-note">10쪽의 <span class="mono">G43.4 / G49 / M424 / M667</span> 동작 설명</p></div></li>
+              <li><span class="reference-number">H3</span><div><cite>Multi-axis 3D printing systems 연구</cite><p>Janis Andersons, University of Twente — Rep5x가 기반으로 삼은 선행 연구</p></div></li>
+              <li><span class="reference-number">H4</span><div><cite>Open5x: Accessible 5-axis 3D printing</cite><p>Hong, F. et al. (CHI 2022) — 베드 틸트 방식 비교 대상</p></div></li>
+            </ol>
+          </article>
+          <article class="source-column">
+            <div class="reference-column-header">
+              <span class="reference-type-badge paper-badge">PAPER</span>
+              <h3>알고리즘 선행 연구</h3>
+            </div>
+            <ol class="reference-list">
+              <li><span class="reference-number">P1</span><div><cite>Novel 4-axis 3D printing process (RotBot)</cite><p>Wüthrich, M. et al. (2020/2021)</p><p class="use-note"><strong>원뿔 변환식은 이 연구의 것이다.</strong> 우리는 사용자다.</p></div></li>
+              <li><span class="reference-number">P2</span><div><cite>CurviSlicer (2019) · S³-Slicer (2022) · Neural Slicer (2024)</cite><p>자동 곡면 레이어 방향 결정 — 무거운 최적화·딥러닝 갈래</p></div></li>
+              <li><span class="reference-number">P3</span><div><cite>Wu 2020 · Gao 2019 · Wei 2018 · Han 2025</cite><p>부위별 <strong>이산</strong> 방향 분해. <strong>복잡도–성능 곡선 개념은 Wu 2020의 것이다.</strong></p></div></li>
+              <li><span class="reference-number">P4</span><div><cite>Slicer4RTN</cite><p>Spiritdude — 회전축 슬라이서 구현 비교</p></div></li>
+            </ol>
+            <p class="source-axis"><strong>우리 축은 하나다.</strong> 위 연구들이 <em>이산 방향</em>을 고르는 자리에서 우리는 <em>연속 원뿔각 θ(z)</em>를 고른다.</p>
+          </article>
+          <article class="source-column">
+            <div class="reference-column-header">
+              <span class="reference-type-badge paper-badge">CODE</span>
+              <h3>저장소와 도구</h3>
+            </div>
+            <ol class="reference-list">
+              <li><span class="reference-number">C1</span><div><cite>KJH-code/slicer</cite><p>파이프라인·검증기·실험 (MIT)</p></div></li>
+              <li><span class="reference-number">C2</span><div><cite>26037-arch/find_conical_angle</cite><p>팀원의 독립 구현 — 검증 계층 ⑤층</p></div></li>
+              <li><span class="reference-number">C3</span><div><cite>26037-arch/conical-slice-viewer</cite><p>교선 시각화 (Three.js)</p></div></li>
+              <li><span class="reference-number">C4</span><div><cite>PrusaSlicer · Marlin · Three.js · Reveal.js · KaTeX</cite><p>파이프라인과 이 발표 자료가 사용하는 오픈소스</p></div></li>
+            </ol>
+            <div class="license-note">
+              <strong>자료 사용 고지</strong>
+              <p>8·9쪽의 사진과 3D 모델은 Rep5x 저장소(GPL v3)에서 가져와 표시용으로 축소·변환한 것이다. 원저작자 Dennis Klappe에게 저작권이 있으며, 변환 절차는 저장소의 <span class="mono">assets/models/rep5x/NOTICE.md</span>에 적었다.</p>
+            </div>
+          </article>
+        </div>
+        <footer class="reference-footer">
+          <p><strong>발표에 쓴 실측 수치</strong>는 전부 <span class="mono">KJH-code/slicer</span>의 실행 결과이며, 재현 명령은 저장소 README에 있다.</p>
+          <span>자료 최종 확인: 2026. 9. 8.</span>
+        </footer>
+      </section>
+
+    </div>
+  </main>
+
+  <nav class="presentation-nav" aria-label="발표 슬라이드 이동">
+    <button id="prev-slide" type="button" aria-label="이전 슬라이드">←</button>
+    <div class="slide-counter" aria-live="polite">
+      <span id="current-slide">1</span><i></i><span id="total-slides">13</span>
+    </div>
+    <button id="next-slide" type="button" aria-label="다음 슬라이드">→</button>
+    <button id="fullscreen-toggle" class="fullscreen-button" type="button" aria-label="전체 화면 전환">⛶</button>
+  </nav>
+  <div class="global-progress" aria-hidden="true"><i id="global-progress-bar"></i></div>
+
+  <script src="assets/vendor/reveal/reveal.js"></script>
+  <script src="assets/vendor/three/three.min.js"></script>
+  <script src="assets/vendor/three/OrbitControls.js"></script>
+  <script src="assets/vendor/three/STLLoader.js"></script>
+  <script src="assets/vendor/katex/katex.min.js"></script>
+  <script src="assets/vendor/katex/contrib/auto-render.min.js"></script>
+  <script>
+    if (typeof window.renderMathInElement === "function") {
+      window.renderMathInElement(document.body, {
+        delimiters: [
+          { left: "\\[", right: "\\]", display: true },
+          { left: "\\(", right: "\\)", display: false }
+        ],
+        throwOnError: false,
+        minRuleThickness: 0.06
+      });
+    }
+  </script>
+  <script src="rep5x-deck.js"></script>
+  <script src="presentation.js"></script>
+  <script src="stl-viewer.js"></script>
+  <script src="rep5x-parts.js"></script>
+</body>
+</html>

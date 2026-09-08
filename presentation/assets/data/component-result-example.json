@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "stlFile": "arch-01.stl",
+  "triangleCount": 6,
+  "faceComponents": [-1, -1, 0, 0, 1, 1],
+  "components": [
+    {
+      "label": "I_c1",
+      "color": "#ff9d45",
+      "selectedAngleDeg": null,
+      "hMin": null,
+      "hMax": null
+    },
+    {
+      "label": "I_c2",
+      "color": "#2de2c5",
+      "selectedAngleDeg": null,
+      "hMin": null,
+      "hMax": null
+    }
+  ]
+}

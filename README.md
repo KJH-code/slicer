@@ -133,7 +133,25 @@ profiles/            외부 슬라이서(PrusaSlicer) 파이프라인 프리셋
 tools/               시뮬레이터(html)·G-code 진단·엑셀 생성기
 examples/            예시 입력(STL)과 출력(G-code)
 tests/               회귀 테스트
+presentation/        발표 자료 (HTML). 코드가 아니라 산출물이다 — 아래 참고
 ```
+
+### presentation/ — 발표 자료
+
+팀 저장소(`26037-arch/adaptive-conical-slicing-presentation`)에 푸시 권한이 없어
+이쪽에 함께 둔다. 빌드 없이 브라우저로 열린다.
+
+| 파일 | 무엇 |
+|---|---|
+| `presentation/index.html` | 2026 R&E **중간 성과공유회** 발표 13장 — 검증 계층, 다중 모델 원뿔각 검증, 통합 파이프라인, 그리고 Rep5x 기반 5축 프린터 설계 |
+| `presentation/2026-07-27-midterm.html` | 지난 온라인 멘토링 발표 17장 |
+
+```
+cd presentation && python3 -m http.server 8000   # → http://localhost:8000
+```
+
+`file://` 로 열어도 대부분 동작하지만, 부품 3D 뷰어(9쪽)는 HTTP 서버가 필요하다.
+자세한 것은 `presentation/README.md`.
 
 ### 판정 기준 (통일됨)
 
