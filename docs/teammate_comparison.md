@@ -82,14 +82,37 @@
 `conical/kappa.py` 에 함께 두고 `κ_max` 의 근거를 위 표로 남긴다.
 팀메 기본값 0.3 은 실측상 너무 엄격하다.
 
-## 3. 부호 규약 확인 필요 (viewer)
+## 3. 부호 규약 — 어긋났고, 맞췄다 (viewer)
 
-`conical-slice-viewer` 는 교선을 `q = z − r·tan(α)` 로 잡는다. 우리 정변환은
-`Z′ = z + c·r·tanθ` (c=+1 outward)다. 따라서 **viewer 의 α 양수 = 우리 inward**
-로 보인다. 같은 모델·같은 숫자를 넣어도 두 도구가 반대 원뿔을 그린다는 뜻이라,
-발표 자료에 두 화면을 나란히 놓기 전에 맞춰야 한다.
-(`find_conical_angle` 쪽 `DIRECTION_SIGNS` 는 outward=+1 로 우리와 같다 —
-어긋난 것은 viewer 하나다.)
+`conical-slice-viewer` 는 교선을 `q = z − r·tan(α)` 로 잡는데 우리 정변환은
+`Z′ = z + c·r·tanθ` (c=+1 outward)다. 따라서 **뷰어의 α 양수 = 우리 inward** 였다.
+같은 모델에 같은 숫자를 넣어도 두 도구가 **반대 원뿔을 그린다.** 뷰어의 기본값이
+`angleDeg: -30` 이었던 것이 그 증거다 — 우리 기준으로는 outward 30° 다.
+(`find_conical_angle` 의 `DIRECTION_SIGNS` 는 outward=+1 로 우리와 같다 —
+어긋난 것은 뷰어 하나였다.)
+
+**수정 방침**: 뷰어 내부 수식은 건드리지 않았다. 미분(`derivativeAtT`)·볼록성
+가정·극값 탐색 방향(`findMinimum = tanAngle < 0`)이 전부 `q = z − r·tan` 을 전제로
+짜여 있어서, `coneQ` 만 뒤집으면 나머지가 조용히 깨진다. 대신 **각도→탄젠트 변환
+지점 두 곳**에서만 부호를 뒤집는다.
+
+```js
+// conicalMath.js — 변환은 여기 한 곳에서만 정의
+export function tanFromStandardAngleDeg(angleDeg) {
+  return -Math.tan((angleDeg * Math.PI) / 180);
+}
+```
+
+호출 지점은 `slicingWorker.js`(슬라이싱)와 `ConicalViewer.js`(비드 렌더) 둘뿐이다.
+UI 기본값 `-30 → 30`, 라벨에 `+outward / −inward` 명시, README 에 규약 문단 추가.
+
+**검증**: 뷰어의 `coneQ` 와 우리 `transform_cone`(Python)을 10개 각도·방향 조합
+× 5점에서 대조 → **차이 0.00e+0**.
+
+⚠ 이 저장소는 팀메 소유라 직접 푸시하지 않았다. 패치 파일로 전달한다
+(`git am` 또는 `git apply` 로 적용, 원본 최신 커밋에 깨끗하게 붙는 것 확인함).
+`generateRasterInfill` 의 `angleRadians` 는 인필 래스터의 XY 회전각이라 원뿔각과
+무관하다 — 손대지 않았다.
 
 ## 4. 서로 없는 것
 
