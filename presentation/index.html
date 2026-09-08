@@ -448,14 +448,30 @@ emit(f"G1 X{x:.3f} Y{y:.3f} Z{z:.3f} "
               <li><strong>부호는 실기 보정 대상.</strong> B의 양의 방향과 C의 0점은 조립 결과에 달려 있다.</li>
             </ul>
           </div>
-          <figure class="code-video" aria-label="실제 출력 영상 자리">
-            <div class="video-placeholder">
-              <span class="video-icon" aria-hidden="true">▶</span>
-              <strong>실제 5축 출력 영상</strong>
-              <span>조립·캘리브레이션 후 촬영 예정 — 발표 시 이 자리에 삽입</span>
-            </div>
-            <figcaption>이 슬라이드의 코드가 실제로 이 기계를 움직이는지는 영상으로 보인다.</figcaption>
-          </figure>
+          <div class="demo-row">
+            <figure class="kin-demo" aria-label="원뿔 레이어를 따라 도는 노즐 자세 애니메이션">
+              <div class="kin-stage interactive-zone">
+                <canvas id="kin-canvas" role="img"
+                  aria-label="원뿔 레이어 위를 도는 압출점에서 노즐이 B만큼 기울고 C가 방위각을 따라가는 애니메이션"></canvas>
+                <div class="kin-readout" aria-live="off">
+                  <span>B<b id="kin-b">0.0°</b></span>
+                  <span>C<b id="kin-c">0.0°</b></span>
+                  <span class="kin-theta">θ(z)<b id="kin-theta">0.0°</b></span>
+                </div>
+                <code class="kin-gcode" id="kin-gcode">G1 …</code>
+                <button id="kin-toggle" type="button" class="kin-toggle" aria-pressed="true">일시정지</button>
+              </div>
+              <figcaption>위 코드가 만드는 자세. θ(z)가 변하면 <strong>B가 따라 변하고</strong>, C는 방위각을 계속 누적한다.</figcaption>
+            </figure>
+            <figure class="code-video" aria-label="실제 출력 영상 자리">
+              <div class="video-placeholder">
+                <span class="video-icon" aria-hidden="true">▶</span>
+                <strong>실제 5축 출력 영상</strong>
+                <span>조립·캘리브레이션 후 촬영 예정 — 발표 시 이 자리에 삽입</span>
+              </div>
+              <figcaption>계산은 왼쪽에서 보이고, 그것이 실제로 맞는지는 이 자리의 영상으로 보인다.</figcaption>
+            </figure>
+          </div>
         </div>
       </section>
 
@@ -608,5 +624,6 @@ emit(f"G1 X{x:.3f} Y{y:.3f} Z{z:.3f} "
   <script src="presentation.js"></script>
   <script src="stl-viewer.js"></script>
   <script src="rep5x-parts.js"></script>
+  <script src="rep5x-motion.js"></script>
 </body>
 </html>

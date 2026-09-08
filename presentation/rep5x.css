@@ -1471,3 +1471,181 @@
   color: var(--orange-soft);
   font-weight: 750;
 }
+
+/* ==========================================================================
+   움직임 — 슬라이드 진입 연출, 표지 모션, 10쪽 자세 애니메이션
+   (prefers-reduced-motion 은 styles.css 끝의 전역 규칙이 처리한다)
+   ========================================================================== */
+
+/* --- 진입 연출: 활성 슬라이드의 요소가 순서대로 올라온다 ----------------- */
+.slide.anim-in [data-anim-item] {
+  animation: rep5xRise .44s cubic-bezier(.22, .68, .3, 1) both;
+  animation-delay: calc(var(--i, 0) * 62ms);
+}
+
+@keyframes rep5xRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 파이프라인 화살표는 카드가 자리잡은 뒤에 흐른다 */
+.slide.anim-in .pipeline-flow li::after {
+  animation: rep5xFlow 1.9s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 62ms + .45s);
+}
+
+@keyframes rep5xFlow {
+  0%, 100% { opacity: .45; transform: translateY(-50%) translateX(0); }
+  50%      { opacity: 1;   transform: translateY(-50%) translateX(3px); }
+}
+
+/* 이 둘은 translateY(-50%) 기준이 아니므로 별도 키프레임을 쓴다 */
+.slide.anim-in .shift-arrow,
+.slide.anim-in .validation-loop > i {
+  animation: rep5xNudge 2.2s ease-in-out infinite;
+}
+
+@keyframes rep5xNudge {
+  0%, 100% { opacity: .5; transform: translateX(0); }
+  50%      { opacity: 1;  transform: translateX(4px); }
+}
+
+/* --- 표지: 원뿔 경로가 축을 돈다 ---------------------------------------- */
+.title-slide .cover-path {
+  animation: coverOrbit1 11s linear infinite;
+}
+
+.title-slide .path-2 { animation: coverOrbit2 8.5s linear infinite; }
+.title-slide .path-3 { animation: coverOrbit3 14s linear infinite; }
+
+@keyframes coverOrbit1 {
+  from { transform: translateX(-50%) translateZ(120px) rotate(0deg); }
+  to   { transform: translateX(-50%) translateZ(120px) rotate(360deg); }
+}
+@keyframes coverOrbit2 {
+  from { transform: translateX(-50%) translateZ(120px) rotate(360deg); }
+  to   { transform: translateX(-50%) translateZ(120px) rotate(0deg); }
+}
+@keyframes coverOrbit3 {
+  from { transform: translateX(-50%) translateZ(120px) rotate(0deg); }
+  to   { transform: translateX(-50%) translateZ(120px) rotate(360deg); }
+}
+
+.title-slide .cover-nozzle {
+  animation: coverNozzle 3.6s ease-in-out infinite;
+}
+
+@keyframes coverNozzle {
+  0%, 100% { transform: translateX(-50%) translateZ(150px) translateY(0); }
+  50%      { transform: translateX(-50%) translateZ(150px) translateY(11px); }
+}
+
+.title-slide .ring-1 { animation: coverRing 5.5s ease-in-out infinite; }
+.title-slide .ring-2 { animation: coverRing 5.5s ease-in-out infinite .7s; }
+.title-slide .ring-3 { animation: coverRing 5.5s ease-in-out infinite 1.4s; }
+
+@keyframes coverRing {
+  0%, 100% { box-shadow: 0 0 30px rgba(45, 226, 197, .2); }
+  50%      { box-shadow: 0 0 46px rgba(45, 226, 197, .5); }
+}
+
+/* --- 10쪽: 자세 애니메이션 + 영상 자리 ---------------------------------- */
+.demo-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.kin-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.kin-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 44% 68%, rgba(45, 226, 197, .09), transparent 58%),
+    #060f1b;
+  border: 1px solid var(--line);
+}
+
+.kin-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.kin-readout {
+  position: absolute;
+  top: 8px;
+  left: 9px;
+  display: flex;
+  gap: 7px;
+  font-family: Consolas, monospace;
+  font-size: 11px;
+}
+
+.kin-readout span {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+  padding: 3px 7px;
+  color: var(--muted);
+  background: rgba(7, 17, 31, .8);
+  border: 1px solid var(--line);
+}
+
+.kin-readout b {
+  color: var(--orange-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.kin-readout .kin-theta b { color: var(--teal-soft); }
+
+.kin-gcode {
+  position: absolute;
+  right: 9px;
+  bottom: 8px;
+  left: 9px;
+  padding: 4px 8px;
+  overflow: hidden;
+  color: #cfe6f2;
+  text-align: right;
+  white-space: nowrap;
+  background: rgba(7, 17, 31, .82);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kin-toggle {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  padding: 3px 9px;
+  color: var(--muted);
+  background: rgba(7, 17, 31, .82);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.kin-toggle:hover { color: var(--text); border-color: var(--line-strong); }
+
+.kin-demo figcaption,
+.code-video figcaption {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.kin-demo figcaption strong { color: var(--orange-soft); }
