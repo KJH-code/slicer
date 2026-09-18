@@ -44,15 +44,25 @@ from conical.config import MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K
 LAYER_H = 0.4
 
 
-def waisted_model():
-    """구 + 가는 목(r=2) + 위로 벌어지는 형상. '허리가 있는' 대조 모델."""
+def waisted_model(r_neck=2.0):
+    """구 + 가는 목 + 위로 벌어지는 형상. '허리가 있는' 대조 모델.
+
+    `r_neck` 으로 목의 반경을 준다 (기본 2.0 = 기존 램프 모델 그대로).
+    허리 깊이를 연속으로 바꿔가며 '허리가 얼마나 깊어야 밴드가 균일각을
+    이기는가' 를 곡선으로 재려고 매개변수화했다 — 그전에는 구(허리 없음) /
+    램프(허리 있음) 두 점의 일화뿐이었다.
+
+    상단 벌어짐은 r=7.0 로 고정이라 `r_neck` 이 7 이면 목이 사라진다
+    (`waist_prominence` = 0). 즉 7 → 1 이 '허리 없음 → 아주 깊은 목' 축이다.
+    """
     R, ZC = 8.0, 8.0
-    t_end = math.pi - math.asin(2.0 / R)          # 구를 r=2 되는 윗지점까지
+    r_neck = float(min(max(r_neck, 0.25), R))
+    t_end = math.pi - math.asin(r_neck / R)       # 구를 r=r_neck 되는 윗지점까지
     pts = [(R * math.sin(t), ZC - R * math.cos(t))
            for t in np.linspace(0, t_end, 60)]
     z_neck = pts[-1][1]
-    pts += [(2.0, z) for z in np.linspace(z_neck, 20.0, 8)[1:]]
-    pts += [(r, z) for r, z in zip(np.linspace(2.0, 7.0, 12)[1:],
+    pts += [(r_neck, z) for z in np.linspace(z_neck, 20.0, 8)[1:]]
+    pts += [(r, z) for r, z in zip(np.linspace(r_neck, 7.0, 12)[1:],
                                    np.linspace(20.0, 30.0, 12)[1:])]
     pts += [(0.0, 30.0)]
     m = trimesh.creation.revolve(np.array(pts), sections=64)

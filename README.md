@@ -59,7 +59,8 @@ python3 find_max_safe_angle.py [model.stl]       # 각도 스윕 → 이 모델�
 python3 compare_prediction_vs_toolpath.py        # 본편 실험: 메시 예측 vs 툴패스 (순위상관)
 python3 compare_waist.py                         # 핵심 실험: 밴드 vs 균일 — '허리'가 있어야 이긴다
 python3 analyze_blend_k.py                       # J의 블렌드 비용 가중치 k_blend 창 분석
-python3 compare_bands.py                         # 복잡도(밴드 수 N=1~4) vs 성능, 툴패스 실측
+python3 compare_bands.py                         # 복잡도(밴드 수 N=1~6) vs 성능, 툴패스 실측
+python3 compare_bands.py --waist-sweep            # + 허리 깊이 축으로 모델 표본 확대
 python3 compare_kappa_rules.py                   # 임계 κ 규칙(고정 45° vs 형상 의존) 실측 판정
 python3 compare_with_teammate.py --teammate ./find_conical_angle   # 팀메 독립 구현과 면 단위 대조
 ```
@@ -188,11 +189,32 @@ J = (서포트 감소 %p) − k×평균|θ| − k_blend × Σ(블렌드 구간 �
 `analyze_blend_k.py` 의 '판단이 뒤집히는 창'(측정값 0.1~1.5) 분석이다.
 
 밴드 수를 늘렸을 때의 곡선은 `compare_bands.py` 가 그린다 (페리미터 미지지 % /
-평균 왜곡각): 구는 N=1~4 내내 1.08%/28° 로 균일에 머무르고, 램프는
-3.01%/24.0° → 1.78%/16.3° → 1.78%/16.3° → **1.57%/14.8°** 로 개선된다.
-**J 가 N 에 대해 비감소인지**가 이 실험의 자체 점검이다 — N개는 이웃을 같은 각도로
-두면 N−1개를 흉내낼 수 있기 때문. 처음엔 위반했고, 그걸 따라가 계획기 결함 셋을
-찾았다 (docs/verification.md).
+평균 왜곡각): 구는 N=1~6 내내 1.08%/28° 로 균일에 머무르고, 램프는
+3.01%/24.0° → 1.78%/16.3° → 1.78%/16.3° → **1.57%/14.8°** 로 개선된 뒤
+N=5,6 에서 더 나아지지 않는다. **표본 일곱 개 전부 N≤4 에서 이미 J 최댓값에
+도달하고, N=5,6 이 그걸 갱신한 모델이 하나도 없다.**
+
+**J 가 N 에 대해 비감소인지**가 이 실험의 자체 점검이다. 처음엔 위반했고, 그걸
+따라가 계획기 결함 셋을 찾았다 (docs/verification.md). 다만 그 점검의 원래 논거
+("N개는 이웃을 같은 각도로 두면 N−1개를 흉내낼 수 있다")는 **틀렸다**: 밴드 경계가
+`linspace` 라 N=3 의 경계(33.3%, 66.7%)는 N=4 의 경계(25/50/75%)에 하나도 없다.
+흉내내기가 보장되는 짝은 **n 이 m 을 나눌 때뿐**이고(1→2, 2→4, 3→6 …), 그 짝에서만
+감소가 결함이다. 이웃한 N 사이의 감소는 격자 비정합이다
+(`tests/test_band_nesting.py` 가 고정).
+
+모델 표본은 `--waist-sweep` 으로 늘린다. 목 반경을 7→1 로 바꾸면 허리 두드러짐
+(`conical.meshio.waist_prominence`) 이 0.00→0.86 으로 움직여, '허리가 있어야
+밴드가 이긴다'를 두 모델의 일화가 아니라 축으로 잰다.
+
+```
+python3 compare_bands.py --waist-sweep --n-max 6     # 허리 깊이 × 밴드 수
+python3 compare_bands.py sphere waist:3 model.stl    # 모델 직접 지정
+python3 compare_bands.py --replay compare_bands_results.json   # 그림만 다시 그리기
+```
+
+전체 스윕은 수십 분 걸린다(선택 비용이 N 에 2차). 측정값은
+`compare_bands_results.json` 에 저장되므로, 라벨·축만 손볼 때는 `--replay` 로
+다시 그린다 — 같은 입력이면 그림이 바이트 단위로 같다.
 
 > 강도는 실측이 아니라 '레이어-표면 정렬' 기반 가벼운 proxy다 (증명 아닌 경향).
 > '세밀(면마다)'은 이론적 바닥일 뿐 물리적으로 못 찍는다(유효한 θ(z) 아님).
