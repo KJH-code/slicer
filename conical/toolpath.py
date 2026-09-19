@@ -19,10 +19,13 @@ toolpath.py — 툴패스(G-code) 기반 가상 검증기. 하드웨어 없이 �
 """
 
 import math
+import re
 from dataclasses import dataclass
 
 import numpy as np
 from scipy.spatial import cKDTree
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
+from shapely.ops import unary_union
 
 
 # ─────────────────────────────────────────────────────────────
@@ -41,11 +44,32 @@ def _type_of(comment):
     return 2                           # other
 
 
-def sample_extrusions(items, width=0.45, return_types=False):
+# `; layer 3`(우리), `;LAYER:3`(Cura), `;LAYER_CHANGE`(PrusaSlicer) 를 모두 받는다.
+# `; layers=50 ...` 같은 헤더에 걸리지 않게 숫자 앞에 구분자를 요구한다.
+_LAYER_NUM = re.compile(r"^;\s*layer\s*[:#]?\s+(\d+)|^;\s*LAYER\s*[:#]\s*(\d+)", re.I)
+_LAYER_CHANGE = re.compile(r"^;\s*LAYER_CHANGE\b", re.I)
+
+
+def _layer_of(comment, current):
+    """레이어 주석 → 층 번호. 해당 없으면 current 를 그대로 돌려준다."""
+    mo = _LAYER_NUM.match(comment)
+    if mo:
+        return int(mo.group(1) or mo.group(2))
+    if _LAYER_CHANGE.match(comment):
+        return current + 1
+    return current
+
+
+def sample_extrusions(items, width=0.45, return_types=False, return_layers=False):
     """압출(dE>0) 세그먼트를 간격 width/2 로 점 샘플링 (G-code 순서 유지).
 
     반환: pts (N,3), move_id (N,), weight (N,)  — weight = 각 점이 대표하는 경로 길이(mm)
-    return_types=True 면 kinds (N,) 도 함께 반환한다 (0=페리미터, 1=인필, 2=기타).
+    return_types=True 면 kinds (N,) 를, return_layers=True 면 layer (N,) 를
+    그 순서로 덧붙여 반환한다 (0=페리미터, 1=인필, 2=기타 / 층 번호, 미상은 −1).
+
+    층 번호가 왜 필요한가: 원뿔 경로는 역변환 뒤 z 가 층으로 나뉘지 않는다.
+    z 로 비닝하면 원뿔면 하나가 여러 층으로 쪼개지므로, 층은 G-code 주석에서
+    읽는다 (`; layer N` / `;LAYER:N` / `;LAYER_CHANGE`).
 
     왜 종류를 나누나: 희소 인필은 레이어마다 방향이 바뀌어 '아래에 아무것도 없는'
     구간이 원래 많다(브리징으로 정상 출력됨). 이걸 오버행 미지지와 같이 세면
@@ -53,15 +77,20 @@ def sample_extrusions(items, width=0.45, return_types=False):
     상단부 수치를 좌우한 것이 인필이었다.
     """
     spacing = width / 2.0
-    pts, mids, wts, kinds = [], [], [], []
+    pts, mids, wts, kinds, lays = [], [], [], [], []
     x = y = z = None
     e_prev = 0.0
     mid = 0
     cur_type = 2
+    cur_layer = -1
     for kind, p in items:
         if kind != "move":
-            if isinstance(p, str) and p.lstrip().upper().startswith(";TYPE:"):
-                cur_type = _type_of(p.lstrip())
+            if isinstance(p, str):
+                c = p.lstrip()
+                if c.upper().startswith(";TYPE:"):
+                    cur_type = _type_of(c)
+                elif c.startswith(";"):
+                    cur_layer = _layer_of(c, cur_layer)
             continue
         nx = p.x if p.x is not None else x
         ny = p.y if p.y is not None else y
@@ -78,6 +107,7 @@ def sample_extrusions(items, width=0.45, return_types=False):
                     mids.append(mid)
                     wts.append(L / n)
                     kinds.append(cur_type)
+                    lays.append(cur_layer)
         if p.e is not None:
             e_prev = p.e
         x, y, z = nx, ny, nz
@@ -85,7 +115,9 @@ def sample_extrusions(items, width=0.45, return_types=False):
     out = (np.array(pts) if pts else np.zeros((0, 3)),
            np.array(mids, dtype=int), np.array(wts))
     if return_types:
-        return out + (np.array(kinds, dtype=int),)
+        out = out + (np.array(kinds, dtype=int),)
+    if return_layers:
+        out = out + (np.array(lays, dtype=int),)
     return out
 
 
@@ -147,6 +179,93 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
                           if wl > 0 else 0.0)
     return supported, {"unsupported_pct": float(bad / total * 100.0),
                        "layers": layers}
+
+
+def layer_cross_sections(pts, move_id, kinds, layer, width=0.45):
+    """층별 단면 폴리곤을 **페리미터 압출선만으로** 복원한다 (메시 불필요).
+
+    왜 메시를 안 쓰나: 이 검사기는 외부 슬라이서가 낸 G-code 에도 써야 한다.
+    페리미터는 단면 경계를 그대로 그리므로, 같은 층 페리미터 선분을 압출폭의
+    절반으로 부풀려 합치면 경계를 두른 띠가 되고, 그 띠의 바깥 고리를 채우면
+    단면이 된다. 구 모델에서 진짜 단면과 IoU 최소 0.9976 으로 일치한다.
+
+    ⚠ 정직: 바깥 고리만 채우므로 **부품 내부의 진짜 구멍도 메워진다.** 구멍 위를
+      지나는 압출은 '단면 안'으로 잘못 분류된다. 우리 실험 모델에는 내부 구멍이
+      없어서 지금은 안 물리지만, 구멍 있는 모델에 쓰기 전에 손봐야 한다.
+    """
+    out = {}
+    peri = kinds == 0
+    for L in np.unique(layer[peri]):
+        if L < 0:
+            continue
+        sel = peri & (layer == L)
+        segs = []
+        for mv in np.unique(move_id[sel]):
+            q = pts[sel & (move_id == mv)][:, :2]
+            if len(q) >= 2:
+                segs.append(LineString(q))
+            elif len(q) == 1:
+                segs.append(Point(q[0]).buffer(width * 0.02))
+        if not segs:
+            continue
+        band = unary_union([g.buffer(width * 0.5 + 1e-4) for g in segs])
+        geoms = band.geoms if isinstance(band, MultiPolygon) else [band]
+        filled = [Polygon(g.exterior) for g in geoms if not g.is_empty]
+        if filled:
+            out[int(L)] = unary_union(filled)
+    return out
+
+
+def classify_unsupported(pts, move_id, kinds, layer, supported, width=0.45):
+    """미지지 페리미터를 '진짜 돌출' / '희소 인필 위'로 가른다.
+
+    왜 필요한가: 검사기 A 는 수평 ≤ 압출폭(0.45mm) 안에 아랫점이 있어야 지지로
+    친다. 그런데 **위로 좁아지는** 형상은 층마다 페리미터가 안쪽으로 들어가
+    아랫층 페리미터를 벗어나고, 그 자리 아래에는 희소 인필(간격 2.5mm)밖에
+    없다. 그러면 '미지지'로 찍히지만 물리적으로는 아랫층 단면 **안**이라
+    몇 mm 건너뛰는 평범한 브리징이다 — 오버행이 아니다.
+
+    실측(2026-09-19): `slicing-comparison-model.stl` 의 페리미터 미지지 11.53%가
+    **전부** 이 경우였다(진짜 돌출 0.00%p). 메시 예측은 "오버행 없음"이라 했고
+    그쪽이 옳았다. 구(평면 0°)에서도 7.51% 중 2.62%p(35%)가 이 경우다.
+    허상 비율이 모델마다 0~100% 로 달라지므로, 가르지 않은 '페리미터 미지지 %'는
+    **모델 간 비교에 그대로 쓰면 안 된다.**
+
+    판정: 점이 **바로 아래 층**의 단면 폴리곤 안에 있으면 '희소 인필 위'(허상),
+    밖이면 '진짜 돌출'. 아래 층 단면을 모르면(층 미상·첫 층) 진짜 돌출로 둔다 —
+    모르는 것을 유리하게 세지 않는다.
+
+    반환: over_section (bool 배열). True = 아랫층 단면 안 = 허상.
+    """
+    over = np.zeros(len(pts), dtype=bool)
+    target = (kinds == 0) & ~supported & (layer > 0)
+    if not target.any():
+        return over
+    sections = layer_cross_sections(pts, move_id, kinds, layer, width)
+    for i in np.where(target)[0]:
+        below = sections.get(int(layer[i]) - 1)
+        if below is not None and below.contains(Point(pts[i, 0], pts[i, 1])):
+            over[i] = True
+    return over
+
+
+def support_breakdown(pts, move_id, kinds, layer, supported, weight,
+                      width=0.45):
+    """페리미터 미지지를 갈라 % 로 돌려준다.
+
+    반환: dict(perimeter_unsupported_pct, overhang_pct, infill_gap_pct)
+      overhang_pct + infill_gap_pct == perimeter_unsupported_pct
+    """
+    peri = kinds == 0
+    tot = weight[peri].sum()
+    if tot <= 0:
+        return {"perimeter_unsupported_pct": float("nan"),
+                "overhang_pct": float("nan"), "infill_gap_pct": float("nan")}
+    over = classify_unsupported(pts, move_id, kinds, layer, supported, width)
+    bad = peri & ~supported
+    return {"perimeter_unsupported_pct": float(weight[bad].sum() / tot * 100.0),
+            "overhang_pct": float(weight[bad & ~over].sum() / tot * 100.0),
+            "infill_gap_pct": float(weight[bad & over].sum() / tot * 100.0)}
 
 
 # ─────────────────────────────────────────────────────────────

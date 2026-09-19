@@ -38,7 +38,8 @@ from conical.backtransform import backtransform
 from conical.profile import AngleProfile
 from conical.varangle import select_banded, select_banded_j
 from conical.selector import select_cone
-from conical.toolpath import sample_extrusions, check_support
+from conical.toolpath import (sample_extrusions, check_support,
+                              support_breakdown)
 from conical.config import MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K
 
 LAYER_H = 0.4
@@ -80,8 +81,14 @@ def mean_abs_angle(mesh, spec):
     return float((np.abs(spec.theta_at(fz)) * areas).sum() / areas.sum())
 
 
-def run_pipeline(mesh, angle_or_profile, direction="outward"):
-    """파이프라인 1회 → (페리미터 미지지 %, 전체 미지지 %, 인필 미지지 %)."""
+def run_pipeline(mesh, angle_or_profile, direction="outward", breakdown=False):
+    """파이프라인 1회 → (페리미터 미지지 %, 전체 미지지 %, 인필 미지지 %).
+
+    `breakdown=True` 면 (진짜 돌출 %p, 희소 인필 위 %p) 를 덧붙인다. 페리미터
+    미지지에는 오버행이 아닌 몫이 섞여 있다 — 위로 좁아지는 형상은 페리미터가
+    안쪽으로 들어가 아랫층 희소 인필 위에 놓이는데, 그건 평범한 브리징이다.
+    `conical.toolpath.classify_unsupported` 의 docstring 참고.
+    """
     if isinstance(angle_or_profile, AngleProfile):
         v = transform_cone_profile(mesh.vertices, angle_or_profile, direction)
     elif angle_or_profile > 0:
@@ -91,14 +98,19 @@ def run_pipeline(mesh, angle_or_profile, direction="outward"):
     warped = trimesh.Trimesh(vertices=v, faces=mesh.faces, process=False)
     items = slice_mesh(warped, layer_height=LAYER_H)
     real, _ = backtransform(items, angle_or_profile, direction)
-    pts, mid, w, kinds = sample_extrusions(real, return_types=True)
+    pts, mid, w, kinds, lay = sample_extrusions(real, return_types=True,
+                                                return_layers=True)
     sup, st = check_support(pts, mid, w, layer_height=LAYER_H)
 
     def pct(mask):
         tot = w[mask].sum()
         return (w[mask & ~sup].sum() / tot * 100.0) if tot > 0 else float("nan")
 
-    return pct(kinds == 0), st["unsupported_pct"], pct(kinds == 1)
+    base = (pct(kinds == 0), st["unsupported_pct"], pct(kinds == 1))
+    if not breakdown:
+        return base
+    b = support_breakdown(pts, mid, kinds, lay, sup, w)
+    return base + (b["overhang_pct"], b["infill_gap_pct"])
 
 
 def strategies(mesh, k=DEFAULT_K):
