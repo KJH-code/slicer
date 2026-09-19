@@ -284,7 +284,12 @@ def main():
               "이 파일로는 실물을 못 뽑는다.")
         print("    --machine-profile profiles/machine.example.ini "
               "(템플릿: 값은 실기 확인 전)")
-    print(f"  검증        : python3 toolpath_check.py {out_path}")
+    if args.mode == "open5x":
+        # 검사기 A/B 는 3축 가정이라 5축 출력에는 안 맞는다. 기계좌표 검사로 보낸다.
+        print(f"  검증        : python3 open5x_check.py {out_path} --bed-radius <mm>")
+        print("                (3축용 toolpath_check 는 5축 출력에 맞지 않는다)")
+    else:
+        print(f"  검증        : python3 toolpath_check.py {out_path}")
     if args.mode == "xyz":
         print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "
               "큰 각도는 틸트 하드웨어 필요.")

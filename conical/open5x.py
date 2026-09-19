@@ -142,3 +142,137 @@ def to_open5x(items, cone_angle_deg, cone_type, profile=PRUSA_UV):
     stats = {"v_min": v_range[0], "v_max": v_range[1],
              "v_turns": (v_range[1] - v_range[0]) / 360.0}
     return out, stats
+
+
+# ─────────────────────────────────────────────────────────────
+# 검사기 C: 기계좌표 출력 검사 (실기 전 사전 점검)
+# ─────────────────────────────────────────────────────────────
+def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
+                 min_z=0.0, max_feed=None, max_turns=None):
+    """Open5x 기계좌표 G-code 를 기계에 걸기 **전에** 검사한다.
+
+    이 모듈 docstring 의 '실기 체크리스트' 를 자동으로 보는 것이다. 5축은 3축보다
+    사고가 쉽게 나고, 사고가 나면 기계가 상한다. 프린터가 없는 동안에도 할 수 있는
+    검사를 미리 걸어 둔다.
+
+    보는 것:
+      · 틸트 U 가 기계 한계 안인가, 한 번만 설정되는가
+      · **회전 V 누적** — 슬립링이 없으면 배선이 감긴다 (구 데모에서 약 149회전)
+      · **V 급회전** — 축 근처 트래블에서 한 이동에 ±180° 가 뛴다 (방위각 반전)
+      · 기계 Z 가 음수로 가는가 (틸트에서는 정상일 수 있으나 소프트리밋에 걸린다)
+      · 베드 밖으로 나가는가 (bed_radius 를 주면)
+      · 피드레이트가 기계 최대를 넘는가 (max_feed 를 주면)
+
+    ⚠ 보지 **못하는** 것: 노즐-출력물 간섭(검사기 B 의 3축 가정은 5축에 안 맞는다),
+      축 가속도 한계, 실제 기구 충돌. 이 검사를 통과해도 첫 출력은 사람이 지켜봐야
+      한다.
+
+    반환: (findings, stats). findings 는 (심각도, 메시지) 목록으로
+    심각도는 "치명"(기계가 상할 수 있음) / "경고" / "정보".
+    """
+    findings, u_seen = [], []
+    xs, ys, zs, vs, feeds = [], [], [], [], []
+    dv_max, dv_at = 0.0, None
+    v_prev = None
+    v_travel = 0.0                       # |ΔV| 누적 (배선 감김의 실제 척도)
+
+    for kind, payload in items:
+        if kind != "move":
+            continue
+        mv = payload
+        extra = (mv.extra or "").upper()
+        for tok in extra.split():
+            if tok.startswith(profile.tilt_axis):
+                try:
+                    u_seen.append(float(tok[len(profile.tilt_axis):]))
+                except ValueError:
+                    findings.append(("치명", f"틸트 축 값을 못 읽었다: {tok}"))
+            elif tok.startswith(profile.rot_axis):
+                try:
+                    v = float(tok[len(profile.rot_axis):])
+                except ValueError:
+                    findings.append(("치명", f"회전 축 값을 못 읽었다: {tok}"))
+                    continue
+                vs.append(v)
+                if v_prev is not None:
+                    dv = abs(v - v_prev)
+                    v_travel += dv
+                    if dv > dv_max:
+                        dv_max, dv_at = dv, (mv.x, mv.y, mv.z)
+                v_prev = v
+        if mv.x is not None:
+            xs.append(mv.x)
+        if mv.y is not None:
+            ys.append(mv.y)
+        if mv.z is not None:
+            zs.append(mv.z)
+        if mv.f is not None:
+            feeds.append(mv.f)
+
+    # --- 틸트 ---
+    if not u_seen:
+        findings.append(("치명", f"틸트 축 {profile.tilt_axis} 설정이 없다 — "
+                                 "원뿔 레이어가 수평이 되지 않는다"))
+    else:
+        if max(abs(u) for u in u_seen) > profile.max_tilt_deg + 1e-9:
+            findings.append(("치명", f"틸트 {max(u_seen, key=abs):.1f}° 가 기계 한계 "
+                                     f"±{profile.max_tilt_deg}° 를 넘는다"))
+        if len(set(round(u, 6) for u in u_seen)) > 1:
+            findings.append(("경고", f"틸트가 여러 값으로 바뀐다 ({len(set(u_seen))}종) "
+                                     "— 원뿔 모드는 상수여야 한다"))
+
+    # --- 회전 누적 (배선 감김) ---
+    turns = v_travel / 360.0
+    if vs:
+        span = (max(vs) - min(vs)) / 360.0
+        limit = max_turns if max_turns is not None else 3.0
+        if turns > limit:
+            findings.append(("치명", f"회전 누적 {turns:.1f}회전 (한계 {limit:.0f}) — "
+                                     "슬립링이 없으면 배선이 감긴다. 되감기 또는 "
+                                     "레이어별 방향 교대가 필요하다"))
+        elif turns > limit * 0.5:
+            findings.append(("경고", f"회전 누적 {turns:.1f}회전 — 배선 여유 확인"))
+        if span * 360.0 > 1e-9 and turns > span * 3:
+            findings.append(("정보", f"V 가 왕복한다 (누적 {turns:.1f} vs 범위 "
+                                     f"{span:.1f}회전) — 되감기 여지가 있다"))
+
+    # --- 급회전 ---
+    if dv_max > max_dv_deg:
+        where = (f" (부근 X{dv_at[0]:.1f} Y{dv_at[1]:.1f} Z{dv_at[2]:.1f})"
+                 if dv_at and None not in dv_at else "")
+        sev = "치명" if dv_max > 90.0 else "경고"
+        findings.append((sev, f"한 이동에 V 가 {dv_max:.0f}° 뛴다{where} — "
+                              "축 근처 방위각 반전. 베드가 급회전하며 출력물을 "
+                              "흔든다"))
+
+    # --- 기계 Z 가 음수로 간다 ---
+    #   틸트로 베드가 '내려간 쪽'을 따라가려면 기계 Z 가 음수여야 하는 것이
+    #   정상일 수 있다. 위험한 것은 그 자체가 아니라 **펌웨어가 잘라낼 때**다.
+    if zs and min(zs) < min_z - 1e-6:
+        findings.append(("치명",
+                         f"기계 Z 최소 {min(zs):.2f}mm < {min_z} — 틸트로 베드가 "
+                         "내려간 쪽을 따라가려면 Z 가 음수여야 한다. 펌웨어 "
+                         "소프트리밋이 0 이면 잘려서 노즐이 출력물을 파고든다. "
+                         "Z 오프셋(원점을 띄우기)을 잡고 소프트리밋을 확인할 것"))
+
+    # --- 베드 밖 ---
+    if bed_radius is not None and xs and ys:
+        r = max(math.hypot(a, b) for a, b in zip(xs, ys))
+        if r > bed_radius:
+            findings.append(("치명", f"기계좌표 반경 {r:.1f}mm > 베드 반경 "
+                                     f"{bed_radius}mm — 베드 밖으로 나간다"))
+
+    # --- 피드 ---
+    if max_feed is not None and feeds and max(feeds) > max_feed:
+        findings.append(("경고", f"피드 {max(feeds):.0f} > 기계 최대 {max_feed} "
+                                 "— 펌웨어가 잘라내면 동기가 어긋날 수 있다"))
+
+    stats = {"tilt": u_seen[0] if u_seen else None,
+             "v_turns_accumulated": turns,
+             "v_span_turns": ((max(vs) - min(vs)) / 360.0) if vs else 0.0,
+             "v_max_step_deg": dv_max,
+             "z_min": min(zs) if zs else None,
+             "xy_radius_max": (max(math.hypot(a, b) for a, b in zip(xs, ys))
+                               if xs and ys else None),
+             "moves": len(vs)}
+    return findings, stats
