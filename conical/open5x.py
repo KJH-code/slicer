@@ -145,6 +145,130 @@ def to_open5x(items, cone_angle_deg, cone_type, profile=PRUSA_UV):
 
 
 # ─────────────────────────────────────────────────────────────
+# 되감기: 배선 감김 대책
+# ─────────────────────────────────────────────────────────────
+def _with_v(extra, rot_axis, v):
+    """extra 문자열의 회전축 값을 v 로 바꾼다 (다른 워드는 보존)."""
+    toks = [t for t in (extra or "").split()
+            if not t.upper().startswith(rot_axis.upper())]
+    toks.append(f"{rot_axis}{v:.3f}")
+    return " ".join(toks)
+
+
+def add_v_rewinds(items, profile=PRUSA_UV, max_turns=1.0, clearance=2.0,
+                  rot_feed=1200.0, lift_feed=3000.0):
+    """배선 감김을 막기 위해 **트래블 중에 V 를 360°의 배수만큼 되감는다.**
+
+    왜 되는가: 베드를 정확히 360° 돌리면 부품은 제자리로 온다 — `Rz` 는 360°
+    주기이므로 부품 점의 기계좌표가 **변하지 않는다.** 그래서 되감기 이동은
+    X/Y/Z 를 건드리지 않고 V 만 바꾸면 된다.
+
+    ⚠ 그런데 **도는 도중의 중간 각도**에서는 부품이 다른 방향을 향한다. 노즐이
+      그 자리에 그대로 있으면 부딪힌다. 그래서 되감기 전에 **지금까지 쌓은 것보다
+      위로** 들어올린다(`clearance` mm 여유). 올릴 높이는 '여태 압출한 기계 Z 의
+      최댓값'이다 — 아직 안 찍은 위쪽은 부딪힐 것이 없다.
+
+    언제 되감나: **압출하지 않는 이동(트래블)** 에서만, 그리고 시작 기준 이탈이
+    `max_turns` 회전을 넘었을 때만. 매 트래블마다 돌리면 출력 시간이 늘어난다.
+
+    보장되는 상한은 **`max_turns + 1` 회전**이다: 되감기는 트래블에서만 하므로
+    한 번의 압출 구간(둘레 한 바퀴 ≈ 1회전) 동안은 더 자랄 수 있다.
+    실측 트레이드오프 (funnel 20°, rot_feed=1200):
+
+    | max_turns | 되감기 | 감김 | 추가 시간 |
+    |---|---|---|---|
+    | 0.5 | 148회 | 1.0회전 | 44분 |
+    | **1.0** | 32회 | 2.0회전 | **15분** |
+    | 2.0 | 16회 | 3.0회전 | 13분 |
+
+    0.5 는 1.0 보다 시간이 3배 드는데 감김은 1회전밖에 못 줄인다. 기본값 1.0.
+    ⚠ 진짜 한계는 **기계의 배선 여유**에서 와야 한다 — 서비스 루프를 재서 정할 것.
+    `rot_feed` 를 올리면 추가 시간이 비례해서 준다 (축 속도 한계 확인 후).
+
+    ⚠ 한계: 여기서 보장하는 것은 '들어올린 높이가 여태 퇴적물보다 높다' 까지다.
+      노즐 몸체·히트블록이 옆으로 부딪히는 것은 보지 못한다(검사기 B 는 3축
+      가정이라 5축에 못 쓴다). `clearance` 는 넉넉하게 줄 것.
+    """
+    out = []
+    offset = 0.0                 # 이후 V 에 더할 값 (360 의 배수)
+    v0 = None                    # 첫 V (감김의 기준점)
+    v_prev = None
+    mx = my = mz = None          # 직전 기계 좌표
+    z_deposited = None           # 여태 '압출한' 기계 Z 의 최댓값
+    e_prev = 0.0
+    n_rewinds, rewind_deg = 0, 0.0
+
+    for kind, payload in items:
+        if kind != "move":
+            out.append((kind, payload))
+            continue
+        mv = payload
+        v_raw = None
+        for tok in (mv.extra or "").split():
+            if tok.upper().startswith(profile.rot_axis.upper()):
+                try:
+                    v_raw = float(tok[len(profile.rot_axis):])
+                except ValueError:
+                    pass
+        extruding = mv.e is not None and mv.e > e_prev + 1e-9
+
+        if v_raw is not None:
+            v = v_raw + offset
+            if v0 is None:
+                v0 = v
+            # 트래블이고, 감김이 한계를 넘었으면 여기서 푼다.
+            if (not extruding and abs(v - v0) > max_turns * 360.0
+                    and None not in (mx, my, mz) and v_prev is not None):
+                k = round((v0 - v_prev) / 360.0)
+                if k != 0:
+                    safe_z = max(z_deposited if z_deposited is not None else mz,
+                                 mz) + clearance
+                    v_new = v_prev + 360.0 * k
+                    out.append(("raw", f"; V_REWIND BEGIN {k:+d} turn(s): "
+                                       f"{v_prev:.1f} -> {v_new:.1f} deg "
+                                       f"(lift to Z{safe_z:.2f})"))
+                    out.append(("move", Move(g=0, x=mx, y=my, z=safe_z,
+                                             f=lift_feed,
+                                             extra=_with_v(mv.extra,
+                                                           profile.rot_axis,
+                                                           v_prev))))
+                    out.append(("move", Move(g=0, x=mx, y=my, z=safe_z,
+                                             f=rot_feed,
+                                             extra=_with_v(mv.extra,
+                                                           profile.rot_axis,
+                                                           v_new))))
+                    out.append(("move", Move(g=0, x=mx, y=my, z=mz,
+                                             f=lift_feed,
+                                             extra=_with_v(mv.extra,
+                                                           profile.rot_axis,
+                                                           v_new))))
+                    out.append(("raw", "; V_REWIND END"))
+                    rewind_deg += abs(360.0 * k)
+                    offset += 360.0 * k
+                    v = v_raw + offset
+                    v_prev = v_new
+                    n_rewinds += 1
+            mv = Move(g=mv.g, x=mv.x, y=mv.y, z=mv.z, e=mv.e, f=mv.f,
+                      extra=_with_v(mv.extra, profile.rot_axis, v))
+            v_prev = v
+
+        out.append(("move", mv))
+        if mv.x is not None:
+            mx = mv.x
+        if mv.y is not None:
+            my = mv.y
+        if mv.z is not None:
+            mz = mv.z
+        if extruding and mz is not None:
+            z_deposited = mz if z_deposited is None else max(z_deposited, mz)
+        if mv.e is not None:
+            e_prev = mv.e
+
+    return out, {"rewinds": n_rewinds, "rewind_deg": rewind_deg,
+                 "rewind_minutes": rewind_deg / max(rot_feed, 1e-9)}
+
+
+# ─────────────────────────────────────────────────────────────
 # 검사기 C: 기계좌표 출력 검사 (실기 전 사전 점검)
 # ─────────────────────────────────────────────────────────────
 def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
@@ -157,7 +281,8 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
 
     보는 것:
       · 틸트 U 가 기계 한계 안인가, 한 번만 설정되는가
-      · **회전 V 누적** — 슬립링이 없으면 배선이 감긴다 (구 데모에서 약 149회전)
+      · **배선 감김** — 시작 기준 최대 이탈 |V − V₀|. Σ|ΔV| 가 아니다 (왕복은
+        감기지 않는다). 슬립링이 없으면 이 값이 배선 여유를 넘으면 안 된다
       · **V 급회전** — 축 근처 트래블에서 한 이동에 ±180° 가 뛴다 (방위각 반전)
       · 기계 Z 가 음수로 가는가 (틸트에서는 정상일 수 있으나 소프트리밋에 걸린다)
       · 베드 밖으로 나가는가 (bed_radius 를 주면)
@@ -172,12 +297,22 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
     """
     findings, u_seen = [], []
     xs, ys, zs, vs, feeds = [], [], [], [], []
+    in_rewind, n_rewind, rewind_max = False, 0, 0.0
     dv_max, dv_at = 0.0, None
-    v_prev = None
-    v_travel = 0.0                       # |ΔV| 누적 (배선 감김의 실제 척도)
+    v_prev, v_first = None, None
+    v_travel = 0.0                       # Σ|ΔV| — 총 회전량 (마모·시간). 감김 아님
+    wind_max = 0.0                       # max |V − V_start| — **배선 감김의 척도**
 
     for kind, payload in items:
         if kind != "move":
+            # 되감기 구간은 **의도된** 큰 회전이다. 사고(축 근처 방위각 반전)와
+            # 구별해야 하므로 G-code 에 표시를 박아두고 여기서 가른다.
+            if isinstance(payload, str):
+                up = payload.upper()
+                if "V_REWIND BEGIN" in up:
+                    in_rewind, n_rewind = True, n_rewind + 1
+                elif "V_REWIND END" in up:
+                    in_rewind = False
             continue
         mv = payload
         extra = (mv.extra or "").upper()
@@ -194,10 +329,15 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
                     findings.append(("치명", f"회전 축 값을 못 읽었다: {tok}"))
                     continue
                 vs.append(v)
+                if v_first is None:
+                    v_first = v
+                wind_max = max(wind_max, abs(v - v_first))
                 if v_prev is not None:
                     dv = abs(v - v_prev)
                     v_travel += dv
-                    if dv > dv_max:
+                    if in_rewind:
+                        rewind_max = max(rewind_max, dv)
+                    elif dv > dv_max:
                         dv_max, dv_at = dv, (mv.x, mv.y, mv.z)
                 v_prev = v
         if mv.x is not None:
@@ -221,20 +361,26 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
             findings.append(("경고", f"틸트가 여러 값으로 바뀐다 ({len(set(u_seen))}종) "
                                      "— 원뿔 모드는 상수여야 한다"))
 
-    # --- 회전 누적 (배선 감김) ---
-    turns = v_travel / 360.0
+    # --- 배선 감김 ---
+    #   감김은 **시작 기준 최대 이탈**이다. Σ|ΔV| 가 아니다 — +360 돌고 −360 돌면
+    #   배선은 제자리다. 실측: funnel 20° 에서 Σ|ΔV|=175회전인데 실제 감김은 44.5.
+    #   Σ|ΔV| 는 마모·시간의 척도로 따로 본다.
+    total_turns = v_travel / 360.0
+    wind_turns = wind_max / 360.0
     if vs:
-        span = (max(vs) - min(vs)) / 360.0
-        limit = max_turns if max_turns is not None else 3.0
-        if turns > limit:
-            findings.append(("치명", f"회전 누적 {turns:.1f}회전 (한계 {limit:.0f}) — "
-                                     "슬립링이 없으면 배선이 감긴다. 되감기 또는 "
-                                     "레이어별 방향 교대가 필요하다"))
-        elif turns > limit * 0.5:
-            findings.append(("경고", f"회전 누적 {turns:.1f}회전 — 배선 여유 확인"))
-        if span * 360.0 > 1e-9 and turns > span * 3:
-            findings.append(("정보", f"V 가 왕복한다 (누적 {turns:.1f} vs 범위 "
-                                     f"{span:.1f}회전) — 되감기 여지가 있다"))
+        limit = max_turns if max_turns is not None else 2.0
+        if wind_turns > limit:
+            findings.append(("치명",
+                             f"배선 감김 {wind_turns:.1f}회전 (한계 {limit:.1f}) — "
+                             "슬립링이 없으면 배선이 감긴다. 트래블 중 되감기"
+                             "(`--v-rewind`) 또는 레이어별 방향 교대가 필요하다"))
+        elif wind_turns > limit * 0.6:
+            findings.append(("경고", f"배선 감김 {wind_turns:.1f}회전 — 여유 확인"))
+        if wind_turns > 1e-9 and total_turns > wind_turns * 3:
+            findings.append(("정보",
+                             f"V 가 많이 왕복한다 (총 회전량 {total_turns:.1f} vs "
+                             f"감김 {wind_turns:.1f}회전) — 감김은 아니지만 "
+                             "베어링 마모와 출력 시간에 들어간다"))
 
     # --- 급회전 ---
     if dv_max > max_dv_deg:
@@ -267,8 +413,14 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
         findings.append(("경고", f"피드 {max(feeds):.0f} > 기계 최대 {max_feed} "
                                  "— 펌웨어가 잘라내면 동기가 어긋날 수 있다"))
 
+    if n_rewind:
+        findings.append(("정보", f"되감기 {n_rewind}회 (최대 {rewind_max:.0f}°) — "
+                                 "의도된 회전이라 급회전 판정에서 뺐다. 들어올린 "
+                                 "높이가 퇴적물 위인지는 이 검사가 보지 못한다"))
     stats = {"tilt": u_seen[0] if u_seen else None,
-             "v_turns_accumulated": turns,
+             "rewinds": n_rewind, "rewind_max_deg": rewind_max,
+             "v_wind_turns": wind_turns,
+             "v_total_turns": total_turns,
              "v_span_turns": ((max(vs) - min(vs)) / 360.0) if vs else 0.0,
              "v_max_step_deg": dv_max,
              "z_min": min(zs) if zs else None,

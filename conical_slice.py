@@ -107,6 +107,14 @@ def main():
     ap.add_argument("--mode", choices=["xyz", "open5x"], default="xyz",
                     help="xyz=3축(작은 각도) / open5x=베드 틸트+회전 기계좌표 [실험적]")
     ap.add_argument("--machine", choices=["prusa-uv", "voron-bc"], default="prusa-uv")
+    ap.add_argument("--v-rewind", type=float, default=1.0,
+                    help="배선 감김을 (이 값+1) 회전 이내로 유지 (트래블 중 되감기). "
+                         "0 이면 끔. 진짜 한계는 기계의 배선 여유에서 온다")
+    ap.add_argument("--v-rewind-feed", type=float, default=1200.0,
+                    help="되감기 회전 속도 (deg/min). 올리면 추가 시간이 비례해 준다 "
+                         "— 축 속도 한계 확인 후")
+    ap.add_argument("--v-rewind-clearance", type=float, default=2.0,
+                    help="되감기 전 들어올릴 여유 mm (퇴적물 최고점 위로)")
     ap.add_argument("--pivot-depth", type=float, default=50.0,
                     help="베드면→틸트축 거리 mm (Open5x 스탠드오프별, 실기 보정)")
     ap.add_argument("-o", "--output", default=None)
@@ -234,13 +242,23 @@ def main():
 
     # [5] 출력 모드
     if args.mode == "open5x":
-        from conical.open5x import to_open5x, PRUSA_UV, VORON_BC
+        from conical.open5x import to_open5x, add_v_rewinds, PRUSA_UV, VORON_BC
         prof = PRUSA_UV if args.machine == "prusa-uv" else VORON_BC
         prof.pivot_depth = args.pivot_depth
         real_items, o5 = to_open5x(real_items, angle, direction, prof)
-        print(f"  Open5x      : 틸트 {prof.tilt_axis}={angle:.0f}° 고정, "
-              f"{prof.rot_axis} {o5['v_turns']:.1f}회전 누적 "
+        print(f"  Open5x      : 틸트 {prof.tilt_axis}={angle:.0f}° 고정 "
               f"(pivot {args.pivot_depth}mm) [실험적 — 부호·피벗 실기보정 필요]")
+        if args.v_rewind > 0:
+            real_items, rw = add_v_rewinds(real_items, prof,
+                                           max_turns=args.v_rewind,
+                                           clearance=args.v_rewind_clearance,
+                                           rot_feed=args.v_rewind_feed)
+            print(f"  되감기      : 트래블 중 {rw['rewinds']}회, "
+                  f"감김 ≤{args.v_rewind + 1:.1f}회전 "
+                  f"(들어올림 +{args.v_rewind_clearance}mm, "
+                  f"추가 시간 약 {rw['rewind_minutes']:.0f}분)")
+        else:
+            print("  ⚠ 되감기 꺼짐 — 배선 감김을 직접 확인할 것")
     out_path = args.output or (Path(args.stl).stem +
                                ("_open5x.gcode" if args.mode == "open5x"
                                 else "_conical.gcode"))
