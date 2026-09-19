@@ -6,7 +6,9 @@ compare_bands.py — 복잡도(밴드 수) vs 성능 곡선, 툴패스 실측판
 
   · 밴드 각도를 프로필 단위 J 로 고르고 (블렌드 비용 포함, select_banded_j)
   · 실제로 파이프라인을 돌려 G-code 를 만들고
-  · 툴패스 검사기의 **페리미터 미지지 %** 로 잰다
+  · 툴패스 검사기의 **진짜 오버행 %p** 로 잰다 (페리미터 미지지에서 '아랫층
+    단면 안'을 뺀 몫 — conical.toolpath.classify_unsupported 참고. 옛 지표는
+    위로 좁아지는 형상에서 오버행 아닌 것을 세어 순위를 바꿨다)
 
 두 축을 같이 본다 — 서포트만 보면 항상 큰 각도가 이기기 때문에, 면적가중
 평균 왜곡각 ⟨|θ|⟩ 를 나란히 기록한다.
@@ -76,14 +78,15 @@ def sweep(mesh, n_max, k=DEFAULT_K):
         r = select_banded_j(mesh, k, n, r_max, rp, MAX_SPACING_FACTOR)
         t_sel = time.time() - t0
         prof = r["profile_obj"]
-        peri, total, fill = run_pipeline(mesh, prof)
+        peri, total, fill, oh, ins, gapz = run_pipeline(mesh, prof,
+                                                        breakdown=True)
         blends = prof.blend_intervals()
         rows.append({
             "n": n, "thetas": r["thetas"], "J": r["J"],
             "uniform_J": r["uniform_J"], "blend_penalty": r["blend_penalty"],
             "n_blends": len(blends),
             "blend_mm": sum(b - a for a, b in blends),
-            "peri": peri, "total": total,
+            "peri": peri, "total": total, "overhang": oh, "inside": ins,
             "angle": mean_abs_angle(mesh, prof), "t_sel": t_sel,
         })
     return rows
@@ -137,36 +140,52 @@ def report(name, mesh, rows):
                  else "허리 없음")
     print("=" * 92)
     print(f"[{name}]  면 {len(mesh.faces):,}  높이 {mesh.bounds[1][2]:.1f}mm  {waist_txt}")
-    print(f"  {'N':>2} | {'선택 각도':<26} | {'페리미터':>8} | {'⟨|θ|⟩':>6} | "
-          f"{'J':>6} | {'블렌드':>10} | {'선택':>5}")
+    print(f"  {'N':>2} | {'선택 각도':<26} | {'오버행':>7} | {'(페리미터)':>9} | "
+          f"{'⟨|θ|⟩':>6} | {'J':>6} | {'블렌드':>10} | {'선택':>5}")
     for r in rows:
         th = ",".join(f"{t:.0f}" for t in r["thetas"])
         bl = f"{r['n_blends']}개 {r['blend_mm']:.1f}mm" if r["n_blends"] else "없음"
-        print(f"  {r['n']:>2} | [{th:<24}] | {r['peri']:7.2f}% | "
-              f"{r['angle']:5.1f}° | {r['J']:6.2f} | {bl:>10} | {r['t_sel']:4.0f}s")
+        print(f"  {r['n']:>2} | [{th:<24}] | {r['overhang']:6.2f}%p | "
+              f"{r['peri']:8.2f}% | {r['angle']:5.1f}° | {r['J']:6.2f} | "
+              f"{bl:>10} | {r['t_sel']:4.0f}s")
 
-    best = min(rows, key=lambda r: r["peri"])
+    best = min(rows, key=lambda r: r["overhang"])
     jbest = max(rows, key=lambda r: r["J"])
     uni = rows[0]
-    print(f"  → 페리미터 최소 N={best['n']} ({best['peri']:.2f}%), "
+    print(f"  → 오버행 최소 N={best['n']} ({best['overhang']:.2f}%p), "
           f"J 최대 N={jbest['n']} (J={jbest['J']:.2f})")
     # 밴드가 균일각을 이겼는가 — J 기준(선택이 실제로 쓰는 축)과 툴패스 기준 둘 다.
     print(f"  → 균일(N=1) 대비: J {uni['J']:.2f}→{jbest['J']:.2f} "
           f"({jbest['J'] - uni['J']:+.2f}), "
-          f"페리미터 {uni['peri']:.2f}%→{best['peri']:.2f}% "
-          f"({uni['peri'] / best['peri'] if best['peri'] > 0 else float('inf'):.2f}배)")
+          f"오버행 {uni['overhang']:.2f}%p→{best['overhang']:.2f}%p "
+          f"({uni['overhang'] / best['overhang'] if best['overhang'] > 0 else float('inf'):.2f}배)")
 
     print_monotonicity(rows)
 
-    return {"name": name, "prominence": prom, "rows": rows,
+    return summarize(name, prom, rows)
+
+
+def summarize(name, prominence, rows):
+    """rows 에서 요약값을 **계산**한다 (저장하지 않는다).
+
+    저장해 두면 `--replay` 로 옛 JSON 을 읽을 때 새로 추가한 항목이 없어서
+    깨진다. 실제로 한 번 깨졌다 — 파생값은 원천에서 그때그때 뽑는다.
+    """
+    uni = rows[0]
+    best = min(rows, key=lambda r: r["overhang"])
+    jbest = max(rows, key=lambda r: r["J"])
+    return {"name": name, "prominence": prominence, "rows": rows,
             "J_gain": jbest["J"] - uni["J"], "n_best": jbest["n"],
-            "peri_uniform": uni["peri"], "peri_best": best["peri"]}
+            "peri_uniform": uni["peri"], "peri_best": best["peri"],
+            "oh_uniform": uni["overhang"], "oh_best": best["overhang"],
+            "n_oh_best": best["n"], "oh_at_jbest": jbest["overhang"],
+            "ang_at_jbest": jbest["angle"], "ang_oh_best": best["angle"]}
 
 
 def plot(summaries, path="compare_bands.png"):
     # 축 범위는 모델 간 공유한다 — 값이 전부 같은 패널(구)에서 축이 확대되면
     # 평평한 선이 구조가 있는 것처럼 보인다.
-    all_peri = [r["peri"] for s in summaries for r in s["rows"]]
+    all_peri = [r["overhang"] for s in summaries for r in s["rows"]]
     all_J = [r["J"] for s in summaries for r in s["rows"]]
     ylim_p = (0, max(all_peri) * 1.30)
     ylim_J = (min(0, min(all_J)) * 1.1, max(all_J) * 1.15)
@@ -182,10 +201,10 @@ def plot(summaries, path="compare_bands.png"):
     for ax, s in zip(flat, summaries):
         rows = s["rows"]
         ns = [r["n"] for r in rows]
-        l1, = ax.plot(ns, [r["peri"] for r in rows], "o-", color="#2e7d32",
-                      label=L("unsupported perimeter (%)", "페리미터 미지지 (%)"))
+        l1, = ax.plot(ns, [r["overhang"] for r in rows], "o-", color="#2e7d32",
+                      label=L("true overhang (%p)", "진짜 오버행 (%p)"))
         for r in rows:
-            ax.annotate(f"{r['angle']:.0f}°", (r["n"], r["peri"]),
+            ax.annotate(f"{r['angle']:.0f}°", (r["n"], r["overhang"]),
                         textcoords="offset points", xytext=(0, 10),
                         ha="center", fontsize=8)
         ax2 = ax.twinx()
@@ -196,7 +215,7 @@ def plot(summaries, path="compare_bands.png"):
         ax2.set_ylabel(L("J (objective)", "J (평가함수)"), color="#4a7ebb")
         ax2.set_ylim(*ylim_J)
         ax.set_xlabel(L("number of bands N", "밴드 수 N"))
-        ax.set_ylabel(L("unsupported perimeter (%)", "페리미터 미지지 (%)"),
+        ax.set_ylabel(L("true overhang (%p)", "진짜 오버행 (%p)"),
                       color="#2e7d32")
         ax.set_xticks(ns)
         ax.set_ylim(*ylim_p)
@@ -215,45 +234,61 @@ def plot(summaries, path="compare_bands.png"):
 
 
 def plot_waist_axis(summaries, path="bands_vs_waist.png"):
-    """허리 두드러짐 ↔ 밴드의 이득. 표본이 3개 이상일 때만 의미가 있다."""
-    order = sorted(summaries, key=lambda s: (s["prominence"], s["J_gain"]))
-    x = [s["prominence"] for s in order]
-    y = [s["J_gain"] for s in order]
+    """허리 두드러짐 ↔ 밴드의 오버행 이득(배수). 표본이 3개 이상일 때만 의미가 있다.
+
+    세로축은 **진짜 오버행의 배수**(균일 N=1 ÷ 밴드2)다. J 이득을 쓰지 않는 이유:
+    `k_blend=0.1` 에서 J 이득은 허리와 거의 무관하게 1.7~2.1 로 평평해서 허리
+    이야기가 전혀 안 보인다 — J 는 왜곡 감소도 같이 세기 때문이다. 이 실험이
+    묻는 것은 '허리가 있어야 오버행을 줄일 수 있나' 이므로 축도 그것이어야 한다.
+
+    밴드2 를 쓰는 이유: N 은 사람이 주는 값이고(`--auto-bands N`) 기본으로 쓰는
+    것이 2 다. N 을 J 로 고르면 안 된다는 것은 본문 표에서 따로 경고한다.
+    """
+    pts = []
+    for s in summaries:
+        r2 = next((r for r in s["rows"] if r["n"] == 2), None)
+        if r2 is None or r2["overhang"] <= 0 or s["oh_uniform"] <= 0:
+            continue                      # 배수가 정의되지 않는 모델은 뺀다
+        pts.append((s["prominence"], s["oh_uniform"] / r2["overhang"], s["name"]))
+    if len(pts) < 3:
+        return
+    pts.sort()
+    x = [p[0] for p in pts]
+    y = [p[1] for p in pts]
+
     fig, ax = plt.subplots(figsize=(8.0, 4.8))
-    ax.plot(x, y, "o-", color="#4a7ebb",
-            label=L("J gain over uniform cone", "균일 원뿔 대비 J 이득"))
-    ax.axhline(0, color="#999", lw=.8, ls=":")
+    ax.plot(x, y, "o-", color="#2e7d32",
+            label=L("overhang reduction, uniform ÷ 2-band",
+                    "오버행 감소 배수 (균일 ÷ 밴드2)"))
+    ax.axhline(1.0, color="#999", lw=.9, ls=":")
+    ax.annotate(L("1.0 = no gain", "1.0 = 이득 없음"), (max(x) * .97, 1.0),
+                textcoords="offset points", xytext=(0, 6), ha="right",
+                fontsize=8, color="#666")
 
-    # 두드러짐 0.5 아래 구간은 '경향'이라고 부르지 않는다 — 이득이 J 지형의 평평한
-    # 구간(0.005 차이로 해를 가른다)과 자릿수가 같고 부호도 뒤섞인다.
-    shallow = max([s["J_gain"] for s in order if s["prominence"] < 0.5] or [0])
-    ax.axvspan(-0.03, 0.5, color="#bbb", alpha=.18, lw=0)
-    ax.annotate(L(f"shallow: gain ≤ {shallow:.2f} — not a trend",
-                  f"얕은 구간: 이득 ≤ {shallow:.2f} — 경향이라 부르지 않음"),
-                (0.235, max(y) * .92), ha="center", fontsize=8, color="#666")
+    # 문턱: 이득이 처음 1.5 배를 넘는 지점 앞뒤로 구간을 나눈다 (측정에서 나온 값).
+    below = [p for p in pts if p[1] < 1.5]
+    above = [p for p in pts if p[1] >= 1.5]
+    if below and above:
+        edge = (max(p[0] for p in below) + min(p[0] for p in above)) / 2
+        ax.axvspan(min(x) - .05, edge, color="#bbb", alpha=.18, lw=0)
+        ax.annotate(L(f"waist < {edge:.2f}: no gain",
+                      f"허리 < {edge:.2f}: 이득 없음"),
+                    ((min(x) - .05 + edge) / 2, max(y) * .93), ha="center",
+                    fontsize=8.5, color="#666")
 
-    # 허리가 없는 모델은 전부 x=0 에 겹친다 — 그 묶음만 라벨을 부채꼴로 편다.
-    groups = {}
-    for s in order:
-        groups.setdefault(round(s["prominence"], 3), []).append(s)
-    for members in groups.values():
-        n = len(members)
-        for i, s in enumerate(members):
-            dx = 0 if n == 1 else (i - (n - 1) / 2) * 86
-            dy = 14 + (i % 2) * 26 if n > 1 else 12
-            ax.annotate(f"{s['name']}\nN*={s['n_best']}",
-                        (s["prominence"], s["J_gain"]),
-                        textcoords="offset points", xytext=(dx, dy),
-                        ha="center", fontsize=7.5,
-                        arrowprops=dict(arrowstyle="-", lw=.5, color="#aaa",
-                                        shrinkA=0, shrinkB=2))
-    ax.set_xlim(-0.05, 0.95)
+    for i, (px, py, name) in enumerate(pts):
+        ax.annotate(name, (px, py), textcoords="offset points",
+                    xytext=(0, 12 if i % 2 == 0 else -20), ha="center",
+                    fontsize=7.5,
+                    arrowprops=dict(arrowstyle="-", lw=.5, color="#aaa",
+                                    shrinkA=0, shrinkB=2))
+    ax.set_xlim(min(x) - .06, max(x) + .06)
+    ax.set_ylim(0, max(y) * 1.25)
     ax.set_xlabel(L("waist prominence  1 − r(z*)/min(max below, max above)",
                     "허리 두드러짐  1 − r(z*)/min(아래 최대, 위 최대)"))
-    ax.set_ylabel(L("J gain over uniform cone", "균일 원뿔 대비 J 이득"))
-    ax.set_title(L("the deeper the waist, the more bands gain over a uniform cone",
-                   "허리가 깊을수록 밴드가 균일 원뿔보다 얻는 것이 커진다"),
-                 fontsize=11)
+    ax.set_ylabel(L("overhang reduction (×)", "오버행 감소 배수 (×)"))
+    ax.set_title(L("bands cut overhang only where the model has a waist",
+                   "밴드가 오버행을 줄이는 것은 허리가 있을 때뿐"), fontsize=11)
     ax.legend(fontsize=9, loc="upper left")
     fig.tight_layout()
     fig.savefig(path, dpi=130)
@@ -279,7 +314,9 @@ def main():
 
     if args.replay:
         with open(args.replay, encoding="utf-8") as f:
-            summaries = json.load(f)
+            saved = json.load(f)
+        summaries = [summarize(d["name"], d["prominence"], d["rows"])
+                     for d in saved]
         print(f"측정 없이 {args.replay} 로 다시 그린다 (모델 {len(summaries)}개)")
     else:
         specs = list(args.models)
@@ -304,13 +341,33 @@ def main():
         plot_waist_axis(summaries, f"{os.path.dirname(root) or '.'}/bands_vs_waist{ext}")
 
     print("\n" + "=" * 92)
-    print(f"  {'모델':<18} | {'허리':>5} | {'N*':>3} | {'균일 J':>7} | {'최선 J':>7} "
-          f"| {'J 이득':>7} | {'페리미터 균일→최선':>20}")
+    # 세 값을 나란히 둔다 — J 가 고르는 것과 달성 가능한 최소가 갈리기 때문.
+    # 알고리즘이 실제로 내놓는 것은 'J 최대' 쪽이다. 최소만 보고하면 과장이 된다.
+    print(f"  {'모델':<22} | {'허리':>5} | {'균일 N=1':>15} | "
+          f"{'밴드2 (실제 기본)':>16} | {'오버행 최소':>19}")
     for s in summaries:
-        uni, best = s["rows"][0], max(s["rows"], key=lambda r: r["J"])
-        print(f"  {s['name']:<18} | {s['prominence']:5.2f} | {s['n_best']:>3} | "
-              f"{uni['J']:7.2f} | {best['J']:7.2f} | {s['J_gain']:+7.2f} | "
-              f"{s['peri_uniform']:8.2f}% → {s['peri_best']:.2f}%")
+        r2 = next((r for r in s["rows"] if r["n"] == 2), s["rows"][0])
+        # 기준선이 0 이면 배수가 정의되지 않는다 (원뿔이 이길 여지가 없는 모델).
+        gain = (f"×{s['oh_uniform'] / r2['overhang']:4.1f}"
+                if r2["overhang"] > 0 and s["oh_uniform"] > 0 else "    —")
+        print(f"  {s['name']:<22} | {s['prominence']:5.2f} | "
+              f"{s['oh_uniform']:6.2f}%p {s['rows'][0]['angle']:5.1f}° | "
+              f"{r2['overhang']:6.2f}%p {r2['angle']:5.1f}° {gain} | "
+              f"N={s['n_oh_best']} {s['oh_best']:6.2f}%p {s['ang_oh_best']:5.1f}°")
+
+    # N 을 J 로 고르면 안 된다는 것이 이 표에서 나온다 — J 는 N 에 대해 비감소라
+    # (경계가 겹치는 짝에서) 항상 큰 N 으로 가는데, 진짜 오버행은 거기서 나빠진다.
+    diverge = [s for s in summaries if s["oh_at_jbest"] > s["oh_best"] + 0.05]
+    if diverge:
+        print(f"\n  ⚠ **밴드 수 N 을 J 로 고르면 안 된다.** J 최대 N 의 오버행이 "
+              f"달성 가능한 최소보다 나쁜 모델 {len(diverge)}/{len(summaries)}:")
+        for s in diverge:
+            print(f"      {s['name']:<22} J 최대 N={s['n_best']} → "
+                  f"{s['oh_at_jbest']:.2f}%p  (최소는 N={s['n_oh_best']} "
+                  f"{s['oh_best']:.2f}%p)")
+        print("    J 는 각도 비용 k 때문에 왜곡이 적은 쪽(밴드가 많고 각도가 낮은 쪽)을"
+              " 선호한다.\n    N 은 지금처럼 사람이 준다(--auto-bands N). 자동화하려면 "
+              "N 에 대한 비용이 따로 필요하다.")
     print("⚠ 시뮬레이션 경향이며 실물 출력 검증 전 — '증명'이 아니다.")
     return 0
 

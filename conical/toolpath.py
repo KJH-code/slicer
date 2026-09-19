@@ -48,6 +48,8 @@ def _type_of(comment):
 # `; layers=50 ...` 같은 헤더에 걸리지 않게 숫자 앞에 구분자를 요구한다.
 _LAYER_NUM = re.compile(r"^;\s*layer\s*[:#]?\s+(\d+)|^;\s*LAYER\s*[:#]\s*(\d+)", re.I)
 _LAYER_CHANGE = re.compile(r"^;\s*LAYER_CHANGE\b", re.I)
+# `G92 E0` — E 원점 이동. 프라임 선 뒤나 층마다 나온다.
+_G92_E = re.compile(r"^G92\b[^;]*?\bE(-?\d+(?:\.\d+)?)", re.I)
 
 
 def _layer_of(comment, current):
@@ -91,6 +93,14 @@ def sample_extrusions(items, width=0.45, return_types=False, return_layers=False
                     cur_type = _type_of(c)
                 elif c.startswith(";"):
                     cur_layer = _layer_of(c, cur_layer)
+                else:
+                    # G92 로 E 원점을 옮기면 '압출인가'의 기준도 같이 옮겨야 한다.
+                    # 안 그러면 리셋 직후 한 구간이 '압출 아님'으로 빠진다
+                    # (프라임 선 뒤 G92 E0 이 대표적). gcode.parse 는 G0/G1 만
+                    # move 로 보므로 G92 는 여기 raw 로 온다.
+                    mo = _G92_E.match(c)
+                    if mo:
+                        e_prev = float(mo.group(1))
             continue
         nx = p.x if p.x is not None else x
         ny = p.y if p.y is not None else y
@@ -216,56 +226,112 @@ def layer_cross_sections(pts, move_id, kinds, layer, width=0.45):
     return out
 
 
+OVERHANG, INSIDE = 0, 1
+UNSUPPORTED_KINDS = {OVERHANG: "진짜 오버행", INSIDE: "아랫층 단면 안"}
+
+
 def classify_unsupported(pts, move_id, kinds, layer, supported, width=0.45):
-    """미지지 페리미터를 '진짜 돌출' / '희소 인필 위'로 가른다.
+    """미지지 페리미터를 '진짜 오버행' / '아랫층 단면 안'으로 가른다.
+    반환: label (N,), 해당 없으면 −1.
 
-    왜 필요한가: 검사기 A 는 수평 ≤ 압출폭(0.45mm) 안에 아랫점이 있어야 지지로
-    친다. 그런데 **위로 좁아지는** 형상은 층마다 페리미터가 안쪽으로 들어가
-    아랫층 페리미터를 벗어나고, 그 자리 아래에는 희소 인필(간격 2.5mm)밖에
-    없다. 그러면 '미지지'로 찍히지만 물리적으로는 아랫층 단면 **안**이라
-    몇 mm 건너뛰는 평범한 브리징이다 — 오버행이 아니다.
+    검사기 A 는 수평 ≤ 압출폭(0.45mm) 안에 먼저 퇴적된 아랫점이 있어야 지지로
+    친다. 그 창이 **아랫층 단면 안인데도 창 밖**인 경우를 전부 미지지로 세는데,
+    그건 오버행이 아니다 — 위로 좁아지는 형상은 층마다 페리미터가 안쪽으로
+    들어가 희소 인필(간격 2.5mm) 위에 놓인다.
 
-    실측(2026-09-19): `slicing-comparison-model.stl` 의 페리미터 미지지 11.53%가
-    **전부** 이 경우였다(진짜 돌출 0.00%p). 메시 예측은 "오버행 없음"이라 했고
-    그쪽이 옳았다. 구(평면 0°)에서도 7.51% 중 2.62%p(35%)가 이 경우다.
-    허상 비율이 모델마다 0~100% 로 달라지므로, 가르지 않은 '페리미터 미지지 %'는
-    **모델 간 비교에 그대로 쓰면 안 된다.**
+    가장 깨끗한 시연: 위로 좁아지는 **순수 원뿔**(아래를 보는 면이 바닥뿐이라
+    오버행이 정의상 0)이 좁아지는 속도에 따라 미지지 31~63% 로 보고된다.
 
-    판정: 점이 **바로 아래 층**의 단면 폴리곤 안에 있으면 '희소 인필 위'(허상),
-    밖이면 '진짜 돌출'. 아래 층 단면을 모르면(층 미상·첫 층) 진짜 돌출로 둔다 —
-    모르는 것을 유리하게 세지 않는다.
+    ⚠ **이 분류는 '단면 안'을 무죄라고 말하지 않는다.** 단면 안에도 성질이 다른
+      둘이 섞여 있다 — ⓐ 아래 재료가 바로 밑에 있는 평범한 브리징(정상)과
+      ⓑ 층간격이 벌어져 수직으로 떠 있는 것(결함). 둘을 수평·수직 창으로
+      가르려 해봤으나 창 하나로는 갈라지지 않았다(2.5mm 로 두면 ⓑ가 전부
+      ⓐ로, 0.45mm 로 두면 ⓐ가 전부 ⓑ로 간다). **층간격 팽창은 이 분류기가
+      아니라 전용 해석식 검사(`AngleProfile.check_spacing`, 배율 m = 1−c·r·s)가
+      맡는다** — 그쪽이 원인을 직접 보기 때문이다.
+      대신 `support_breakdown` 이 '단면 안' 점들의 **수직 간격 통계**를 같이
+      돌려주므로, 그 값이 층고보다 크면 브리징이 아니라 팽창을 의심하면 된다.
+      (실측: 구 밴드2 배율 1.50 프로필에서 수직 간격 중앙값 1.20mm, 층고 0.40)
 
-    반환: over_section (bool 배열). True = 아랫층 단면 안 = 허상.
+    단면은 `layer_cross_sections` 가 페리미터 압출선만으로 복원한다(메시 불필요).
+    층을 모르면(첫 층·주석 없음) 판정할 수 없으므로 오버행으로 둔다 — 모르는
+    것을 유리하게 세지 않는다.
     """
-    over = np.zeros(len(pts), dtype=bool)
-    target = (kinds == 0) & ~supported & (layer > 0)
+    n = len(pts)
+    label = np.full(n, -1, dtype=int)
+    target = (kinds == 0) & ~supported
     if not target.any():
-        return over
+        return label
+    idx = np.where(target)[0]
+    label[idx] = OVERHANG
     sections = layer_cross_sections(pts, move_id, kinds, layer, width)
-    for i in np.where(target)[0]:
+    for i in idx:
         below = sections.get(int(layer[i]) - 1)
         if below is not None and below.contains(Point(pts[i, 0], pts[i, 1])):
-            over[i] = True
-    return over
+            label[i] = INSIDE
+    return label
+
+
+def vertical_gaps(pts, mask, width=0.45, max_depth=4.0):
+    """`mask` 점들에 대해 **먼저 퇴적된** 아래 재료까지의 수직 거리 (수평 ≤ width).
+
+    ⚠ 이 값은 층간격 팽창의 지표가 **아니다.** 희소 인필 격자에 지배된다 —
+      인필은 층마다 0/90° 로 방향이 바뀌고 간격이 2.5mm 라, 좁은 수평 창 안에서
+      바로 아랫층에 선이 없는 일이 흔하고 몇 층 내려가야 만난다. 실제로
+      **팽창이 정의상 없는 평면 0° 슬라이싱에서도 중앙값 1.20mm** 가 나온다
+      (층고 0.40). 그래서 절대값이 아니라 **평면 0° 대조군과의 차이**로만 읽어야
+      하고, 그조차 신뢰도가 낮다(램프 배율 5.8배에서는 2.14mm 로 뜨는데 구
+      배율 15.5배에서는 1.20mm 로 안 뜬다).
+
+    층간격 팽창의 판정은 전용 해석식 검사(`AngleProfile.check_spacing`,
+    배율 m = 1 − c·r·s)가 맡는다. 이 함수는 참고 수치일 뿐이다.
+    창 안에 아무것도 없으면 nan.
+    """
+    out = np.full(int(mask.sum()), np.nan)
+    if not mask.any():
+        return out
+    idx = np.where(mask)[0]
+    tree = cKDTree(pts[:, :2])
+    neigh = tree.query_ball_point(pts[idx][:, :2], r=width)
+    for k, i in enumerate(idx):
+        nb = np.asarray(neigh[k], dtype=int)
+        nb = nb[nb < i]                       # G-code 순서: 먼저 퇴적된 것만
+        if len(nb) == 0:
+            continue
+        dz = pts[i, 2] - pts[nb, 2]
+        dz = dz[(dz > 1e-9) & (dz <= max_depth)]
+        if len(dz):
+            out[k] = dz.min()
+    return out
 
 
 def support_breakdown(pts, move_id, kinds, layer, supported, weight,
                       width=0.45):
-    """페리미터 미지지를 갈라 % 로 돌려준다.
+    """페리미터 미지지를 갈라 % 로 돌려준다 + '단면 안' 수직 간격 진단.
 
-    반환: dict(perimeter_unsupported_pct, overhang_pct, infill_gap_pct)
-      overhang_pct + infill_gap_pct == perimeter_unsupported_pct
+    반환: dict(perimeter_unsupported_pct, overhang_pct, inside_pct,
+               inside_gap_median, inside_gap_p90)
+      overhang_pct + inside_pct == perimeter_unsupported_pct
+    **서포트 판단은 `overhang_pct` 로 한다.** `inside_pct` 는 오버행이 아니지만
+    무죄도 아니다 — 수직 간격이 층고 수준이면 브리징(정상), 크게 넘으면
+    층간격 팽창(결함)을 의심하고 `check_spacing` 으로 확인한다.
     """
     peri = kinds == 0
     tot = weight[peri].sum()
+    keys = ("perimeter_unsupported_pct", "overhang_pct", "inside_pct",
+            "inside_gap_median", "inside_gap_p90")
     if tot <= 0:
-        return {"perimeter_unsupported_pct": float("nan"),
-                "overhang_pct": float("nan"), "infill_gap_pct": float("nan")}
-    over = classify_unsupported(pts, move_id, kinds, layer, supported, width)
+        return dict.fromkeys(keys, float("nan"))
+    lab = classify_unsupported(pts, move_id, kinds, layer, supported, width)
     bad = peri & ~supported
+    ins = lab == INSIDE
+    gaps = vertical_gaps(pts, ins, width)
+    fin = gaps[~np.isnan(gaps)]
     return {"perimeter_unsupported_pct": float(weight[bad].sum() / tot * 100.0),
-            "overhang_pct": float(weight[bad & ~over].sum() / tot * 100.0),
-            "infill_gap_pct": float(weight[bad & over].sum() / tot * 100.0)}
+            "overhang_pct": float(weight[lab == OVERHANG].sum() / tot * 100.0),
+            "inside_pct": float(weight[ins].sum() / tot * 100.0),
+            "inside_gap_median": float(np.median(fin)) if len(fin) else float("nan"),
+            "inside_gap_p90": float(np.percentile(fin, 90)) if len(fin) else float("nan")}
 
 
 # ─────────────────────────────────────────────────────────────

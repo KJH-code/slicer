@@ -40,6 +40,7 @@ from conical import gcode as gc
 from conical.selector import select_cone
 from conical.profile import AngleProfile
 from conical.varangle import select_banded, select_banded_j
+from conical.machine import MachineProfile
 from conical.config import (THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP, DEFAULT_K,
                             MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, BLEND_COST_K)
 
@@ -109,6 +110,9 @@ def main():
     ap.add_argument("--pivot-depth", type=float, default=50.0,
                     help="베드면→틸트축 거리 mm (Open5x 스탠드오프별, 실기 보정)")
     ap.add_argument("-o", "--output", default=None)
+    ap.add_argument("--machine-profile", default=None,
+                    help="기계 프로파일 INI (시작/종료 G-code). 없으면 경로만 "
+                         "나오고 실물로는 못 뽑는다 — profiles/machine.example.ini 참고")
     args = ap.parse_args()
 
     mesh = trimesh.load(args.stl, force="mesh")
@@ -262,8 +266,24 @@ def main():
         "chord_tol": args.chord_tol, "source_stl": str(args.stl),
         "mode": args.mode}, separators=(",", ":"))
     meta = [("raw", f";CONICAL_META {meta_json}"), ("raw", legacy)]
-    gc.write(meta + real_items, out_path)
+
+    # 기계 프로파일(예열·호밍·프라임·냉각)은 경로 생성과 분리해 파일로 받는다.
+    # 없으면 경로만 나오므로 실물로는 못 뽑는다 — 그 사실을 조용히 넘기지 않는다.
+    head, tail = [], []
+    if args.machine_profile:
+        mp = MachineProfile.from_file(args.machine_profile)
+        ctx = {"layer_height": args.layer_height, "angle": f"{angle:.1f}",
+               "direction": direction, "mode": args.mode,
+               "source_stl": Path(args.stl).name}
+        head, tail = mp.start_items(ctx), mp.end_items(ctx)
+        print(f"  기계        : {mp.name}  ({args.machine_profile})")
+    gc.write(meta + head + real_items + tail, out_path)
     print(f"  출력        : {out_path}")
+    if not args.machine_profile:
+        print("  ⚠ 기계 프로파일이 없다 — 예열·호밍·프라임·냉각이 빠져 있어 "
+              "이 파일로는 실물을 못 뽑는다.")
+        print("    --machine-profile profiles/machine.example.ini "
+              "(템플릿: 값은 실기 확인 전)")
     print(f"  검증        : python3 toolpath_check.py {out_path}")
     if args.mode == "xyz":
         print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "

@@ -86,13 +86,18 @@ def test_non_nested_step_may_lose():
     r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
     ms = BLEND_SHIFT_RATIO * float(mesh.bounds[1][2] - mesh.bounds[0][2])
 
-    j3 = _J(mesh, rp, r_max, ms, 3, [18, 18, 16])
-    # N=4 에서 '한 번만 꺾는' 해를 전수 조사 — 좌표하강과 무관하게 격자의 한계를 본다.
-    best = max(_J(mesh, rp, r_max, ms, 4, [a] * cut + [b] * (4 - cut))
-               for cut in (1, 2, 3)
-               for a in range(0, 41, 4) for b in range(0, 41, 4))
-    assert best < j3 - 1e-6, \
-        f"N=4 최선 {best:.4f} 이 N=3 {j3:.4f} 에 도달하면 안 된다 (경계 비정합)"
+    # 두 격자에서 '한 번만 꺾는' 해를 각각 전수 조사한다. 특정 해를 박아두면
+    # k_blend 같은 기본값이 바뀔 때 증인이 낡아 테스트가 깨진다 — 성질은
+    # 그대로인데도. 그래서 최적해를 그때그때 구해서 비교한다.
+    def best_single_bend(n):
+        return max(_J(mesh, rp, r_max, ms, n, [a] * cut + [b] * (n - cut))
+                   for cut in range(1, n)
+                   for a in range(0, 41, 4) for b in range(0, 41, 4))
+
+    j3, j4 = best_single_bend(3), best_single_bend(4)
+    assert j4 < j3 - 1e-6, \
+        (f"N=4 최선 {j4:.4f} 이 N=3 {j3:.4f} 에 도달하면 안 된다 — "
+         "N=4 는 66.7% 에 전이를 놓을 수 없다 (경계 비정합)")
 
 
 if __name__ == "__main__":

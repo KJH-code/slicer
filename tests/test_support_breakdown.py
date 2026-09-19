@@ -6,14 +6,17 @@
 희소 인필(간격 2.5mm)밖에 없다 — 물리적으로는 아랫층 단면 안이라 평범한 브리징인데
 검사기는 미지지로 센다.
 
-그 허상 비율이 모델·전략마다 0~67% 로 달라져서 **순위를 뒤집었다**(램프에서
-균일 24° 가 밴드4 에 지는 것처럼 보였다). 갈라내는 이 기능이 조용히 망가지면
-같은 착오가 되돌아온다.
+그 몫이 모델·전략마다 0~100% 로 달라져서 **순위를 뒤집었다.** 갈라내는 이 기능이
+조용히 망가지면 같은 착오가 되돌아온다.
+
+⚠ '아랫층 단면 안'은 오버행이 아니라는 뜻이지 무죄라는 뜻이 아니다. 그 안에서
+브리징(정상)과 층간격 팽창(결함)을 더 가르는 것은 아직 못 했다 —
+`conical.toolpath.classify_unsupported` 의 ⚠ 참고.
 
 지키는 성질:
   ① 진짜 오버행은 **인필 간격과 무관**하다 (기하량이므로)
   ② 페리미터 미지지는 인필을 촘촘히 할수록 진짜 오버행으로 수렴한다
-  ③ 두 몫의 합은 페리미터 미지지와 같다
+  ③ 두 몫(오버행 + 아랫층 단면 안)의 합은 페리미터 미지지와 같다
   ④ 위로만 좁아지는 형상(원뿔)은 진짜 오버행이 0 이다
 
     python3 tests/test_support_breakdown.py
@@ -61,7 +64,7 @@ def _cone_narrowing_up():
 
 def test_parts_sum_to_total():
     b = measure(_cone_narrowing_up())
-    assert abs(b["overhang_pct"] + b["infill_gap_pct"]
+    assert abs(b["overhang_pct"] + b["inside_pct"]
                - b["perimeter_unsupported_pct"]) < 1e-9
 
 
@@ -76,8 +79,8 @@ def test_dense_infill_converges_to_true_overhang():
     """희소 인필이 원인이라면, 촘촘해질수록 허상 몫이 줄어야 한다."""
     mesh = _cone_narrowing_up()
     sparse, dense = measure(mesh, 2.5), measure(mesh, 0.6)
-    assert dense["infill_gap_pct"] < sparse["infill_gap_pct"], \
-        f"촘촘한 인필에서 허상이 안 줄었다: {sparse} → {dense}"
+    assert dense["inside_pct"] < sparse["inside_pct"], \
+        f"촘촘한 인필에서 '단면 안' 몫이 안 줄었다: {sparse} → {dense}"
     assert dense["perimeter_unsupported_pct"] < \
         sparse["perimeter_unsupported_pct"] + 1e-9
 
@@ -100,7 +103,7 @@ def test_sphere_has_both_parts():
     b = measure(center_on_axis(trimesh.creation.icosphere(subdivisions=3,
                                                           radius=10.0)))
     assert b["overhang_pct"] > 1.0, f"진짜 오버행이 너무 작다: {b}"
-    assert b["infill_gap_pct"] > 0.1, f"허상 몫이 너무 작다: {b}"
+    assert b["inside_pct"] > 0.1, f"'단면 안' 몫이 너무 작다: {b}"
 
 
 if __name__ == "__main__":

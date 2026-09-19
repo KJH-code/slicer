@@ -79,8 +79,8 @@ def main():
             b = support_breakdown(pts, mid, kinds, lay, sup, w, width=args.width)
             print(f"    │  ├ 진짜 오버행   : {b['overhang_pct']:.2f} %p"
                   f"   ← **서포트 판단은 이 값으로**")
-            print(f"    │  └ 희소 인필 위 : {b['infill_gap_pct']:.2f} %p"
-                  f"   (아랫층 단면 안 — 브리징, 오버행 아님)")
+            print(f"    │  └ 아랫층 단면 안: {b['inside_pct']:.2f} %p"
+                  f"   (오버행 아님 — 브리징 또는 층간격 팽창)")
         else:
             print("    │  (층 주석이 없어 오버행/브리징을 가르지 못했다 — "
                   "`; layer N` 또는 `;LAYER:N` 필요)")
