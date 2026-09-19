@@ -350,14 +350,47 @@ class HotendProfile:
 
 
 def check_nozzle(pts, move_id, hotend=None, batch_samples=2000,
-                 clearance=0.3):
-    """노즐 간섭 검사 (3축, 노즐 수직). 반환: collision(bool), 통계 dict.
+                 clearance=0.3, tool_up=None, arm_length=None,
+                 arm_radius=None, stride=1):
+    """노즐 간섭 검사. 반환: collision(bool), 통계 dict.
 
     이전 배치=트리, 같은 배치 안 앞선 점=브루트포스 (check_support 와 동일 구조).
     clearance: 간섭으로 세지 않는 팁 위 여유(기본 층고 1배). 방금 찍은 자기
     비드는 정의상 노즐에 닿아 있으므로 — 원뿔 경로는 진행 방향으로 미세하게
     내려가 직전 샘플이 µm 단위로 '위'가 되는데, 이걸 간섭으로 오검출하는 버그를
     스윕 실측(4°에서 51% 오검출)으로 잡아 추가한 하한이다.
+
+    ## `tool_up`: 3축이 5축의 특수 경우가 된다
+
+    핫엔드 기하(팁에서 원뿔 → 히트블록)는 **공구 축 기준**으로 정의된다. 3축은
+    그 축이 항상 +Z 라서 `dz = q.z − p.z`, `horiz = XY 거리` 로 끝났다. 헤드가
+    기우는 5축(REP5X)에서는 축이 점마다 다르므로 같은 판정을 **공구 프레임**에서
+    한다:
+
+        u  = 팁에서 공구 축을 따라 '위' 방향 단위벡터 (= −공구 방향)
+        dz = (q − p)·u                  ← 공구 축 성분
+        horiz = ‖(q − p) − dz·u‖         ← 공구 축에 수직인 성분
+
+    `tool_up=None` 이면 전부 (0,0,1) 이고 **위 3축 식과 정확히 같아진다**
+    (`tests/test_head_interference.py` 가 두 경로의 결과가 비트 단위로 같은지
+    강제한다). 그래서 5축 판정과 3축 판정을 **같은 기하로** 비교할 수 있다.
+
+    ## `arm_length` / `arm_radius`: B_arm
+
+    REP5X 는 팁에서 공구 축을 따라 `LB`(=54.67mm) 위에 틸트축이 있고 그 사이가
+    B_arm 이다. 히트블록보다 훨씬 멀지만, 깊은 구멍이나 높은 벽 안쪽을 찍을 때는
+    이쪽이 먼저 닿는다. 원기둥 하나로 근사해 히트블록 위에 이어 붙인다.
+
+    ⚠ **`arm_radius` 는 확인된 값이 아니다.** 저장소에 치수가 없다(3MF 파일만
+      있다). 주지 않으면 이 항목을 **끄고**, 주면 '가정'으로 표시해 보고한다.
+
+    ## `stride`: 팁만 솎는다 (장애물은 전부 유지)
+
+    비용이 O(N²) 이라 실제 출력(6만 점)에서는 분 단위로 간다. `stride=k` 면
+    **k 번째 점만 노즐 위치로 평가**하고, 이미 놓인 점은 **하나도 빼지 않는다.**
+    즉 '자세의 표본'을 줄이는 것이지 '부딪힐 대상'을 줄이는 게 아니다 —
+    후자를 줄이면 간섭을 놓친다. 통계의 `evaluated` 가 실제로 본 팁 수다.
+    ⚠ 솎으면 **드문 간섭을 못 볼 수 있다.** 최종 판정은 `stride=1` 로 할 것.
     """
     h = hotend or HotendProfile()
     n = len(pts)
@@ -366,38 +399,78 @@ def check_nozzle(pts, move_id, hotend=None, batch_samples=2000,
         return collision, {"collision_pct": 0.0, "first_collision_z": None}
     tan_half = math.tan(math.radians(h.cone_half_deg))
     dz_max = h.block_z0 + h.block_height
+    use_arm = arm_length is not None and arm_radius is not None \
+        and arm_length > dz_max
     r_h_max = max(h.block_radius, h.tip_radius + h.cone_height * tan_half)
-    radius = math.sqrt(r_h_max ** 2 + dz_max ** 2)
+    if use_arm:
+        r_h_max = max(r_h_max, arm_radius)
+        dz_far = arm_length
+    else:
+        dz_far = dz_max
+    radius = math.sqrt(r_h_max ** 2 + dz_far ** 2)
 
     def hit(dz, horiz):
         cone = (dz > clearance) & (dz <= h.cone_height) & \
                (horiz < h.tip_radius + dz * tan_half)
         block = (dz > max(h.block_z0, clearance)) & (dz <= dz_max) & \
                 (horiz < h.block_radius)
-        return cone | block
+        out = cone | block
+        if use_arm:
+            out = out | ((dz > dz_max) & (dz <= arm_length) &
+                         (horiz < arm_radius))
+        return out
+
+    if tool_up is None:
+        up = None
+    else:
+        up = np.asarray(tool_up, dtype=float)
+        up = up / np.linalg.norm(up, axis=1, keepdims=True)
 
     tree = None
     for s0 in range(0, n, batch_samples):
         idx = np.arange(s0, min(s0 + batch_samples, n))
-        if tree is not None:
-            neigh = tree.query_ball_point(pts[idx], r=radius)
-            for k, nb in zip(idx, neigh):
+        qidx = idx[(idx - s0) % stride == 0] if stride > 1 else idx
+        if tree is not None and len(qidx):
+            neigh = tree.query_ball_point(pts[qidx], r=radius)
+            for k, nb in zip(qidx, neigh):
                 if not nb:
                     continue
                 q = pts[np.array(nb)]
-                dz = q[:, 2] - pts[k, 2]              # 팁보다 '위'의 기퇴적물
-                horiz = np.hypot(pts[k, 0] - q[:, 0], pts[k, 1] - q[:, 1])
+                if up is None:
+                    dz = q[:, 2] - pts[k, 2]          # 팁보다 '위'의 기퇴적물
+                    horiz = np.hypot(pts[k, 0] - q[:, 0], pts[k, 1] - q[:, 1])
+                else:
+                    diff = q - pts[k]
+                    dz = diff @ up[k]
+                    horiz = np.sqrt(np.maximum(
+                        np.einsum("ij,ij->i", diff, diff) - dz * dz, 0.0))
                 if np.any(hit(dz, horiz)):
                     collision[k] = True
         b = pts[idx]
-        dzm = b[:, 2][None, :] - b[:, 2][:, None]      # q_j.z − tip_i.z
-        horizm = np.hypot(b[:, 0][:, None] - b[:, 0][None, :],
-                          b[:, 1][:, None] - b[:, 1][None, :])
+        if up is None:
+            dzm = b[:, 2][None, :] - b[:, 2][:, None]   # q_j.z − tip_i.z
+            horizm = np.hypot(b[:, 0][:, None] - b[:, 0][None, :],
+                              b[:, 1][:, None] - b[:, 1][None, :])
+        else:
+            ub = up[idx]
+            # dz[i,j] = (b_j − b_i)·u_i = (b @ u_iᵀ)[j,i] − (b_i·u_i)
+            dzm = (b @ ub.T).T - np.einsum("ij,ij->i", b, ub)[:, None]
+            d2 = (np.einsum("ij,ij->i", b, b)[:, None]
+                  + np.einsum("ij,ij->i", b, b)[None, :] - 2.0 * (b @ b.T))
+            horizm = np.sqrt(np.maximum(d2 - dzm * dzm, 0.0))
         earlier = np.tril(np.ones((len(b), len(b)), dtype=bool), k=-1)
-        collision[idx] |= (earlier & hit(dzm, horizm)).any(axis=1)
+        rows = (idx - s0) if stride == 1 else (qidx - s0)
+        collision[s0 + rows] |= (earlier & hit(dzm, horizm))[rows].any(axis=1)
         tree = cKDTree(pts[:idx[-1] + 1])
 
-    stats = {"collision_pct": float(collision.mean() * 100.0),
+    evaluated = np.zeros(n, dtype=bool)
+    for s0 in range(0, n, batch_samples):
+        idx = np.arange(s0, min(s0 + batch_samples, n))
+        evaluated[idx[(idx - s0) % stride == 0] if stride > 1 else idx] = True
+    stats = {"collision_pct": float(collision[evaluated].mean() * 100.0)
+             if evaluated.any() else 0.0,
              "first_collision_z": (float(pts[collision, 2].min())
-                                   if collision.any() else None)}
+                                   if collision.any() else None),
+             "arm_modeled": bool(use_arm),
+             "evaluated": int(evaluated.sum()), "samples": int(n)}
     return collision, stats

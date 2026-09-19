@@ -72,6 +72,9 @@ G-code 는 C 가 방위각을 따라 **계속 누적**되므로(funnel 20° 에�
 import math
 from dataclasses import dataclass
 
+import numpy as np
+from scipy.spatial import cKDTree
+
 from .gcode import Move
 
 
@@ -476,3 +479,199 @@ def add_c_rewinds(items, profile=REP5X, clearance=2.0, rot_feed=3600.0,
                  "unfixable_segments": unfixable, "fixable": unfixable == 0,
                  "start_offset": start_offset,
                  "window_turns": (hi_lim - lo_lim) / 360.0}
+
+
+# ─────────────────────────────────────────────────────────────
+# 헤드 회전식 노즐 간섭 — 베드 틸트식의 '정의상 불가능' 이 여기서는 성립 안 한다
+# ─────────────────────────────────────────────────────────────
+def move_tool_frames(items, profile=REP5X):
+    """이동별 (B, C) → 공구 축 '위' 방향 단위벡터 배열.
+
+    `sample_extrusions` 의 `move_id` 가 **이동 인덱스**이므로, 여기서 만든 배열을
+    `up[move_id]` 로 색인하면 샘플점마다의 공구 자세가 된다.
+
+    모달이다: B/C 가 안 적힌 이동은 직전 값을 잇는다.
+    """
+    b = c = 0.0
+    ups = []
+    for kind, p in items:
+        if kind != "move":
+            continue
+        for tok in (p.extra or "").split():
+            t = tok.upper()
+            if t.startswith(profile.tilt_axis.upper()):
+                try:
+                    b = float(tok[len(profile.tilt_axis):])
+                except ValueError:
+                    pass
+            elif t.startswith(profile.rot_axis.upper()):
+                try:
+                    c = float(tok[len(profile.rot_axis):])
+                except ValueError:
+                    pass
+        d = tool_direction(b, c)
+        ups.append((-d[0], -d[1], -d[2]))       # 팁에서 공구 축을 따라 '위'
+    return np.asarray(ups, dtype=float)
+
+
+def check_head_interference(items, profile=REP5X, hotend=None, width=0.45,
+                            clearance=0.3, arm_radius=None,
+                            batch_samples=2000, stride=1):
+    """헤드 회전식에서 **노즐/B_arm 이 출력물을 치는가**.
+
+    ## 왜 이게 따로 필요한가
+
+    베드 틸트식(Open5x)에서는 원뿔 레이어가 기계공간에서 수평면이 되어 **간섭이
+    정의상 불가능**했다(`envelope.check_planar_stacking`). **헤드 회전식에서는 그
+    논증이 성립하지 않는다** — 부품이 고정이라 레이어가 기울어 있고, 노즐이 기운다.
+
+    그렇다고 3축과 같지도 않다. 3축은 노즐이 **수직 고정**이라 기운 원뿔면 위에서
+    핫엔드가 출력물을 파고들었다(funnel 의 3축 MAX_ANGLE 이 24° 였던 이유).
+    헤드 회전식은 노즐이 **원뿔면의 법선을 따라간다** — 국소적으로는 평면 출력과
+    같은 자세다. 그래서 유리할 것으로 **예상**되는데, 예상은 근거가 아니므로 잰다.
+
+    ## 어떻게
+
+    `toolpath.check_nozzle` 을 **공구 프레임**으로 일반화해 그대로 쓴다. 3축은
+    `tool_up=(0,0,1)` 인 특수 경우이고 두 경로의 결과가 **정확히 같다**
+    (테스트가 강제). 그래서 3축 판정과 5축 판정을 **같은 기하·같은 코드**로
+    비교할 수 있다 — 기하가 다르면 비교가 안 된다.
+
+    ⚠ 보지 못하는 것:
+      · **B_arm 의 실제 치수** — 저장소에 3MF 뿐이라 반경을 모른다. `arm_radius`
+        를 주면 팁에서 `LB`(54.67mm)까지 원기둥으로 근사해 넣고, 안 주면 **끈다**.
+        (`arm_modeled` 로 어느 쪽인지 보고한다)
+      · **트래블·되감기 도중**의 자세 → `check_rewind_sweep`
+      · 캐리지·팬 덕트·보덴 튜브
+    """
+    from .toolpath import HotendProfile, check_nozzle, sample_extrusions
+
+    pts, mid, _wt = sample_extrusions(items, width=width)
+    if len(pts) == 0:
+        return np.zeros(0, dtype=bool), {"collision_pct": 0.0,
+                                         "first_collision_z": None,
+                                         "arm_modeled": False, "samples": 0}
+    ups = move_tool_frames(items, profile)
+    col, st = check_nozzle(pts, mid, hotend or HotendProfile(),
+                           batch_samples=batch_samples, clearance=clearance,
+                           tool_up=ups[mid],
+                           arm_length=profile.lb if arm_radius else None,
+                           arm_radius=arm_radius, stride=stride)
+    return col, st
+
+
+def check_rewind_sweep(items, profile=REP5X, hotend=None, width=0.45,
+                       n_angles=24, clearance=0.3, arm_radius=None):
+    """되감기 **도중** 핫엔드가 쓸고 지나가는 부피가 출력물을 치는가.
+
+    되감기는 C 를 360° 배수만큼 돌린다. **끝난 뒤**의 자세는 시작과 같지만
+    (Rz 주기), **도는 도중**에는 다르다. RTCP 가 팁을 붙잡아 두므로 핫엔드 몸체가
+    팁 둘레를 **반각 B 의 원뿔로 쓸고 지나간다.** 베드 회전식에서는 부품이 돌아
+    문제였는데, 여기서는 팔이 돈다 — 어느 쪽이든 도중 자세를 봐야 한다.
+
+    들어올림(`add_c_rewinds` 의 `clearance`)이 그 대책인데, 그 들어올림은
+    '여태 퇴적한 것보다 위' 까지만 보장한다. 옆으로 부딪히는 것은 **이 검사가**
+    본다.
+
+    방법: 되감기 블록 안의 이동마다 **그 이동이 실제로 훑는 C 구간**을
+    `n_angles` 개로 나눠 각 자세에서 간섭을 보고 OR 한다. 되감기는
+    들어올림 → 회전 → 하강 세 이동인데 **C 가 도는 것은 가운데 하나뿐**이고
+    나머지는 C 가 고정이다. 전부 360° 훑는 것으로 잘못 세면 들어올림을 30mm 로
+    키워도 검출 수가 안 변한다 — 실제로 그렇게 만들었다가 잡았다.
+
+    반환: (findings, stats). 되감기가 없으면 빈 목록.
+    """
+    from .toolpath import HotendProfile, check_nozzle, sample_extrusions
+
+    h = hotend or HotendProfile()
+    pts, _mid, _wt = sample_extrusions(items, width=width)
+    if len(pts) == 0:
+        return [], {"rewinds": 0, "swept_hits": 0, "checked": 0}
+
+    # 되감기 구간의 '들어올린 뒤 회전하는' 이동을 모은다: 그 위치와 B, 그리고
+    # 그 시점까지 퇴적된 점만 후보다 (아직 안 찍은 것은 부딪힐 것이 없다).
+    tree = cKDTree(pts)
+    tan_half = math.tan(math.radians(h.cone_half_deg))
+    dz_max = h.block_z0 + h.block_height
+    far = profile.lb if arm_radius else dz_max
+    r_max = max(h.block_radius, h.tip_radius + h.cone_height * tan_half,
+                arm_radius or 0.0)
+    radius = math.sqrt(r_max ** 2 + far ** 2)
+
+    def hit(dz, horiz):
+        cone = (dz > clearance) & (dz <= h.cone_height) & \
+               (horiz < h.tip_radius + dz * tan_half)
+        block = (dz > max(h.block_z0, clearance)) & (dz <= dz_max) & \
+                (horiz < h.block_radius)
+        out = cone | block
+        if arm_radius:
+            out = out | ((dz > dz_max) & (dz <= profile.lb) &
+                         (horiz < arm_radius))
+        return out
+
+    in_rw, n_rw, hits, checked = False, 0, 0, 0
+    worst = None
+    px = py = pz = None
+    b_cur = 0.0
+    # 여태 퇴적한 샘플 수. `_mid` 는 이동 인덱스이고 샘플은 G-code 순서이므로,
+    # '이동 m 까지의 샘플 수' = searchsorted(_mid, m, "right") 로 정확히 나온다.
+    # (직접 포인터를 미는 방식은 이동 하나가 샘플을 0개 내는 경우에 어긋난다)
+    n_dep = 0
+    move_i = -1
+    c_from = c_cur = None
+    for kind, payload in items:
+        if kind != "move":
+            if isinstance(payload, str):
+                up = payload.upper()
+                if "V_REWIND BEGIN" in up:
+                    in_rw, n_rw = True, n_rw + 1
+                elif "V_REWIND END" in up:
+                    in_rw = False
+            continue
+        mv = payload
+        move_i += 1
+        n_dep = int(np.searchsorted(_mid, move_i, side="right"))
+        for tok in (mv.extra or "").split():
+            if tok.upper().startswith(profile.tilt_axis.upper()):
+                try:
+                    b_cur = float(tok[len(profile.tilt_axis):])
+                except ValueError:
+                    pass
+        c_new = _c_of(mv.extra, profile.rot_axis)
+        if c_new is not None:
+            c_from, c_cur = (c_cur if c_cur is not None else c_new), c_new
+        px = mv.x if mv.x is not None else px
+        py = mv.y if mv.y is not None else py
+        pz = mv.z if mv.z is not None else pz
+        if not in_rw or None in (px, py, pz) or n_dep == 0:
+            continue
+        checked += 1
+        p = np.array([px, py, pz], dtype=float)
+        nb = [j for j in tree.query_ball_point(p, r=radius) if j < n_dep]
+        if not nb:
+            continue
+        q = pts[np.array(nb)] - p
+        d2 = np.einsum("ij,ij->i", q, q)
+        # 이 이동이 실제로 훑는 C 구간만 본다. C 가 안 변하면 자세 하나다.
+        lo, hi = (c_from, c_cur) if c_from <= c_cur else (c_cur, c_from)
+        n_a = 1 if abs(hi - lo) < 1e-9 else max(2, n_angles)
+        for a in range(n_a):
+            cc = lo if n_a == 1 else lo + (hi - lo) * a / (n_a - 1)
+            d = tool_direction(b_cur, cc)
+            u = np.array([-d[0], -d[1], -d[2]])
+            dz = q @ u
+            horiz = np.sqrt(np.maximum(d2 - dz * dz, 0.0))
+            if np.any(hit(dz, horiz)):
+                hits += 1
+                if worst is None:
+                    worst = (float(px), float(py), float(pz), float(cc))
+                break
+
+    findings = []
+    if hits:
+        findings.append(("치명", f"되감기 도중 핫엔드가 출력물을 친다 "
+                                 f"({hits}/{checked} 자세, 처음 {worst}). "
+                                 f"들어올림(`--v-rewind-clearance`)을 키우거나 "
+                                 f"되감기 위치를 옮겨야 한다"))
+    return findings, {"rewinds": n_rw, "swept_hits": hits, "checked": checked,
+                      "arm_modeled": bool(arm_radius)}

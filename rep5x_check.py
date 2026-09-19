@@ -24,7 +24,9 @@ rep5x_check.py — REP5X G-code 사전 점검 (검사기 C 의 REP5X 판).
 import argparse
 
 from conical import gcode as gc
-from conical.rep5x import REP5X, Rep5xProfile, check_rep5x
+from conical.rep5x import (REP5X, Rep5xProfile, check_head_interference,
+                           check_rep5x, check_rewind_sweep)
+from conical.toolpath import HotendProfile
 
 SEVERITY_ORDER = {"치명": 0, "경고": 1, "정보": 2}
 
@@ -44,6 +46,14 @@ def main():
                     help="한 이동에 허용할 C 변화(도). 기본 30")
     ap.add_argument("--max-feed", type=float, default=None,
                     help="기계 최대 피드 (mm/min)")
+    ap.add_argument("--no-interference", action="store_true",
+                    help="노즐 간섭 검사를 건너뛴다 (O(N²) 라 느리다)")
+    ap.add_argument("--stride", type=int, default=4,
+                    help="간섭 검사에서 팁을 몇 개에 하나씩 볼지 (장애물은 전부 "
+                         "본다). 최종 판정은 1 로 할 것")
+    ap.add_argument("--arm-radius", type=float, default=None,
+                    help="B_arm 반경 mm (⚠ 저장소에 치수가 없다 — 실측해서 줄 것). "
+                         "주면 팁에서 LB 까지 원기둥으로 넣는다")
     args = ap.parse_args()
 
     prof = Rep5xProfile(c_min=args.c_min, c_max=args.c_max,
@@ -66,6 +76,23 @@ def main():
     print(f"  부품 최대 반경: {st['radius_max']:.1f}mm  "
           f"(PRINTABLE_RADIUS {prof.printable_radius:.0f})")
     print(f"  되감기        : {st['rewinds']}회")
+
+    if not args.no_interference:
+        _col, ci = check_head_interference(items, prof, HotendProfile(),
+                                           arm_radius=args.arm_radius,
+                                           stride=args.stride)
+        print(f"  노즐 간섭     : {ci['collision_pct']:.2f}%  "
+              f"(팁 {ci['evaluated']:,}/{ci['samples']:,} 표본, "
+              f"B_arm {'포함' if ci['arm_modeled'] else '**제외**'})")
+        if ci["collision_pct"] > 0.0:
+            findings.append(("치명", f"노즐이 출력물을 친다 "
+                                     f"{ci['collision_pct']:.2f}% "
+                                     f"(처음 z={ci['first_collision_z']})"))
+        sw, ss = check_rewind_sweep(items, prof, HotendProfile(),
+                                    arm_radius=args.arm_radius)
+        if ss["checked"]:
+            print(f"  되감기 쓸림   : {ss['swept_hits']}/{ss['checked']} 자세")
+        findings.extend(sw)
 
     if not findings:
         print("  ✓ 걸린 것 없음 (그래도 첫 출력은 지켜볼 것)")
