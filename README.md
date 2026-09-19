@@ -90,7 +90,27 @@ python3 compare_bands.py                         # 복잡도(밴드 수 N=1~6) v
 python3 compare_bands.py --waist-sweep            # + 허리 깊이 축으로 모델 표본 확대
 python3 compare_kappa_rules.py                   # 임계 κ 규칙(고정 45° vs 형상 의존) 실측 판정
 python3 compare_with_teammate.py --teammate ./find_conical_angle   # 팀메 독립 구현과 면 단위 대조
+python3 analyze_sync.py                          # 5축 회전 요구량 + 동기화 예산 (플랫폼 비교)
 ```
+
+### 하드웨어 플랫폼 비교 (REP5X vs 뱀부랩 개조)
+
+`analyze_sync.py` 는 기계가 없어도 G-code 만으로 **회전축에 무엇이 요구되는지**를
+잰다. 자세한 것은 [`docs/platform_comparison.md`](docs/platform_comparison.md).
+
+세 줄 요약:
+
+1. **요구 각속도가 축 근처에서 발산한다** — `ω = f/r`. 최대 7,396(funnel) /
+   18,211(lamp) deg/s. 그래서 슬라이서나 펌웨어가 피드를 깎아야 하고,
+   **축의 최대 각속도가 출력 시간을 정한다** (720 deg/s 확보 시 손해 10% 안쪽).
+2. **동기 오차는 `f·Δt`** — 반경이 약분된다. 1ms 지각이면 최대 46µm(압출폭의 10%),
+   10ms 면 466µm 로 **압출폭을 넘는다.** 외부 컨트롤러는 1ms 이내 동기가 필요하다.
+3. **기계 XY 가 X축 직선으로 축퇴한다** (기계 Y 폭 = 0.0000mm). `V = −φ(p)` 라
+   압출점이 항상 방위각 0 에 오기 때문이다. → **기반 프린터의 XY 속도는 이 모드에서
+   거의 쓰이지 않는다.** 병목은 회전축이다.
+
+⚠ 기구학 요구량이지 실제 시간이 아니다(가속도·저크 무시 → 하한). 축 토크·관성은
+보지 않는다.
 
 ### 검사기 C: Open5x 기계좌표 사전 점검 (5축)
 
@@ -213,6 +233,7 @@ conical/
   backtransform.py   역변환 + 적응 현 분할 L=2√(2rε)
   open5x.py          Open5x 5축 기계좌표 변환 + V 되감기 + 검사기 C [실험적]
   machine.py         기계 프로파일(시작/종료 G-code) 주입 — 경로 생성과 분리
+  sync.py            5축 회전 요구량·동기화 예산 (플랫폼 비교)
   meshio.py          STL 로드 / 축 센터링 / 높이별 반경 프로필 / 데모 구
   plotstyle.py       그림 라벨 한글/영문 자동 선택 (한글 폰트 감지)
   kappa.py           임계 κ 규칙 둘 (고정 45° / 팀메 형상 의존) — 실측 비교용
