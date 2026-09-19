@@ -104,8 +104,9 @@ def main():
                     help='외부 슬라이서 CLI 템플릿. 예 "prusa-slicer -g -o {gcode} {stl}"')
     ap.add_argument("--k", type=float, default=DEFAULT_K,
                     help=f"J의 각도 비용 가중치 (기본 {DEFAULT_K}; analyze_k 참조)")
-    ap.add_argument("--mode", choices=["xyz", "open5x"], default="xyz",
-                    help="xyz=3축(작은 각도) / open5x=베드 틸트+회전 기계좌표 [실험적]")
+    ap.add_argument("--mode", choices=["xyz", "open5x", "rep5x"], default="xyz",
+                    help="xyz=3축(작은 각도) / open5x=베드 틸트+회전 기계좌표 / "
+                         "rep5x=헤드 틸트+요, 부품좌표+B/C (펌웨어가 IK) [실험적]")
     ap.add_argument("--machine", choices=["prusa-uv", "voron-bc"], default="prusa-uv")
     ap.add_argument("--v-rewind", type=float, default=1.0,
                     help="배선 감김을 (이 값+1) 회전 이내로 유지 (트래블 중 되감기). "
@@ -133,8 +134,8 @@ def main():
     if args.profile is not None or args.auto_bands is not None:
         if args.angle is not None:
             raise SystemExit("--angle 과 --profile/--auto-bands 는 동시 사용 불가")
-        if args.mode == "open5x":
-            raise SystemExit("가변각 + open5x 는 향후 과제 (틸트 U가 상수라는 "
+        if args.mode in ("open5x", "rep5x"):
+            raise SystemExit("가변각 + 5축 모드는 향후 과제 (틸트가 상수라는 "
                              "가정이 깨짐) — xyz 모드만 지원")
         r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
         rprof = RadiusProfile(mesh)
@@ -259,9 +260,29 @@ def main():
                   f"추가 시간 약 {rw['rewind_minutes']:.0f}분)")
         else:
             print("  ⚠ 되감기 꺼짐 — 배선 감김을 직접 확인할 것")
+    elif args.mode == "rep5x":
+        from conical.rep5x import REP5X, add_c_rewinds, to_rep5x
+        real_items, r5 = to_rep5x(real_items, angle, direction, REP5X)
+        print(f"  REP5X       : 헤드 틸트 B={r5['b']:.0f}° 고정, C 가 방위각 추종 "
+              f"(펌웨어가 IK — X/Y/Z 는 노즐 팁) [실험적 — 축 부호 실기보정 필요]")
+        print(f"                C 누적 {r5['c_turns']:.1f}회전 "
+              f"(펌웨어 소프트 엔드스톱 창 "
+              f"{REP5X.c_min:.0f}~{REP5X.c_max:.0f}°)")
+        if args.v_rewind > 0:
+            real_items, rw = add_c_rewinds(real_items, REP5X,
+                                           clearance=args.v_rewind_clearance,
+                                           rot_feed=args.v_rewind_feed)
+            note = "" if rw["fixable"] else \
+                f"  ⚠⚠ 못 고친 구간 {rw['unfixable_segments']}개 (창보다 넓게 감긴다)"
+            print(f"  C 되감기    : 트래블 중 {rw['rewinds']}회 "
+                  f"(시작 오프셋 {rw['start_offset']:+.0f}°, "
+                  f"들어올림 +{args.v_rewind_clearance}mm){note}")
+        else:
+            print("  ⚠⚠ 되감기 꺼짐 — C 가 소프트 엔드스톱을 넘어 기계가 멈춘다")
     out_path = args.output or (Path(args.stl).stem +
-                               ("_open5x.gcode" if args.mode == "open5x"
-                                else "_conical.gcode"))
+                               {"open5x": "_open5x.gcode",
+                                "rep5x": "_rep5x.gcode"}.get(args.mode,
+                                                             "_conical.gcode"))
     # 뷰어/후처리 도구가 읽는 메타데이터 (tools/slicing_simulator.html 등)
     # ;CONICAL_META — 검증 탭이 파일 하나로 자기 계산을 할 수 있게 하는
     # 한 줄 JSON (자기기술 G-code, 사이드카 파일 없음).
@@ -305,6 +326,9 @@ def main():
     if args.mode == "open5x":
         # 검사기 A/B 는 3축 가정이라 5축 출력에는 안 맞는다. 기계좌표 검사로 보낸다.
         print(f"  검증        : python3 open5x_check.py {out_path} --bed-radius <mm>")
+        print("                (3축용 toolpath_check 는 5축 출력에 맞지 않는다)")
+    elif args.mode == "rep5x":
+        print(f"  검증        : python3 rep5x_check.py {out_path}")
         print("                (3축용 toolpath_check 는 5축 출력에 맞지 않는다)")
     else:
         print(f"  검증        : python3 toolpath_check.py {out_path}")
