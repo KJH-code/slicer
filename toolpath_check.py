@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 
 from conical import gcode as gc
 from conical.toolpath import (sample_extrusions, check_support, check_nozzle,
+                              support_breakdown,
                               HotendProfile)
 
 
@@ -50,8 +51,9 @@ def main():
     lines = open(args.gcode).readlines()
     lh = args.layer_height or detect_layer_height(lines)
     items = gc.parse(lines)
-    pts, mid, w, kinds = sample_extrusions(items, width=args.width,
-                                           return_types=True)
+    pts, mid, w, kinds, lay = sample_extrusions(items, width=args.width,
+                                                return_types=True,
+                                                return_layers=True)
     if len(pts) == 0:
         raise SystemExit("압출 세그먼트 없음")
 
@@ -70,7 +72,18 @@ def main():
     peri, fill = kinds == 0, kinds == 1
     if peri.any() or fill.any():
         print(f"    ├ 페리미터  : {pct(peri):.2f} %  "
-              f"(전체 길이의 {w[peri].sum()/w.sum()*100:.0f}%)  ← 표면 지지 지표")
+              f"(전체 길이의 {w[peri].sum()/w.sum()*100:.0f}%)")
+        # 페리미터 미지지에는 오버행이 아닌 몫이 섞인다 — 위로 좁아지는 형상은
+        # 페리미터가 아랫층 희소 인필 위에 놓인다(평범한 브리징). 갈라서 보고한다.
+        if (lay >= 0).any():
+            b = support_breakdown(pts, mid, kinds, lay, sup, w, width=args.width)
+            print(f"    │  ├ 진짜 오버행   : {b['overhang_pct']:.2f} %p"
+                  f"   ← **서포트 판단은 이 값으로**")
+            print(f"    │  └ 아랫층 단면 안: {b['inside_pct']:.2f} %p"
+                  f"   (오버행 아님 — 브리징 또는 층간격 팽창)")
+        else:
+            print("    │  (층 주석이 없어 오버행/브리징을 가르지 못했다 — "
+                  "`; layer N` 또는 `;LAYER:N` 필요)")
         print(f"    └ 인필      : {pct(fill):.2f} %  "
               f"(희소 인필은 층마다 방향이 바뀌어 원래 브리징 — 참고용)")
     worst = sorted(st["layers"].items(), key=lambda kv: -kv[1])[:5]

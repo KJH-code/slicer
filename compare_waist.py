@@ -38,21 +38,32 @@ from conical.backtransform import backtransform
 from conical.profile import AngleProfile
 from conical.varangle import select_banded, select_banded_j
 from conical.selector import select_cone
-from conical.toolpath import sample_extrusions, check_support
+from conical.toolpath import (sample_extrusions, check_support,
+                              support_breakdown)
 from conical.config import MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K
 
 LAYER_H = 0.4
 
 
-def waisted_model():
-    """구 + 가는 목(r=2) + 위로 벌어지는 형상. '허리가 있는' 대조 모델."""
+def waisted_model(r_neck=2.0):
+    """구 + 가는 목 + 위로 벌어지는 형상. '허리가 있는' 대조 모델.
+
+    `r_neck` 으로 목의 반경을 준다 (기본 2.0 = 기존 램프 모델 그대로).
+    허리 깊이를 연속으로 바꿔가며 '허리가 얼마나 깊어야 밴드가 균일각을
+    이기는가' 를 곡선으로 재려고 매개변수화했다 — 그전에는 구(허리 없음) /
+    램프(허리 있음) 두 점의 일화뿐이었다.
+
+    상단 벌어짐은 r=7.0 로 고정이라 `r_neck` 이 7 이면 목이 사라진다
+    (`waist_prominence` = 0). 즉 7 → 1 이 '허리 없음 → 아주 깊은 목' 축이다.
+    """
     R, ZC = 8.0, 8.0
-    t_end = math.pi - math.asin(2.0 / R)          # 구를 r=2 되는 윗지점까지
+    r_neck = float(min(max(r_neck, 0.25), R))
+    t_end = math.pi - math.asin(r_neck / R)       # 구를 r=r_neck 되는 윗지점까지
     pts = [(R * math.sin(t), ZC - R * math.cos(t))
            for t in np.linspace(0, t_end, 60)]
     z_neck = pts[-1][1]
-    pts += [(2.0, z) for z in np.linspace(z_neck, 20.0, 8)[1:]]
-    pts += [(r, z) for r, z in zip(np.linspace(2.0, 7.0, 12)[1:],
+    pts += [(r_neck, z) for z in np.linspace(z_neck, 20.0, 8)[1:]]
+    pts += [(r, z) for r, z in zip(np.linspace(r_neck, 7.0, 12)[1:],
                                    np.linspace(20.0, 30.0, 12)[1:])]
     pts += [(0.0, 30.0)]
     m = trimesh.creation.revolve(np.array(pts), sections=64)
@@ -70,8 +81,14 @@ def mean_abs_angle(mesh, spec):
     return float((np.abs(spec.theta_at(fz)) * areas).sum() / areas.sum())
 
 
-def run_pipeline(mesh, angle_or_profile, direction="outward"):
-    """파이프라인 1회 → (페리미터 미지지 %, 전체 미지지 %, 인필 미지지 %)."""
+def run_pipeline(mesh, angle_or_profile, direction="outward", breakdown=False):
+    """파이프라인 1회 → (페리미터 미지지 %, 전체 미지지 %, 인필 미지지 %).
+
+    `breakdown=True` 면 (진짜 오버행 %p, 아랫층 단면 안 %p, 그 수직 간격 중앙값)
+    을 덧붙인다. 서포트 판단은 **진짜 오버행**으로 한다. '단면 안'은 오버행이
+    아니지만 무죄도 아니다 — 수직 간격이 층고 수준이면 브리징(정상), 크게 넘으면
+    층간격 팽창(결함)이다. `conical.toolpath.classify_unsupported` 참고.
+    """
     if isinstance(angle_or_profile, AngleProfile):
         v = transform_cone_profile(mesh.vertices, angle_or_profile, direction)
     elif angle_or_profile > 0:
@@ -81,14 +98,19 @@ def run_pipeline(mesh, angle_or_profile, direction="outward"):
     warped = trimesh.Trimesh(vertices=v, faces=mesh.faces, process=False)
     items = slice_mesh(warped, layer_height=LAYER_H)
     real, _ = backtransform(items, angle_or_profile, direction)
-    pts, mid, w, kinds = sample_extrusions(real, return_types=True)
+    pts, mid, w, kinds, lay = sample_extrusions(real, return_types=True,
+                                                return_layers=True)
     sup, st = check_support(pts, mid, w, layer_height=LAYER_H)
 
     def pct(mask):
         tot = w[mask].sum()
         return (w[mask & ~sup].sum() / tot * 100.0) if tot > 0 else float("nan")
 
-    return pct(kinds == 0), st["unsupported_pct"], pct(kinds == 1)
+    base = (pct(kinds == 0), st["unsupported_pct"], pct(kinds == 1))
+    if not breakdown:
+        return base
+    b = support_breakdown(pts, mid, kinds, lay, sup, w)
+    return base + (b["overhang_pct"], b["inside_pct"], b["inside_gap_median"])
 
 
 def strategies(mesh, k=DEFAULT_K):
@@ -145,11 +167,15 @@ def main():
         strats, _ = strategies(mesh)
         for label, spec, note in strats:
             t0 = time.time()
-            peri, total, fill = run_pipeline(mesh, spec)
+            peri, total, fill, oh, ins, gapz = run_pipeline(mesh, spec,
+                                                            breakdown=True)
             ma = mean_abs_angle(mesh, spec)
-            rows.append((label, peri, total, fill, note, ma))
-            print(f"  {label:<28} 페리미터 {peri:6.2f}%   평균|θ| {ma:5.1f}°   "
-                  f"전체 {total:6.2f}%   ({time.time()-t0:.0f}s)")
+            rows.append((label, peri, total, fill, note, ma, oh, ins, gapz))
+            # 수직거리는 참고용 — 희소 인필 격자에 지배되어 평면 0° 에서도
+            # 1.2mm 가 나온다 (conical.toolpath.vertical_gaps 참고).
+            print(f"  {label:<28} 오버행 {oh:5.2f}%p   평균|θ| {ma:5.1f}°   "
+                  f"(페리미터 {peri:5.2f}% = {oh:.2f} + 단면안 {ins:.2f}"
+                  f", 아래재료 {gapz:.2f}mm)  ({time.time()-t0:.0f}s)")
             print(f"  {'':<28} └ {note}")
         results[name] = rows
 
@@ -164,22 +190,31 @@ def main():
     fig, axes = plt.subplots(1, len(results), figsize=(6.6 * len(results), 4.4))
     axes = np.atleast_1d(axes)
     for ax, (name, rows) in zip(axes, results.items()):
-        vals = [r[1] for r in rows]
+        # 쌓은 막대: 아래가 진짜 오버행, 위가 희소 인필 위(허상).
+        # 둘을 같이 그리는 이유 — 막대 전체 높이가 옛 지표('페리미터 미지지')라
+        # 옛 표와 새 표의 관계가 그림에서 바로 읽힌다. 결론은 아래 칸으로 읽는다.
+        ohs = [r[6] for r in rows]
+        gaps = [r[7] for r in rows]
         angs = [r[5] for r in rows]
-        colors = ["#9aa7c4", "#4a7ebb", "#d9534f", "#8bc34a", "#2e7d32"][:len(rows)]
-        ax.bar(range(len(vals)), vals, color=colors)
-        ax.set_xticks(range(len(vals)))
-        ax.set_xticklabels(xlabels[:len(vals)], fontsize=7)
+        ax.bar(range(len(ohs)), ohs, color="#2e7d32",
+               label=L("true overhang", "진짜 오버행"))
+        ax.bar(range(len(gaps)), gaps, bottom=ohs, color="#cfd8dc",
+               hatch="//", edgecolor="#90a4ae", linewidth=.5,
+               label=L("inside the layer below (not overhang)",
+                       "아랫층 단면 안 (오버행 아님)"))
+        ax.set_xticks(range(len(ohs)))
+        ax.set_xticklabels(xlabels[:len(ohs)], fontsize=7)
         ax.set_ylabel(L("unsupported perimeter (%)", "페리미터 미지지 (%)"))
         ax.set_title(L("sphere (no waist)", "구 (허리 없음)") if "구" in name
                      else L("lamp (with waist)", "램프 (허리 있음)"), fontsize=10)
-        for i, (v, a) in enumerate(zip(vals, angs)):
-            ax.text(i, v, f"{v:.2f}\n⟨|θ|⟩={a:.0f}°", ha="center", va="bottom",
-                    fontsize=7)
-        ax.set_ylim(0, max(vals) * 1.25)
-    fig.suptitle(L("per-band angles vs uniform cone — banding wins only where the "
-                   "model has a waist  (⟨|θ|⟩ = mean distortion angle)",
-                   "부위별 각도 vs 균일 원뿔 — '허리'가 있어야 밴드가 이긴다  "
+        ax.legend(fontsize=7, loc="upper right", framealpha=.9)
+        for i, (o, g, a) in enumerate(zip(ohs, gaps, angs)):
+            ax.text(i, o + g, f"{o:.2f}\n⟨|θ|⟩={a:.0f}°", ha="center",
+                    va="bottom", fontsize=7)
+        ax.set_ylim(0, max(o + g for o, g in zip(ohs, gaps)) * 1.25)
+    fig.suptitle(L("per-band angles vs uniform cone — read the solid part only "
+                   "(⟨|θ|⟩ = mean distortion angle)",
+                   "부위별 각도 vs 균일 원뿔 — 결론은 아래 칸(진짜 오버행)으로만 읽는다  "
                    "(⟨|θ|⟩ = 면적가중 평균 왜곡각)"), fontsize=11)
     fig.tight_layout()
     fig.savefig("compare_waist.png", dpi=130)

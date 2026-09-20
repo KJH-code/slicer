@@ -77,6 +77,56 @@ def center_on_axis(mesh):
     return mesh
 
 
+def waist_prominence(mesh, n_samples=80, radius_profile=None):
+    """'허리'의 두드러짐 (0 = 없음, 1 에 가까울수록 깊은 목).
+
+    왜 필요한가: 밴드(부위별 각도)가 균일 원뿔을 이기는 조건은 **허리의 존재**다
+    (docs/verification.md). 각도 변경에 필요한 블렌드 폭이 `r_b·|Δtanθ|/(limit−1)`
+    로 '그 높이의 반경'에 비례하므로, 가는 높이에서만 각도를 싸게 바꿀 수 있다.
+    지금까지 그 조건은 구·램프 두 모델의 일화로만 있었다. 표본을 늘리려면
+    '이 모델에 허리가 있나'를 재현 가능한 수로 말해야 한다.
+
+    정의: 내부 높이 z* 에 대해 아래쪽 최대 반경과 위쪽 최대 반경 중 **작은 쪽**을
+    기준으로 얼마나 잘록한지를 재고, 그 최댓값을 취한다.
+
+        prominence = max over interior z*  of  1 − r(z*) / min(max r below, max r above)
+
+    위쪽 최대를 함께 보는 것이 핵심이다. 그냥 min(r)/max(r) 로 재면 위로 갈수록
+    가늘어지기만 하는 형상(구·원뿔·깔때기)의 **꼭대기 테이퍼**가 허리로 잡힌다 —
+    거기는 위에 아무것도 없어서 각도를 바꿔봐야 얻을 게 없는데도 그렇다.
+    위쪽 최대를 기준에 넣으면 그런 단조 형상은 자동으로 0 이 된다.
+
+    ⚠ 정직: 축대칭을 가정한 반경 프로필(`RadiusProfile`, 정점 기준 구간 최댓값)
+      위에서 잰다. 축비대칭 모델(L 브래킷, 아치)에서는 '그 높이의 최대 반경'이
+      단면의 실제 모양을 대표하지 못하므로 이 수치도 대표성이 떨어진다.
+      블렌드 폭 공식이 같은 근사를 쓰므로 **계획기와 같은 기준**이라는 점은 맞다.
+
+    Returns: (prominence, z_waist, r_waist). 허리가 없으면 (0.0, nan, nan).
+    """
+    rp = radius_profile if radius_profile is not None else RadiusProfile(mesh)
+    z0, z1 = float(mesh.bounds[0][2]), float(mesh.bounds[1][2])
+    h = z1 - z0
+    if h <= 0 or n_samples < 3:
+        return 0.0, float("nan"), float("nan")
+    # 양 끝 2% 는 뺀다 — 바닥/꼭대기의 한 점짜리 반경은 허리가 아니다.
+    zs = np.linspace(z0 + 0.02 * h, z1 - 0.02 * h, int(n_samples))
+    rs = np.array([float(rp.at(z)) for z in zs])
+
+    # 누적 최대(아래쪽)/역누적 최대(위쪽) 로 O(n) 에 끝낸다.
+    max_below = np.maximum.accumulate(rs)
+    max_above = np.maximum.accumulate(rs[::-1])[::-1]
+
+    best = (0.0, float("nan"), float("nan"))
+    for i in range(1, len(zs) - 1):
+        ref = min(max_below[i - 1], max_above[i + 1])
+        if ref <= 1e-9:
+            continue
+        p = 1.0 - rs[i] / ref
+        if p > best[0]:
+            best = (float(p), float(zs[i]), float(rs[i]))
+    return best
+
+
 def load_mesh_or_demo(argv, subdivisions=4, radius=10.0):
     """명령줄 인자에 STL 경로가 있으면 로드, 없으면 데모 구를 반환한다.
 
