@@ -41,11 +41,29 @@ from conical.open5x import PRUSA_UV, add_v_rewinds, check_open5x, to_open5x
 from conical.planar_slicer import slice_mesh
 from conical.transform import transform_cone
 
-# ⚠ 전부 가정값 — 실기 제원으로 갈아끼울 것. 회전축은 특히 근거가 없다.
-BASELINE = dict(xy_vel=150.0, xy_acc=3000.0,      # 소비자 FDM 관례
-                z_vel=12.0, z_acc=300.0,
-                rot_vel=360.0, rot_acc=1800.0,    # ⚠ 순전한 가정 (deg/s, deg/s²)
-                e_vel=120.0, e_acc=2000.0)
+# ⚠ 전부 가정값이었다 — 회전축은 특히 근거가 없었다.
+ASSUMED = dict(xy_vel=150.0, xy_acc=3000.0,       # 소비자 FDM 관례
+               z_vel=12.0, z_acc=300.0,
+               rot_vel=360.0, rot_acc=1800.0,     # ⚠ 순전한 가정
+               e_vel=120.0, e_acc=2000.0)
+
+# ✅ REP5X **실측 제원** (`Rep5x-Marlin`, 브랜치 `Marlin2ForPipetBot`,
+#    `Marlin/Configuration.h`). 순서는 { X, Y, Z, I(C), J(B), E }:
+#      DEFAULT_MAX_FEEDRATE      { 500, 500, 600, 3600, 3600, 45 }
+#      DEFAULT_MAX_ACCELERATION  { 3000, 3000, 500, 500, 500, 10000 }
+#      DEFAULT_XJERK 10  ZJERK 0.3  EJERK 5  IJERK 20  JJERK 20
+#
+# ⚠⚠ 내 가정이 **틀린 쪽으로** 틀렸다. 회전축 최대 속도는 가정(360)보다 10배
+#    빠른데(3600), **가속도는 가정(1800)보다 3.6배 느리다(500).** R3 에서
+#    '가속도가 최대 속도보다 더 먹는다' 고 했으므로, 실제 기계는 **중요한 쪽에서
+#    가정보다 나쁘다.** 아래 표가 그 차이를 보여준다.
+REP5X_SPEC = dict(xy_vel=500.0, xy_acc=3000.0,
+                  z_vel=600.0, z_acc=500.0,
+                  rot_vel=3600.0, rot_acc=500.0,
+                  e_vel=45.0, e_acc=10000.0,
+                  xy_jerk=10.0, z_jerk=0.3, rot_jerk=20.0, e_jerk=5.0)
+
+BASELINE = ASSUMED
 
 REWIND_FEED = 1200.0        # mm/min (RRF 는 V 를 '선형'으로 봐서 = 20 deg/s)
 
