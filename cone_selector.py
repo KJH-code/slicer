@@ -7,9 +7,8 @@ conical/selector.py 에, 설정값은 conical/config.py 에 있다.
     python3 cone_selector.py model.stl  # STL 파일에 대해 결정
 """
 
-from conical.selector import select_cone, k_sensitivity
 from conical.meshio import load_mesh_or_demo
-
+from conical.selector import k_sensitivity, select_cone
 
 if __name__ == "__main__":
     import sys

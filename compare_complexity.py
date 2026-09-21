@@ -18,12 +18,11 @@ compare_complexity.py — '복잡도 vs 성능' 가성비 비교 (발표 핵심 
 
 import time
 
-import numpy as np
 import trimesh
 
-from conical.varangle import select_uniform, select_banded, select_fine
 from conical.config import THRESHOLD_DEG
 from conical.meshio import center_on_axis
+from conical.varangle import select_banded, select_fine, select_uniform
 
 
 def profile_str(res):
@@ -75,7 +74,8 @@ def demo_models():
     models["sphere"] = trimesh.creation.icosphere(subdivisions=4, radius=10)
     # 아래=오버행 구 + 위=긴 기둥(오버행 없음): 균일각이 타협할 수밖에 없는 대표 사례
     s = trimesh.creation.icosphere(subdivisions=3, radius=8)
-    cyl = trimesh.creation.cylinder(radius=3, height=20); cyl.apply_translation([0, 0, 18])
+    cyl = trimesh.creation.cylinder(radius=3, height=20)
+    cyl.apply_translation([0, 0, 18])
     models["sphere+stalk"] = trimesh.util.concatenate([s, cyl])
     return models
 

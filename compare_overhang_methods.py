@@ -12,13 +12,12 @@ compare_overhang_methods.py — 두 오버행 판정 방식 비교 (검증/발�
     python3 compare_overhang_methods.py model.stl  # 내 STL로 비교
 """
 
-import numpy as np
 import trimesh
 
-from conical.overhang import analyze_overhangs, support_area_fraction
-from conical.overhang_layers import layer_support_area
 from conical.config import THRESHOLD_DEG
 from conical.meshio import center_on_axis
+from conical.overhang import analyze_overhangs, support_area_fraction
+from conical.overhang_layers import layer_support_area
 
 
 def compare_one(name, mesh, layer_height=0.4, threshold_deg=THRESHOLD_DEG):
@@ -39,8 +38,10 @@ def demo_shapes():
     shapes["cube (바닥밀착)"] = trimesh.creation.box(extents=(10, 10, 10))
     shapes["sphere"] = trimesh.creation.icosphere(subdivisions=4, radius=10)
     # 버섯: 갓 아랫면=진짜 오버행 / 기둥 위=받쳐짐(제외돼야)
-    stem = trimesh.creation.cylinder(radius=2, height=14); stem.apply_translation([0, 0, 7])
-    cap = trimesh.creation.cylinder(radius=8, height=3); cap.apply_translation([0, 0, 15.5])
+    stem = trimesh.creation.cylinder(radius=2, height=14)
+    stem.apply_translation([0, 0, 7])
+    cap = trimesh.creation.cylinder(radius=8, height=3)
+    cap.apply_translation([0, 0, 15.5])
     shapes["mushroom (받쳐짐)"] = trimesh.util.concatenate([stem, cap])
     return shapes
 

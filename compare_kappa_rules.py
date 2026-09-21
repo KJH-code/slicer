@@ -20,10 +20,9 @@ import numpy as np
 import trimesh
 from scipy.stats import spearmanr
 
-from conical import analytic
+from compare_waist import run_pipeline, waisted_model
 from conical.kappa import component_kappa, fixed_kappa, support_fraction_kappa
 from conical.meshio import center_on_axis
-from compare_waist import waisted_model, run_pipeline
 
 ANGLES = [0, 8, 16, 24, 32, 40]
 

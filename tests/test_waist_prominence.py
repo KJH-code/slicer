@@ -21,8 +21,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import trimesh
 
-from conical.meshio import center_on_axis, waist_prominence
 from compare_waist import waisted_model
+from conical.meshio import center_on_axis, waist_prominence
 
 
 def test_monotone_shapes_have_no_waist():
@@ -44,7 +44,7 @@ def test_deeper_neck_gives_larger_prominence():
     necks = [7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0]
     vals = [waist_prominence(waisted_model(r))[0] for r in necks]
     assert vals[0] < 0.02, f"r_neck=7 은 목이 사라진 형상인데 {vals[0]:.3f}"
-    for a, b, ra, rb in zip(vals, vals[1:], necks, necks[1:]):
+    for a, b, ra, rb in zip(vals, vals[1:], necks, necks[1:], strict=False):
         assert b > a + 1e-3, f"r_neck {ra}→{rb}: {a:.3f} → {b:.3f} (증가해야 함)"
 
 

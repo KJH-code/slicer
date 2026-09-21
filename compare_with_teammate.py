@@ -37,7 +37,7 @@ import numpy as np
 import trimesh
 
 from conical import analytic
-from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG
+from conical.config import MAX_ANGLE_DEG, THRESHOLD_DEG
 from conical.meshio import center_on_axis
 
 
@@ -48,7 +48,8 @@ def load_teammate(path):
         return None
     sys.path.insert(0, str(p))
     try:
-        from conical_slicing import evaluation, mesh as tm_mesh
+        from conical_slicing import evaluation
+        from conical_slicing import mesh as tm_mesh
         return evaluation, tm_mesh
     except Exception as exc:      # noqa: BLE001
         print(f"⚠ 팀메 패키지 import 실패: {exc}")

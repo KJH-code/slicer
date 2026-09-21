@@ -18,15 +18,15 @@ analyze_quality.py — 표면 품질·치수 정확도 중 기하가 강제하�
 import argparse
 import math
 
-import numpy as np
-import trimesh
 import matplotlib
+import trimesh
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L as _L
 
 from conical.analytic import support_fraction
 from conical.meshio import center_on_axis
+from conical.plotstyle import L as _L
 from conical.quality import cusp_compare, cusp_heights, rotary_resolution_error
 
 ANGLES = (10, 20, 30, 45, 60)
@@ -79,31 +79,31 @@ def main():
                   f"평면보다 계단이 심해진다.")
             print(f"     같은 층고 기준으로는 `cosθ` 가 전면적에 깔려 이게 "
                   f"가려진다 (계단 평균 배수 {worst[3]:.2f}) — 하지만 그 이득은")
-            print(f"     레이어 수가 늘어나는 대가다(출력 시간, R3). "
-                  f"층고를 `t·cosθ` 로 낮춘 평면과 비교하면 사라진다.")
+            print("     레이어 수가 늘어나는 대가다(출력 시간, R3). "
+                  "층고를 `t·cosθ` 로 낮춘 평면과 비교하면 사라진다.")
         else:
-            print(f"\n  → 이 모델에서는 **상충이 없다.** 어느 각도에서도 정렬이 "
-                  f"나빠지지 않는다 (얕은 형상이라 평면 슬라이싱이 특히 불리하다).")
+            print("\n  → 이 모델에서는 **상충이 없다.** 어느 각도에서도 정렬이 "
+                  "나빠지지 않는다 (얕은 형상이라 평면 슬라이싱이 특히 불리하다).")
 
     # ③ 회전축 분해능
     print("=" * 78)
     rr = rotary_resolution_error([1.0], args.steps_per_deg)
-    print(f"③ 회전축 각분해능 → 치수 오차 (5축 고유, **반경에 비례**)")
+    print("③ 회전축 각분해능 → 치수 오차 (5축 고유, **반경에 비례**)")
     print(f"   {args.steps_per_deg:g} steps/deg → 한 스텝 {rr['step_deg']:.4f}°")
     radii = [5, 10, 20, 50, args.max_radius]
     errs = rotary_resolution_error(radii, args.steps_per_deg)["err_um"]
     print(f"   {'반경':>8} " + " ".join(f"{r:>7.0f}" for r in radii) + " mm")
     print(f"   {'오차':>8} " + " ".join(f"{e:>7.1f}" for e in errs) + " µm")
-    print(f"   ⚠ R2 의 동기 오차(`f·Δt`)는 **반경과 무관**했다 — 성질이 다르고,")
+    print("   ⚠ R2 의 동기 오차(`f·Δt`)는 **반경과 무관**했다 — 성질이 다르고,")
     print(f"     둘 다 있으면 더해진다. 압출폭 450µm 기준으로 반경 "
           f"{450 / (math.radians(rr['step_deg']) * 1000):.0f}mm 에서 압출폭에 닿는다.")
-    print(f"   ⚠ 이것은 **명령 분해능**이다. 마이크로스텝 선형성·백래시·벨트")
-    print(f"     탄성은 실기에서만 잰다 — 여기 값은 하한이다.")
+    print("   ⚠ 이것은 **명령 분해능**이다. 마이크로스텝 선형성·백래시·벨트")
+    print("     탄성은 실기에서만 잰다 — 여기 값은 하한이다.")
 
     # 그림
     fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5))
     ax = axes[0]
-    for name, (pl, s0, rows) in results.items():
+    for name, (_pl, _s0, rows) in results.items():
         a = [r[0] for r in rows]
         ax.plot(a, [r[4] for r in rows], "o-", lw=1.8, label=f"{name} 정렬")
         ax.plot(a, [r[3] for r in rows], "s--", lw=1.4, alpha=.7,
@@ -117,7 +117,7 @@ def main():
     ax.legend(fontsize=7.5)
 
     ax = axes[1]
-    for name, (pl, s0, rows) in results.items():
+    for name, (_pl, _s0, rows) in results.items():
         ax.plot([r[1] for r in rows], [r[4] for r in rows], "o-", lw=1.8,
                 label=name)
         for r in rows:

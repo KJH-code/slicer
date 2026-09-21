@@ -21,7 +21,7 @@ import trimesh
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from conical.meshio import center_on_axis, RadiusProfile  # noqa: E402
+from conical.meshio import RadiusProfile, center_on_axis  # noqa: E402
 from conical.profile import AngleProfile, blend_width_for_spacing  # noqa: E402
 
 
@@ -38,7 +38,7 @@ def _waisted():
     z_neck = pts[-1][1]
     pts += [(2.0, z) for z in np.linspace(z_neck, 20.0, 8)[1:]]
     pts += [(r, z) for r, z in zip(np.linspace(2.0, 7.0, 12)[1:],
-                                   np.linspace(20.0, 30.0, 12)[1:])]
+                                   np.linspace(20.0, 30.0, 12)[1:], strict=True)]
     pts += [(0.0, 30.0)]
     m = trimesh.creation.revolve(np.array(pts), sections=64)
     m.merge_vertices()

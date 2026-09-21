@@ -27,18 +27,19 @@ analyze_motion.py — 축 한계를 넣은 출력 시간 모델 + 민감도. [�
 
 import argparse
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L as _L
 
 from conical.backtransform import backtransform
 from conical.meshio import center_on_axis
 from conical.motion import _displacements, limits_from_spec, plan_motion
 from conical.open5x import PRUSA_UV, add_v_rewinds, check_open5x, to_open5x
 from conical.planar_slicer import slice_mesh
+from conical.plotstyle import L as _L
 from conical.transform import transform_cone
 
 # ⚠ 전부 가정값이었다 — 회전축은 특히 근거가 없었다.
@@ -159,18 +160,18 @@ def main():
                   f"  ← 출력이 아니다")
             print(f"     합계      : {base['seconds'] / 60:6.2f}분")
             spin = rewind_rotation(machine)
-            print(f"     ⚠ 되감기는 **무제한 회전축(REP5X C축)이면 0** 이다.")
+            print("     ⚠ 되감기는 **무제한 회전축(REP5X C축)이면 0** 이다.")
             print(f"       되돌린 총 회전량 {spin / 360:.0f}회전 ÷ 되감기 속도 "
                   f"{args.v_rewind_feed / 60:.0f} deg/s ≒ {spin / (args.v_rewind_feed / 60) / 60:.1f}분")
-            print(f"       → 되돌릴 각도는 감긴 만큼 **정해져 있다.** "
-                  f"이 시간을 줄이는 유일한 레버는 되감기 **속도**이고, "
-                  f"되감기 횟수는 거의 무관하다.")
+            print("       → 되돌릴 각도는 감긴 만큼 **정해져 있다.** "
+                  "이 시간을 줄이는 유일한 레버는 되감기 **속도**이고, "
+                  "되감기 횟수는 거의 무관하다.")
         print(f"     출력의 가속 무시 하한 Σ L/F : {lb / 60:.2f}분 "
               f"→ 가속 때문에 {t_print / lb:.2f}배")
 
-        print(f"\n  ② 어느 축이 속도를 깎고 있나 (출력 구간만, 되감기 제외)")
+        print("\n  ② 어느 축이 속도를 깎고 있나 (출력 구간만, 되감기 제외)")
         bt = {}
-        for who, reg, t in zip(base["binding"], base["regions"], base["times"]):
+        for who, reg, t in zip(base["binding"], base["regions"], base["times"], strict=True):
             if reg:
                 continue
             bt[who or "(명령 피드)"] = bt.get(who or "(명령 피드)", 0.0) + float(t)
@@ -178,8 +179,8 @@ def main():
             print(f"     {axis:>12} : {t / 60:6.2f}분  "
                   f"({t / t_print * 100:5.1f}%)")
 
-        print(f"\n  ③ 어느 스펙에 돈을 써야 하나 (기준값 대비 배수 → 시간 배수)")
-        print(f"     ※ 출력 시간만 본다 (되감기 제외)")
+        print("\n  ③ 어느 스펙에 돈을 써야 하나 (기준값 대비 배수 → 시간 배수)")
+        print("     ※ 출력 시간만 본다 (되감기 제외)")
         header = "  ".join(f"{f:g}×" for f in factors)
         print(f"     {'항목':<22} {header}")
         sens = {}
@@ -204,8 +205,8 @@ def main():
         fig, axes = plt.subplots(1, len(results),
                                  figsize=(6.4 * len(results), 4.6),
                                  squeeze=False)
-        for ax, (name, (base, sens, t_print, t_rw)) in zip(axes[0],
-                                                           results.items()):
+        for ax, (name, (_base, sens, t_print, t_rw)) in zip(axes[0],
+                                                           results.items(), strict=True):
             for key in keys:
                 ax.plot(factors, sens[key], "o-", lw=1.7, label=SWEEPS[key])
             ax.axhline(1.0, color="#999", lw=.9, ls=":")

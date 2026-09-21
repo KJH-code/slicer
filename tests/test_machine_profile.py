@@ -112,7 +112,9 @@ def test_injected_order_in_real_output(tmp_path):
     def last(pred):
         return max(i for i, ln in enumerate(lines) if pred(ln))
 
-    is_move = lambda ln: ln.startswith("G1 ") and " E" in ln
+    def is_move(ln):
+        return ln.startswith("G1 ") and " E" in ln
+
     start_marker = first(lambda ln: ln.startswith("; --- machine start:"))
     end_marker = first(lambda ln: ln.startswith("; --- machine end:"))
     assert start_marker < first(lambda ln: ln.startswith("; conical built-in"))

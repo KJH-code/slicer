@@ -20,21 +20,25 @@ G-code 만으로 잴 수 있다.
 """
 
 import argparse
-import math
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L as _L
 
 from conical.backtransform import backtransform
 from conical.meshio import center_on_axis
 from conical.open5x import PRUSA_UV, to_open5x
 from conical.planar_slicer import slice_mesh
-from conical.sync import (feed_cap_cost, machine_xy_span, rotary_demand,
-                          sync_error_budget)
+from conical.plotstyle import L as _L
+from conical.sync import (
+    feed_cap_cost,
+    machine_xy_span,
+    rotary_demand,
+    sync_error_budget,
+)
 from conical.transform import transform_cone
 
 LAYER_H = 0.3
@@ -59,13 +63,13 @@ def report(name, real, machine, caps, delays):
     print("=" * 78)
     print(f"[{name}]  구간 {len(d['omega']):,} (압출 {int(ext.sum()):,})")
 
-    print(f"\n  ① 요구 회전 각속도 (압출 구간)")
+    print("\n  ① 요구 회전 각속도 (압출 구간)")
     print(f"     중앙 {np.median(w):,.0f}  90% {np.percentile(w, 90):,.0f}  "
           f"99% {np.percentile(w, 99):,.0f}  최대 {w.max():,.0f} deg/s")
     print(f"     부품 반경 최소 {d['r'][ext].min():.2f}mm "
           f"— ω = f/r 이라 축에 가까울수록 발산한다")
 
-    print(f"\n  ② 축 최대 각속도를 정하면 출력 시간이 몇 배가 되나")
+    print("\n  ② 축 최대 각속도를 정하면 출력 시간이 몇 배가 되나")
     cost = feed_cap_cost(d, caps)
     print(f"     {'한계':>9} | {'느려지는 구간':>11} | {'시간':>8} | {'배수':>6}")
     for r in cost["rows"]:
@@ -74,7 +78,7 @@ def report(name, real, machine, caps, delays):
     print(f"     (기준 {cost['base_seconds'] / 60:.1f}분 — 회전 한계 없음, "
           f"가속도 무시한 하한)")
 
-    print(f"\n  ③ 외부 컨트롤러 동기 오차 → 경로 **수직** 치수 오차")
+    print("\n  ③ 외부 컨트롤러 동기 오차 → 경로 **수직** 치수 오차")
     bud = sync_error_budget(d, delays)
     print(f"     {'지각':>7} | {'중앙':>8} | {'99%':>8} | {'최대':>8}")
     for delay in sorted(bud):
@@ -85,13 +89,13 @@ def report(name, real, machine, caps, delays):
           f"— 최대가 압출폭을 넘으면 경로가 이웃 비드로 넘어간다)")
 
     span = machine_xy_span(machine)
-    print(f"\n  ④ 기계 XY 가 실제로 쓰이나")
+    print("\n  ④ 기계 XY 가 실제로 쓰이나")
     print(f"     X 폭 {span['x_span']:.2f}mm,  Y 폭 {span['y_span']:.4f}mm "
           f"(|Y| 최대 {span['y_abs_max']:.4f})")
     if span["y_span"] < 1e-6:
-        print(f"     → **Y 가 0 으로 축퇴한다.** V = −φ(p) 라 압출점이 항상 방위각 0 에")
-        print(f"        오기 때문이다. 기계 XY 경로가 X 축 직선이 되므로 **기반")
-        print(f"        프린터의 XY 속도는 이 모드에서 거의 쓰이지 않는다.**")
+        print("     → **Y 가 0 으로 축퇴한다.** V = −φ(p) 라 압출점이 항상 방위각 0 에")
+        print("        오기 때문이다. 기계 XY 경로가 X 축 직선이 되므로 **기반")
+        print("        프린터의 XY 속도는 이 모드에서 거의 쓰이지 않는다.**")
     return d, cost, bud, span
 
 

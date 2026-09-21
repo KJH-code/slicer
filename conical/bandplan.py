@@ -19,9 +19,9 @@ bandplan.py — 실현 가능한 '밴드 계획' (팀메 bands.py 방식의 경�
 
 import numpy as np
 
-from .config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
 from . import analytic
-from .clusters import overhang_clusters, h_interval
+from .clusters import h_interval, overhang_clusters
+from .config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
 
 
 def _best_joint(mesh, faces, threshold_deg, max_angle, step):

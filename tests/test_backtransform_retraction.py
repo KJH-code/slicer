@@ -11,8 +11,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from conical.gcode import parse
 from conical.backtransform import backtransform
+from conical.gcode import parse
 
 
 def test_retraction_preserved():

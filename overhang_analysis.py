@@ -8,9 +8,8 @@ overhang_analysis.py — Stage 1 실행 스크립트 (CLI).
 (기존처럼 `from overhang_analysis import analyze_overhangs` 도 계속 동작한다.)
 """
 
-from conical.overhang import analyze_overhangs, summarize
 from conical.meshio import load_mesh_or_demo
-
+from conical.overhang import analyze_overhangs, summarize
 
 if __name__ == "__main__":
     import sys

@@ -73,7 +73,7 @@ def rotary_demand(real_items, machine_items, rot_axis="V"):
     e_prev = 0.0
     out = {k: [] for k in ("L", "dt", "dV", "omega", "r", "perp", "extruding")}
 
-    for rp, mp in zip(rm, mm):
+    for rp, mp in zip(rm, mm, strict=True):
         nx = rp.x if rp.x is not None else px
         ny = rp.y if rp.y is not None else py
         nz = rp.z if rp.z is not None else pz

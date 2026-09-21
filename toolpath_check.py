@@ -18,15 +18,19 @@ import argparse
 import re
 from pathlib import Path
 
-import numpy as np
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from conical import gcode as gc
-from conical.toolpath import (sample_extrusions, check_support, check_nozzle,
-                              support_breakdown,
-                              HotendProfile)
+from conical.toolpath import (
+    HotendProfile,
+    check_nozzle,
+    check_support,
+    sample_extrusions,
+    support_breakdown,
+)
 
 
 def detect_layer_height(lines, fallback=0.3):
@@ -105,7 +109,7 @@ def main():
             "layers": st["layers"],
             "points": [[round(float(x), 4), round(float(y), 4),
                         round(float(z), 4), int(s), round(float(ww), 5)]
-                       for (x, y, z), s, ww in zip(pts, sup, w)],
+                       for (x, y, z), s, ww in zip(pts, sup, w, strict=True)],
         }
         with open(args.export_json, "w") as fh:
             json.dump(payload, fh, separators=(",", ":"))
@@ -114,11 +118,13 @@ def main():
     png = args.png or (Path(args.gcode).stem + "_check.png")
     fig, axes = plt.subplots(1, 2, figsize=(11, 5))
     ok = sup
-    for ax, (a, b), name in zip(axes, [(0, 1), (0, 2)], ["top (XY)", "side (XZ)"]):
+    for ax, (a, b), name in zip(axes, [(0, 1), (0, 2)], ["top (XY)", "side (XZ)"], strict=True):
         ax.scatter(pts[ok][::5, a], pts[ok][::5, b], s=1, c="#9aa7c4", label="supported")
         if (~ok).any():
             ax.scatter(pts[~ok][:, a], pts[~ok][:, b], s=2, c="#d9534f", label="unsupported")
-        ax.set_title(name); ax.set_aspect("equal"); ax.legend(fontsize=7)
+        ax.set_title(name)
+        ax.set_aspect("equal")
+        ax.legend(fontsize=7)
     fig.suptitle(f"unsupported {st['unsupported_pct']:.2f}%")
     fig.tight_layout()
     fig.savefig(png, dpi=120)

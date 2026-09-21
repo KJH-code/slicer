@@ -19,12 +19,21 @@ varangle.py — 높이 구간별 '변수각 원뿔' 전략 (부위별 각도의 
 
 import numpy as np
 
-from .config import (THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP,
-                     BLEND_COST_K, MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO)
 # 판정 기준 통일(2026-07 리뷰): metrics(변환공간 근사) → analytic(해석식).
 # α=0 에서 두 정의는 일치, α>0 에서 해석식이 물리 기준이다.
-from .analytic import face_support_and_staircase, support_fraction, \
-    support_fraction_profile
+from .analytic import (
+    face_support_and_staircase,
+    support_fraction,
+    support_fraction_profile,
+)
+from .config import (
+    ANGLE_STEP,
+    BLEND_COST_K,
+    BLEND_SHIFT_RATIO,
+    MAX_ANGLE_DEG,
+    MAX_SPACING_FACTOR,
+    THRESHOLD_DEG,
+)
 from .profile import AngleProfile
 
 
