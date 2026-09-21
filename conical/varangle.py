@@ -3,8 +3,26 @@ varangle.py — 높이 구간별 '변수각 원뿔' 전략 (부위별 각도의 
 
 왜 '높이 구간'인가 (물리적 실현):
     부위마다 각도를 다르게 하려면, 실제로는 각도가 '높이에 따라 변하는 함수' θ(z)여야
-    실제로 프린트할 수 있다. 이것이 RotBot의 변수각(var_angle) 방식이다. 그래서 영역을
-    '오버행 심한 정도'가 아니라 '높이 구간'으로 나눈다. (높이 구간 = θ(z)로 실현 가능)
+    실제로 프린트할 수 있다. 그래서 영역을 '오버행 심한 정도'가 아니라 '높이 구간'으로
+    나눈다. (높이 구간 = θ(z)로 실현 가능)
+
+⚠ 정정 (2026-09-21, RotBot 원문 대조):
+    이 주석은 앞서 "이것이 RotBot 의 변수각(var_angle) 방식이다" 라고 썼다. **틀렸다.**
+    RotBot 의 `Scripts for Variable Angle` 에서 'variable' 은 **실행마다 사용자가 고르는
+    상수각**이라는 뜻이지 높이의 함수가 아니다. 원문 확인:
+      · README `### Scripts for variable angle`:
+        "the cone angle **can be changed**. So it does not only work for 45° angle as used
+         for RotBot, but can also be used with much smaller angles (e.g. 15°)"
+      · `Transformation_STL_var_angle.py:13` `CONE_ANGLE = 16` — 스칼라 상수
+      · 같은 파일 `:18,:35` `transformation_kegel(points, cone_angle_rad, ...)`
+        → `np.tan(cone_angle_rad)`, z 의존성 없음
+      · `Backtransformation_GCode_var_angle.py:215–228` 도 스칼라
+      · 기본 `Backtransformation_GCode.py:40` "divided by **sqrt(2)**" = cos(45°) 하드코딩
+    즉 기본 스크립트가 45° 고정이고, var_angle 스크립트는 그것을 **임의 상수로 일반화**
+    한 것이다. **θ(z) 는 RotBot 에 없다 — 이 저장소의 확장이다.**
+    따름: 블렌드(각도 전환 구간)와 층간격 배율 m 은 RotBot 의 문제공간에 존재하지
+    않는다. 상수각이면 s = dT/dZ′ = 0 이라 m ≡ 1 이기 때문이다 (profile.py 참고).
+    ⚠ 논문 본문(Appl. Sci. 11(18):8760)의 future work 절은 아직 미확인(망 차단).
 
 평가 방식 (정직):
     각 구간은 '상수각'으로 독립 평가한다(그 구간 면들에 그 각도를 적용했다고 가정).

@@ -5,6 +5,10 @@ RotBot 실제 코드(Transformation_STL_var_angle.py)의 변환식을 그대로 
     f(x, y, z) = ( x/cosθ,  y/cosθ,  z + c·√(x²+y²)·tanθ )
     c = +1 (outward 원뿔) / -1 (inward 원뿔)
 
+⚠ 파일 이름 주의: RotBot 의 'var_angle' 은 **θ(z) 가 아니라 실행마다 고르는 상수각**
+   이다(원문 대조 2026-09-21 — varangle.py 주석 참고). 위 변환식 자체는 그대로 차용이
+   맞지만, 아래 transform_cone_profile 의 θ(Z′) 일반화는 RotBot 에 없는 확장이다.
+
 즉 평평한 레이어를 원뿔 모양으로 '기울여' 쌓는 효과를, 모델 좌표를 미리
 왜곡시키는 방식으로 흉내 낸다. (선행연구: RotBot/ZHAW, slicer4rtn)
 """

@@ -386,11 +386,23 @@ tests/               회귀 테스트
 ### 연구 논지: 균일 원뿔 vs 부위별 각도
 
 비교 대상은 RotBot식 **균일 원뿔(모델 전체 각도 1개)**. 우리 방법은 모델을
-**높이 구간으로 나눠 각 구간에 최적 각도**를 준다(= 변수각 원뿔 θ(z), RotBot의
-`var_angle` 방식이라 실제로 프린트 가능). 균일각은 전체 타협값이라 손해고,
+**높이 구간으로 나눠 각 구간에 최적 각도**를 준다(= 변수각 원뿔 θ(z)). 균일각은 전체 타협값이라 손해고,
 구간별은 '각도 예산'을 오버행 심한 구간에만 몰아써서 **더 적은 왜곡으로 오버행을
 더 줄인다** — 단 허리가 있을 때만 (아래 표). `compare_complexity.py`가 균일/구간2/구간3/세밀을 **서포트·강도proxy·
 평균각·계산시간**으로 비교한다(복잡도 vs 성능 가성비 곡선).
+
+> **θ(z) 자체가 이 저장소의 확장이다** (2026-09-21, RotBot 원문 대조로 확정).
+> 앞서 이 문단은 "RotBot 의 `var_angle` 방식"이라고 썼는데 **틀렸다.** RotBot 의
+> `Scripts for Variable Angle` 에서 'variable' 은 **실행마다 고르는 상수각**이라는
+> 뜻이다 — README 원문 *"the cone angle **can be changed** … not only 45° … but also
+> much smaller angles (e.g. 15°)"*, 그리고 `Transformation_STL_var_angle.py:13` 의
+> `CONE_ANGLE = 16` 은 스칼라다(`:35` `np.tan(cone_angle_rad)`, z 의존성 없음).
+> 기본 스크립트는 45° 하드코딩(`Backtransformation_GCode.py:40` "divided by sqrt(2)").
+> **따름**: 블렌드와 층간격 배율 `m` 은 RotBot 의 문제공간에 **존재하지 않는다** —
+> 상수각이면 `s = dT/dZ′ = 0` 이라 `m ≡ 1` 이다. 이 제약은 θ 를 높이의 함수로
+> 허용해야 비로소 생긴다. 차용한 것은 **변환식과 3단계 구조**이고(`transform.py`),
+> **θ(z) 확장·그 제약의 유도·자동 선택**이 이 저장소의 몫이다.
+> ⚠ 논문 본문(Appl. Sci. 11(18):8760)의 future work 절은 미확인(망 차단).
 
 **단, 툴패스로 실측해 보니 조건부다** (`compare_waist.py`):
 

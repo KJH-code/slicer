@@ -19,7 +19,7 @@
 | 무거운 최적화 | **S³-Slicer**(2022), CurviSlicer(2019) | 자동(쿼터니언 필드 최적화) | 무거움 | 수학 무거움 |
 | 딥러닝 | **Neural Slicer**(2024) | 자동(신경 변형장) | 매우 무거움(GPU 학습) | 블랙박스 |
 | 분해 + 탐색 | **Wu 2020**, **Han 2025**, Gao 2019, Wei 2018 | 자동(부위별 **이산 방향**) | 중~무거움(beam search/Pareto) | 투명하나 무거움 |
-| 접근형 경량(수동/고정) | RotBot(고정 45°), Fractal Cortex·Open5x(수동) | 고정 또는 사람이 지정 | 경량 | 투명 |
+| 접근형 경량(수동/고정) | RotBot(고정 45°; `var_angle` 스크립트도 **상수각**, §7 확인), Fractal Cortex·Open5x(수동) | 고정 또는 사람이 지정 | 경량 | 투명 |
 | **← 우리** | 이 프로젝트 | **자동 + 부위별 연속 원뿔각** | **경량 휴리스틱** | **투명·재현** |
 
 우리 자리 = "자동 *이면서* 싸고 *투명하게*, 그리고 그걸 가성비로 정량화". 무거운 것들은
@@ -55,7 +55,9 @@
 ## 4. 우리의 **좁고 방어 가능한 빈칸**
 
 네 분해 논문 전부 **부위마다 "이산 빌드 방향"**을 고른다. **연속 파라미터(원뿔 반각 θ)를
-부위별로 바꾸는 연구는 없다.** 여기가 우리 자리:
+부위별로 바꾸는 연구는 없다.** 그리고 원뿔 계열 쪽(RotBot)도 θ 를 **상수**로 둔다
+(§7 원문 대조로 확정 — 'var_angle' 은 높이의 함수가 아니라 실행마다 고르는 상수다).
+여기가 우리 자리:
 
 1. **부위별 연속 원뿔각 θ 선택** — 이산 방향/절단평면이 아니라 conical 변환의 자유도(θ)를
    부위별로. (Wu·Han의 이산 방향에는 없는 축)
@@ -124,3 +126,60 @@ Fractal Cortex `github.com/fractalrobotics/Fractal-Cortex`(GPL-3.0, Python, **�
 slicer4rtn `github.com/Spiritdude/Slicer4RTN`(**LGPL-3.0**, Perl, 3/4/5축). Open5x
 `github.com/FreddieHong19/Open5x`(**MIT**, Rhino/Grasshopper 의존; CHI EA 2022, DOI
 10.1145/3491101.3519782, arXiv:2202.11426).
+
+---
+
+## 7. RotBot 원문 대조 (2026-09-21) — **'var_angle' 은 θ(z) 가 아니다**
+
+§6 의 "원문 대조 필요" TODO 중 **RotBot 항목을 닫는다.** 저장소
+`github.com/RotBotSlicer/transform` (커밋 `ed8128e`) 를 직접 읽었다.
+
+### 무엇을 확인했나
+
+**'Scripts for Variable Angle' 의 'variable' 은 '실행마다 사용자가 고르는 상수각'
+이라는 뜻이고, 높이의 함수가 아니다.** 저장소 README 원문:
+
+> ### Scripts for variable angle
+> With this scripts, the cone angle **can be changed**. So it does not only work for
+> 45° angle as used for RotBot, but can also be used with much smaller angles
+> (e.g. 15°) to do a conical slicing for any printer.
+
+코드가 확증한다:
+
+| 위치 | 증거 |
+|---|---|
+| `Scripts for Variable Angle/Transformation_STL_var_angle.py:13` | `CONE_ANGLE = 16` — 스칼라 상수 |
+| 같은 파일 `:18`, `:35` | `transformation_kegel(points, cone_angle_rad, cone_type)` → `np.tan(cone_angle_rad)`. **z 의존성 없음** |
+| `Scripts for Variable Angle/Backtransformation_GCode_var_angle.py:215–228` | `z_layer + c*sqrt(x²+y²)*tan(cone_angle_rad)` — 역시 스칼라 |
+| 기본 `Backtransformation_GCode.py:40` | *"has to be divided by **sqrt(2)**"* = cos(45°) **하드코딩** |
+
+즉 기본 스크립트는 RotBot 실기의 45° 틸트 노즐에 고정돼 있고, `var_angle` 스크립트는
+그것을 **임의의 상수각으로 일반화**한 것이다. 그 이상은 없다.
+
+### 따름 — 이 저장소의 기여 범위가 넓어진다
+
+1. **θ(Z′) 가변각 프로필은 RotBot 에 없다.** 차용한 것은 **변환식과 3단계 구조**이고
+   (`conical/transform.py`), θ(Z′) 로의 일반화는 이 저장소의 확장이다.
+2. **블렌드(각도 전환 구간)와 층간격 배율 `m` 은 RotBot 의 문제공간에 존재하지
+   않는다.** 상수각이면 `s = dT/dZ′ = 0` 이라 `m = 1 − c·r·s ≡ 1` 이다. 이 제약은
+   θ 를 높이의 함수로 허용해야 비로소 **생겨난다** — 따라서 `w ≥ r_b·|Δtanθ|/(limit−1)`
+   유도(`conical/profile.py`)는 "선행연구가 안 쓴 것"이 아니라 **선행연구에 없는 문제**다.
+3. 이 확장은 §"새로움을 만드는 세 패턴" 중 **파라미터화**의 형태다: RotBot 의 상수각이
+   우리 상수 프로필의 **특수경우로 포함**되고, 그 포함이
+   `tests/test_profile_constant_equals_fixed.py` 로 **회귀 테스트에 고정**돼 있다.
+   기존 결과가 검증 기준 역할을 하므로 가장 안전한 형태의 일반화다.
+
+### 이 대조가 고친 우리 쪽 오류
+
+`conical/varangle.py` 와 `README.md` 가 θ(z) 를 "RotBot 의 var_angle 방식"이라고
+서술했다. **틀렸고, 자기 기여를 선행연구로 돌리는 방향의 오류였다.** 두 곳 모두
+정정했다. 반면 §1 표가 RotBot 을 "고정 45°" 로 분류한 것은 **맞았다** — 두 서술이
+충돌했는데 선행연구 문서 쪽이 옳았다.
+
+### ⚠ 아직 안 닫힌 것
+
+**논문 본문**(Wüthrich et al., *Appl. Sci.* 11(18):8760)은 이 환경의 망 차단으로
+확인하지 못했다. 특히 **Conclusion / future work 절**에 "각도를 높이에 따라 바꾸는
+것"이 향후 과제로 적혀 있는지 확인할 것. 적혀 있다면 우리 확장이 **저자들이 지목한
+빈칸**에 들어가는 형태가 되므로 방어가 더 쉬워진다. 위 코드 기반 결론은 이 확인과
+무관하게 유지된다(코드가 1차 출처다).
