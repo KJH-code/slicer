@@ -41,7 +41,7 @@ export MPLBACKEND=Agg                # 헤드리스. 없으면 그림 스크립�
 ```
 
 Claude Code on the web 세션은 `.claude/hooks/session-start.sh` 가 위를 자동으로 한다.
-⚠ **이 훅은 아직 `main` 에 없다.** 병합해야 새 세션에서 자동으로 돈다.
+훅은 `main` 에 있으므로 새 세션에서 그냥 돈다 — 직접 설치할 필요 없다.
 
 ## 테스트 · 린트
 
