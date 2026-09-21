@@ -27,7 +27,6 @@ from scipy.spatial import cKDTree
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 
-
 # ─────────────────────────────────────────────────────────────
 # 샘플링
 # ─────────────────────────────────────────────────────────────
@@ -157,7 +156,7 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
             need = idx[~supported[idx]]
             if len(need):
                 neigh = tree.query_ball_point(pts[need], r=radius)
-                for k, nb in zip(need, neigh):
+                for k, nb in zip(need, neigh, strict=True):
                     if not nb:
                         continue
                     q = pts[np.array(nb)]
@@ -432,7 +431,7 @@ def check_nozzle(pts, move_id, hotend=None, batch_samples=2000,
         qidx = idx[(idx - s0) % stride == 0] if stride > 1 else idx
         if tree is not None and len(qidx):
             neigh = tree.query_ball_point(pts[qidx], r=radius)
-            for k, nb in zip(qidx, neigh):
+            for k, nb in zip(qidx, neigh, strict=True):
                 if not nb:
                     continue
                 q = pts[np.array(nb)]

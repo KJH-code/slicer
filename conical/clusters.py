@@ -20,8 +20,8 @@ clusters.py — 오버행 클러스터 진단 + '적응 천장(ceiling)' 계산.
 
 import numpy as np
 
-from .config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
 from . import analytic
+from .config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
 
 
 # ─────────────────────────────────────────────────────────────
@@ -85,7 +85,6 @@ def best_for_cluster(mesh, faces, threshold_deg=THRESHOLD_DEG,
     areas = mesh.area_faces[faces]
     best = None
     for direction in ("outward", "inward"):
-        need_all_by_angle = None
         for angle in np.arange(0.0, max_angle + 1e-9, step):
             need = analytic.needs_support(mesh, angle, direction, threshold_deg)
             left = float(areas[need[faces]].sum())

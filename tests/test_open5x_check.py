@@ -101,6 +101,7 @@ def test_real_pipeline_output_trips_known_risks():
     """
     import subprocess
     import tempfile
+
     from conical import gcode as gc
 
     with tempfile.TemporaryDirectory() as d:
@@ -128,6 +129,7 @@ def test_default_pipeline_has_rewind_on():
     """
     import subprocess
     import tempfile
+
     from conical import gcode as gc
 
     with tempfile.TemporaryDirectory() as d:

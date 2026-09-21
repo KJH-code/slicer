@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from conical.gcode import parse
-from conical.toolpath import sample_extrusions, check_nozzle, HotendProfile
+from conical.toolpath import HotendProfile, check_nozzle, sample_extrusions
 
 H = HotendProfile(tip_radius=0.6, cone_half_deg=30.0, cone_height=3.0,
                   block_radius=12.0, block_z0=5.0, block_height=12.0)

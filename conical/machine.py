@@ -35,7 +35,6 @@ machine.py — 기계 프로파일(시작/종료 G-code, 온도)을 G-code 에 �
 import configparser
 from dataclasses import dataclass, field
 
-
 REQUIRED_HINT = ("[machine] 절에 start_gcode / end_gcode 를 적는다. "
                  "예시는 profiles/machine.example.ini 참고.")
 

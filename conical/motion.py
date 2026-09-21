@@ -202,7 +202,7 @@ def plan_motion(items, limits, rot_axis="V", tilt_axis="U"):
         times[i] = t
 
     bt, rt = {}, {}
-    for who, reg, t in zip(binding, regions, times):
+    for who, reg, t in zip(binding, regions, times, strict=True):
         bt[who or "(명령 피드)"] = bt.get(who or "(명령 피드)", 0.0) + float(t)
         rt[reg] = rt.get(reg, 0.0) + float(t)
 

@@ -15,7 +15,6 @@ import trimesh
 
 from .config import THRESHOLD_DEG
 
-
 # --- 각도 정의 (이 부분은 꼭 이해하고 있어야 함) --------------------------
 # 출력 방향(위)은 +Z 라고 하자.
 # 각 면의 바깥쪽 법선 벡터 n 의 z 성분(n_z)을 보면:

@@ -27,14 +27,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import numpy as np
 import trimesh
 
 from conical.backtransform import backtransform
 from conical.meshio import center_on_axis
 from conical.planar_slicer import slice_mesh
-from conical.toolpath import (check_support, sample_extrusions,
-                              support_breakdown)
+from conical.toolpath import check_support, sample_extrusions, support_breakdown
 
 LH = 0.4
 

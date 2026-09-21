@@ -35,17 +35,18 @@ import math
 import os
 import time
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L
 
-from conical.config import (MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K)
-from conical.meshio import center_on_axis, RadiusProfile, waist_prominence
+from compare_waist import mean_abs_angle, run_pipeline, waisted_model
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
+from conical.meshio import RadiusProfile, center_on_axis, waist_prominence
+from conical.plotstyle import L
 from conical.varangle import select_banded_j
-from compare_waist import waisted_model, run_pipeline, mean_abs_angle
 
 DEFAULT_N_MAX = 6
 
@@ -198,7 +199,7 @@ def plot(summaries, path="compare_bands.png"):
     for ax in flat[len(summaries):]:
         ax.axis("off")
 
-    for ax, s in zip(flat, summaries):
+    for ax, s in zip(flat, summaries, strict=False):
         rows = s["rows"]
         ns = [r["n"] for r in rows]
         l1, = ax.plot(ns, [r["overhang"] for r in rows], "o-", color="#2e7d32",

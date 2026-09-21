@@ -17,8 +17,8 @@ metrics.py — 원뿔 각도 성능을 재는 '지표' 모음.
 import numpy as np
 import trimesh
 
-from .transform import transform_cone
 from .config import THRESHOLD_DEG
+from .transform import transform_cone
 
 
 def transformed_mesh(mesh, angle_deg, cone_type):

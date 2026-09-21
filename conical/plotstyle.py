@@ -42,7 +42,7 @@ def _register_bundled():
     시스템에 한글 폰트가 이미 있으면 굳이 필요 없다(없어도 조용히 넘어간다).
     """
     try:
-        import koreanize_matplotlib          # noqa: F401
+        import koreanize_matplotlib  # noqa: F401
     except Exception:
         pass
 

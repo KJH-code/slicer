@@ -11,9 +11,9 @@ Stage 1 오버행 분석(overhang.py)을 다시 돌리기만 하면 된다.
 
 import trimesh
 
-from .transform import transform_cone
-from .overhang import analyze_overhangs, support_area_fraction
 from .config import THRESHOLD_DEG
+from .overhang import analyze_overhangs, support_area_fraction
+from .transform import transform_cone
 
 
 def support_fraction(mesh, cone_angle_deg, cone_type, threshold_deg=THRESHOLD_DEG):

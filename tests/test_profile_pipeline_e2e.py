@@ -30,7 +30,7 @@ def test_profile_pipeline_e2e():
             items = parse(fh.readlines())
         es = [p.e for k, p in items if k == "move" and p.e is not None]
         assert es, "E 없음"
-        assert all(b >= a - 1e-9 for a, b in zip(es, es[1:])), "E 비단조"
+        assert all(b >= a - 1e-9 for a, b in zip(es, es[1:], strict=False)), "E 비단조"
         # 메타에 프로필 기록 확인 (1줄=CONICAL_META JSON, 2줄=legacy)
         with open(out) as fh:
             head = fh.readline() + fh.readline()

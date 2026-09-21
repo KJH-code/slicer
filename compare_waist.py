@@ -24,23 +24,23 @@ import math
 import sys
 import time
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L
 
-from conical.meshio import center_on_axis, RadiusProfile
-from conical.transform import transform_cone, transform_cone_profile
-from conical.planar_slicer import slice_mesh
 from conical.backtransform import backtransform
+from conical.config import BLEND_SHIFT_RATIO, DEFAULT_K, MAX_SPACING_FACTOR
+from conical.meshio import RadiusProfile, center_on_axis
+from conical.planar_slicer import slice_mesh
+from conical.plotstyle import L
 from conical.profile import AngleProfile
-from conical.varangle import select_banded, select_banded_j
 from conical.selector import select_cone
-from conical.toolpath import (sample_extrusions, check_support,
-                              support_breakdown)
-from conical.config import MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K
+from conical.toolpath import check_support, sample_extrusions, support_breakdown
+from conical.transform import transform_cone, transform_cone_profile
+from conical.varangle import select_banded, select_banded_j
 
 LAYER_H = 0.4
 
@@ -64,7 +64,7 @@ def waisted_model(r_neck=2.0):
     z_neck = pts[-1][1]
     pts += [(r_neck, z) for z in np.linspace(z_neck, 20.0, 8)[1:]]
     pts += [(r, z) for r, z in zip(np.linspace(r_neck, 7.0, 12)[1:],
-                                   np.linspace(20.0, 30.0, 12)[1:])]
+                                   np.linspace(20.0, 30.0, 12)[1:], strict=True)]
     pts += [(0.0, 30.0)]
     m = trimesh.creation.revolve(np.array(pts), sections=64)
     m.merge_vertices()
@@ -189,7 +189,7 @@ def main():
           L("banded-2\n(+ blend cost in J)", "밴드2\n(+ J에 블렌드비용)")]
     fig, axes = plt.subplots(1, len(results), figsize=(6.6 * len(results), 4.4))
     axes = np.atleast_1d(axes)
-    for ax, (name, rows) in zip(axes, results.items()):
+    for ax, (name, rows) in zip(axes, results.items(), strict=True):
         # 쌓은 막대: 아래가 진짜 오버행, 위가 희소 인필 위(허상).
         # 둘을 같이 그리는 이유 — 막대 전체 높이가 옛 지표('페리미터 미지지')라
         # 옛 표와 새 표의 관계가 그림에서 바로 읽힌다. 결론은 아래 칸으로 읽는다.
@@ -208,10 +208,10 @@ def main():
         ax.set_title(L("sphere (no waist)", "구 (허리 없음)") if "구" in name
                      else L("lamp (with waist)", "램프 (허리 있음)"), fontsize=10)
         ax.legend(fontsize=7, loc="upper right", framealpha=.9)
-        for i, (o, g, a) in enumerate(zip(ohs, gaps, angs)):
+        for i, (o, g, a) in enumerate(zip(ohs, gaps, angs, strict=True)):
             ax.text(i, o + g, f"{o:.2f}\n⟨|θ|⟩={a:.0f}°", ha="center",
                     va="bottom", fontsize=7)
-        ax.set_ylim(0, max(o + g for o, g in zip(ohs, gaps)) * 1.25)
+        ax.set_ylim(0, max(o + g for o, g in zip(ohs, gaps, strict=True)) * 1.25)
     fig.suptitle(L("per-band angles vs uniform cone — read the solid part only "
                    "(⟨|θ|⟩ = mean distortion angle)",
                    "부위별 각도 vs 균일 원뿔 — 결론은 아래 칸(진짜 오버행)으로만 읽는다  "

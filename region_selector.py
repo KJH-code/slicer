@@ -8,9 +8,8 @@ region_selector.py — 부위별(영역별) 각도 결정 실행 스크립트 (C
     python3 region_selector.py model.stl   # STL 파일로 실행
 """
 
-from conical.regions import select_regions
 from conical.meshio import load_mesh_or_demo
-
+from conical.regions import select_regions
 
 if __name__ == "__main__":
     import sys

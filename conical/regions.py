@@ -18,9 +18,9 @@ regions.py — 부위별(영역별) 원뿔 각도 결정 (Stage 4, 확장).
 
 import numpy as np
 
+from .config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
 from .overhang import analyze_overhangs
 from .selector import evaluate_J
-from .config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
 
 
 # ─────────────────────────────────────────────────────────────
@@ -156,7 +156,6 @@ def _print_regions(region_results, baseline_pct, total_remaining_pct,
           f"{'영역서포트':>9} | {'남김(전체%)':>10}")
     print("-" * 66)
     for c in region_results:
-        note = "완만→각도0" if c["region"] == 0 else "심함"
         print(f"{c['region']:>4} | {c['area_pct_of_model']:6.1f}% | "
               f"{c['direction']:>8} | {c['angle']:4d}° | "
               f"{c['support']:5.1f}%→ | {c['support_area_left_pct']:9.1f}%")

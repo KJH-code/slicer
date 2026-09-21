@@ -22,10 +22,10 @@ k를 어떻게 정하나:
     k를 훑으며 "k에 따라 선택이 어떻게 변하는가"(민감도 분석)를 함께 출력한다.
 """
 
-from .config import MAX_ANGLE_DEG, ANGLE_STEP, THRESHOLD_DEG
 # 판정 기준 통일(2026-07 리뷰): 변환공간 근사(sweep) 대신 해석식(실공간 국소
 # 레이어 각)을 쓴다. 시그니처 동일. 근거: docs/warped_threshold_finding.md
 from .analytic import support_fraction
+from .config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
 
 
 # ─────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ def select_cone(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP, verbose=True)
                   f"서포트는 {nxt['gain'] - best['gain']:+.1f}%p 더 줄지만 "
                   f"비용이 {nxt['cost'] - best['cost']:+.1f} 늘어 J가 {nxt['J']:.2f}로 낮아짐")
         elif best["angle"] == max_angle:
-            print(f"  · 주의: 최대 각도가 선택됨 → k가 너무 작아 비용이 무시되고 있을 수 있음")
+            print("  · 주의: 최대 각도가 선택됨 → k가 너무 작아 비용이 무시되고 있을 수 있음")
 
     return best, candidates
 

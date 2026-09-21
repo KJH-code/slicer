@@ -24,8 +24,13 @@ rep5x_check.py — REP5X G-code 사전 점검 (검사기 C 의 REP5X 판).
 import argparse
 
 from conical import gcode as gc
-from conical.rep5x import (REP5X, Rep5xProfile, check_head_interference,
-                           check_rep5x, check_rewind_sweep)
+from conical.rep5x import (
+    REP5X,
+    Rep5xProfile,
+    check_head_interference,
+    check_rep5x,
+    check_rewind_sweep,
+)
 from conical.toolpath import HotendProfile
 
 SEVERITY_ORDER = {"치명": 0, "경고": 1, "정보": 2}

@@ -85,7 +85,7 @@ def test_toolpath_is_preserved_exactly():
     for turns in (0.5, 1.0, 3.0):
         b = _extrusions(add_v_rewinds(base, PRUSA_UV, max_turns=turns)[0])
         assert len(a) == len(b), f"turns={turns}: 압출 수 {len(a)} != {len(b)}"
-        for i, (p, q) in enumerate(zip(a, b)):
+        for i, (p, q) in enumerate(zip(a, b, strict=True)):
             assert abs(p[0] - q[0]) < 1e-9 and abs(p[1] - q[1]) < 1e-9 \
                 and abs(p[2] - q[2]) < 1e-9, f"turns={turns} [{i}]: XYZ 가 바뀌었다"
             assert abs(p[3] - q[3]) < 1e-9, f"turns={turns} [{i}]: E 가 바뀌었다"

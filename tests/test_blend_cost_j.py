@@ -25,10 +25,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from conical.analytic import support_fraction  # noqa: E402
 from conical.config import MAX_SPACING_FACTOR  # noqa: E402
-from conical.meshio import center_on_axis, RadiusProfile  # noqa: E402
+from conical.meshio import RadiusProfile, center_on_axis  # noqa: E402
 from conical.profile import AngleProfile  # noqa: E402
-from conical.varangle import (blend_penalty, profile_objective,  # noqa: E402
-                              select_banded_j)
+from conical.varangle import (  # noqa: E402
+    blend_penalty,
+    profile_objective,
+    select_banded_j,
+)
 
 
 def _sphere():
@@ -42,7 +45,7 @@ def _waisted():
            for t in np.linspace(0, t_end, 40)]
     pts += [(2.0, z) for z in np.linspace(pts[-1][1], 20.0, 6)[1:]]
     pts += [(r, z) for r, z in zip(np.linspace(2.0, 7.0, 8)[1:],
-                                   np.linspace(20.0, 30.0, 8)[1:])]
+                                   np.linspace(20.0, 30.0, 8)[1:], strict=True)]
     pts += [(0.0, 30.0)]
     m = trimesh.creation.revolve(np.array(pts), sections=48)
     m.merge_vertices()
