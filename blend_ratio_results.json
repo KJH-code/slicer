@@ -1,0 +1,530 @@
+[
+ {
+  "name": "구",
+  "prominence": 0.0,
+  "r_max": 10.0,
+  "H": 20.0,
+  "dS_ideal": 1.416550843888168,
+  "cost": 72.77625328005102,
+  "rho": 51.37567323760422,
+  "blend_mm": 14.53085056010722,
+  "theta_uniform": [
+   [
+    28,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    36,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 0.5148489005006376,
+   "angle": 28.000000000000007,
+   "thetas": [
+    28.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.5148489005006376,
+   "angle": 28.000000000000007,
+   "thetas": [
+    28.0,
+    28.0
+   ]
+  },
+  "ratio": 1.0,
+  "pareto": false,
+  "seconds": 7.2
+ },
+ {
+  "name": "허리 r=7",
+  "prominence": 0.0,
+  "r_max": 7.999353514496462,
+  "H": 30.0,
+  "dS_ideal": 2.0922216203704456,
+  "cost": 25.681164968120196,
+  "rho": 12.274591141818489,
+  "blend_mm": 8.748170926730587,
+  "theta_uniform": [
+   [
+    18,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    32,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 0.8979091208171468,
+   "angle": 18.000000000000004,
+   "thetas": [
+    18.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.9975586634227136,
+   "angle": 8.555413484721239,
+   "thetas": [
+    18.0,
+    0.0
+   ]
+  },
+  "ratio": 0.9001065839439856,
+  "pareto": false,
+  "seconds": 13.3
+ },
+ {
+  "name": "허리 r=5",
+  "prominence": 0.2857142857142857,
+  "r_max": 7.998736678270458,
+  "H": 30.0,
+  "dS_ideal": 1.8013701906771151,
+  "cost": 14.669480936741348,
+  "rho": 8.143512650904505,
+  "blend_mm": 6.569406629348279,
+  "theta_uniform": [
+   [
+    20,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    32,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 0.955983605637898,
+   "angle": 20.0,
+   "thetas": [
+    20.0
+   ]
+  },
+  "banded": {
+   "overhang": 1.0618226407515978,
+   "angle": 11.198133708791037,
+   "thetas": [
+    20.0,
+    0.0
+   ]
+  },
+  "ratio": 0.9003232450960144,
+  "pareto": false,
+  "seconds": 13.0
+ },
+ {
+  "name": "허리 r=4",
+  "prominence": 0.4285714285714286,
+  "r_max": 7.998739909310704,
+  "H": 30.0,
+  "dS_ideal": 2.9159987300935826,
+  "cost": 9.822502813771173,
+  "rho": 3.368486656870369,
+  "blend_mm": 5.396068134739416,
+  "theta_uniform": [
+   [
+    16,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    34,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 1.380275272790251,
+   "angle": 16.0,
+   "thetas": [
+    16.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.966780387185002,
+   "angle": 15.013095963631832,
+   "thetas": [
+    26.0,
+    0.0
+   ]
+  },
+  "ratio": 1.4277030141346083,
+  "pareto": true,
+  "seconds": 10.7
+ },
+ {
+  "name": "허리 r=3",
+  "prominence": 0.5714285714285714,
+  "r_max": 7.998690143944678,
+  "H": 30.0,
+  "dS_ideal": 1.4277699019284387,
+  "cost": 4.561902577513388,
+  "rho": 3.1951244884429815,
+  "blend_mm": 3.1902565899688753,
+  "theta_uniform": [
+   [
+    20,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    28,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 1.074155225185673,
+   "angle": 20.0,
+   "thetas": [
+    20.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.3226939912626428,
+   "angle": 17.062320447159973,
+   "thetas": [
+    28.0,
+    0.0
+   ]
+  },
+  "ratio": 3.3287115789875705,
+  "pareto": true,
+  "seconds": 10.1
+ },
+ {
+  "name": "허리 r=2",
+  "prominence": 0.7142857142857143,
+  "r_max": 7.999938264950697,
+  "H": 30.0,
+  "dS_ideal": 0.8661669725219557,
+  "cost": 2.324429514034386,
+  "rho": 2.6835813275891978,
+  "blend_mm": 2.3094010767585047,
+  "theta_uniform": [
+   [
+    24,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    30,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 1.0089569929468463,
+   "angle": 24.0,
+   "thetas": [
+    24.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.32511674159282583,
+   "angle": 18.574663348430846,
+   "thetas": [
+    30.0,
+    0.0
+   ]
+  },
+  "ratio": 3.1033683101144565,
+  "pareto": true,
+  "seconds": 10.4
+ },
+ {
+  "name": "허리 r=1",
+  "prominence": 0.8571428571428572,
+  "r_max": 7.999213683425075,
+  "H": 30.0,
+  "dS_ideal": 0.8152231408246362,
+  "cost": 0.7162804789091959,
+  "rho": 0.8786311907003092,
+  "blend_mm": 1.2497387038186574,
+  "theta_uniform": [
+   [
+    26,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    32,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 0.9857510498131964,
+   "angle": 26.0,
+   "thetas": [
+    26.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.23903814619492889,
+   "angle": 20.379839429086008,
+   "thetas": [
+    32.0,
+    0.0
+   ]
+  },
+  "ratio": 4.123823186820333,
+  "pareto": true,
+  "seconds": 9.6
+ },
+ {
+  "name": "허리3 ×1.1",
+  "prominence": 0.5714285714285714,
+  "r_max": 8.798559158339147,
+  "H": 30.0,
+  "dS_ideal": 1.8773743312584537,
+  "cost": 6.410115404870847,
+  "rho": 3.4144045213263237,
+  "blend_mm": 4.6240332041290255,
+  "theta_uniform": [
+   [
+    22,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    32,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 1.3812028435016026,
+   "angle": 22.0,
+   "thetas": [
+    22.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.2753474215858147,
+   "angle": 19.461452970002416,
+   "thetas": [
+    32.0,
+    0.0
+   ]
+  },
+  "ratio": 5.016218548722227,
+  "pareto": true,
+  "seconds": 11.2
+ },
+ {
+  "name": "허리3 ×1.2",
+  "prominence": 0.5714285714285714,
+  "r_max": 9.598428172733614,
+  "H": 30.0,
+  "dS_ideal": 1.954710773006565,
+  "cost": 10.550042259262817,
+  "rho": 5.397239532800889,
+  "blend_mm": 6.988955058932817,
+  "theta_uniform": [
+   [
+    26,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    38,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 1.0166268809051355,
+   "angle": 25.999999999999996,
+   "thetas": [
+    26.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.0,
+   "angle": 20.64061192847817,
+   "thetas": [
+    34.0,
+    0.0
+   ]
+  },
+  "ratio": Infinity,
+  "pareto": true,
+  "seconds": 13.8
+ },
+ {
+  "name": "허리3 ×1.3",
+  "prominence": 0.5714285714285714,
+  "r_max": 10.398297187128083,
+  "H": 30.0,
+  "dS_ideal": 0.6033911489576931,
+  "cost": 17.51469577299415,
+  "rho": 29.027100916626466,
+  "blend_mm": 9.787378121147789,
+  "theta_uniform": [
+   [
+    34,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    38,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 0.20575815774911674,
+   "angle": 33.99999999999999,
+   "thetas": [
+    34.0
+   ]
+  },
+  "banded": {
+   "overhang": 0.6414161670350332,
+   "angle": 19.366865024581394,
+   "thetas": [
+    32.0,
+    0.0
+   ]
+  },
+  "ratio": 0.32078729586789245,
+  "pareto": false,
+  "seconds": 16.5
+ },
+ {
+  "name": "허리3 ×1.5",
+  "prominence": 0.5714285714285714,
+  "r_max": 11.99803521591702,
+  "H": 30.0,
+  "dS_ideal": 0.651616051864049,
+  "cost": 41.54654542595925,
+  "rho": 63.759241822095845,
+  "blend_mm": 17.621092254722882,
+  "theta_uniform": [
+   [
+    36,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    40,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 0.0,
+   "angle": 36.0,
+   "thetas": [
+    36.0
+   ]
+  },
+  "banded": {
+   "overhang": 1.077033002516693,
+   "angle": 19.504415880585498,
+   "thetas": [
+    32.0,
+    0.0
+   ]
+  },
+  "ratio": 0.0,
+  "pareto": false,
+  "seconds": 19.0
+ },
+ {
+  "name": "허리3 ×2",
+  "prominence": 0.5714285714285714,
+  "r_max": 15.997380287889357,
+  "H": 30.0,
+  "dS_ideal": 0.0,
+  "cost": 79.04986764743465,
+  "rho": Infinity,
+  "blend_mm": 28.80821181877224,
+  "theta_uniform": [
+   [
+    42,
+    "outward"
+   ]
+  ],
+  "theta_ideal": [
+   [
+    42,
+    "outward"
+   ],
+   [
+    0,
+    "outward"
+   ]
+  ],
+  "uniform": {
+   "overhang": 0.0,
+   "angle": 41.99999999999999,
+   "thetas": [
+    42.0
+   ]
+  },
+  "banded": {
+   "overhang": 1.569788239089775,
+   "angle": 36.35889031877782,
+   "thetas": [
+    42.0,
+    28.0
+   ]
+  },
+  "ratio": 0.0,
+  "pareto": false,
+  "seconds": 39.1
+ }
+]
