@@ -1,0 +1,1192 @@
+[
+ {
+  "name": "구",
+  "rho": 51.37567323760422,
+  "cost": 72.77625328005102,
+  "dS": 1.416550843888168,
+  "prominence": 0.0,
+  "spread": 0.00476243156385401,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.5148489005006376,
+    "uniform_angle": 28.000000000000007,
+    "uniform_thetas": [
+     28.0
+    ],
+    "banded_oh": 2.15932780599076,
+    "banded_angle": 14.598243341158307,
+    "banded_thetas": [
+     28.0,
+     10.0
+    ],
+    "pareto": false,
+    "seconds": 7.1
+   },
+   "0.1": {
+    "uniform_oh": 0.5148489005006376,
+    "uniform_angle": 28.000000000000007,
+    "uniform_thetas": [
+     28.0
+    ],
+    "banded_oh": 0.5148489005006376,
+    "banded_angle": 28.000000000000007,
+    "banded_thetas": [
+     28.0,
+     28.0
+    ],
+    "pareto": false,
+    "seconds": 7.3
+   },
+   "0.2": {
+    "uniform_oh": 0.5148489005006376,
+    "uniform_angle": 28.000000000000007,
+    "uniform_thetas": [
+     28.0
+    ],
+    "banded_oh": 0.5148489005006376,
+    "banded_angle": 28.000000000000007,
+    "banded_thetas": [
+     28.0,
+     28.0
+    ],
+    "pareto": false,
+    "seconds": 6.3
+   },
+   "0.4": {
+    "uniform_oh": 0.5148489005006376,
+    "uniform_angle": 28.000000000000007,
+    "uniform_thetas": [
+     28.0
+    ],
+    "banded_oh": 0.5148489005006376,
+    "banded_angle": 28.000000000000007,
+    "banded_thetas": [
+     28.0,
+     28.0
+    ],
+    "pareto": false,
+    "seconds": 6.9
+   }
+  }
+ },
+ {
+  "name": "허리 r=7",
+  "rho": 12.274591141818489,
+  "cost": 25.681164968120196,
+  "dS": 2.0922216203704456,
+  "prominence": 0.0,
+  "spread": 2.5376526277146434e-16,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.8979091208171468,
+    "uniform_angle": 18.000000000000004,
+    "uniform_thetas": [
+     18.0
+    ],
+    "banded_oh": 0.8653192788987966,
+    "banded_angle": 11.442737778306698,
+    "banded_thetas": [
+     24.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 11.3
+   },
+   "0.1": {
+    "uniform_oh": 0.8979091208171468,
+    "uniform_angle": 18.000000000000004,
+    "uniform_thetas": [
+     18.0
+    ],
+    "banded_oh": 0.9975586634227136,
+    "banded_angle": 8.555413484721239,
+    "banded_thetas": [
+     18.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 12.4
+   },
+   "0.2": {
+    "uniform_oh": 0.8979091208171468,
+    "uniform_angle": 18.000000000000004,
+    "uniform_thetas": [
+     18.0
+    ],
+    "banded_oh": 0.8979091208171468,
+    "banded_angle": 18.000000000000004,
+    "banded_thetas": [
+     18.0,
+     18.0
+    ],
+    "pareto": false,
+    "seconds": 10.5
+   },
+   "0.4": {
+    "uniform_oh": 0.8979091208171468,
+    "uniform_angle": 18.000000000000004,
+    "uniform_thetas": [
+     18.0
+    ],
+    "banded_oh": 0.8979091208171468,
+    "banded_angle": 18.000000000000004,
+    "banded_thetas": [
+     18.0,
+     18.0
+    ],
+    "pareto": false,
+    "seconds": 11.0
+   }
+  }
+ },
+ {
+  "name": "허리 r=5",
+  "rho": 8.143512650904505,
+  "cost": 14.669480936741348,
+  "dS": 1.8013701906771151,
+  "prominence": 0.2857142857142857,
+  "spread": 0.005125181253992903,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.955983605637898,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.19907057813512508,
+    "banded_angle": 18.373677741709066,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 9.5
+   },
+   "0.1": {
+    "uniform_oh": 0.955983605637898,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 1.0618226407515978,
+    "banded_angle": 11.198133708791037,
+    "banded_thetas": [
+     20.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 11.0
+   },
+   "0.2": {
+    "uniform_oh": 0.955983605637898,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 1.1145224559265217,
+    "banded_angle": 10.075951972745115,
+    "banded_thetas": [
+     18.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 10.4
+   },
+   "0.4": {
+    "uniform_oh": 0.955983605637898,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.955983605637898,
+    "banded_angle": 20.0,
+    "banded_thetas": [
+     20.0,
+     20.0
+    ],
+    "pareto": false,
+    "seconds": 10.8
+   }
+  }
+ },
+ {
+  "name": "허리 r=4",
+  "rho": 3.368486656870369,
+  "cost": 9.822502813771173,
+  "dS": 2.9159987300935826,
+  "prominence": 0.4285714285714286,
+  "spread": 0.0057261633056652885,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 1.380275272790251,
+    "uniform_angle": 16.0,
+    "uniform_thetas": [
+     16.0
+    ],
+    "banded_oh": 0.966780387185002,
+    "banded_angle": 15.013095963631832,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.7
+   },
+   "0.1": {
+    "uniform_oh": 1.380275272790251,
+    "uniform_angle": 16.0,
+    "uniform_thetas": [
+     16.0
+    ],
+    "banded_oh": 0.966780387185002,
+    "banded_angle": 15.013095963631832,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 11.2
+   },
+   "0.2": {
+    "uniform_oh": 1.380275272790251,
+    "uniform_angle": 16.0,
+    "uniform_thetas": [
+     16.0
+    ],
+    "banded_oh": 1.0153810219289006,
+    "banded_angle": 13.852427420217417,
+    "banded_thetas": [
+     24.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 12.1
+   },
+   "0.4": {
+    "uniform_oh": 1.380275272790251,
+    "uniform_angle": 16.0,
+    "uniform_thetas": [
+     16.0
+    ],
+    "banded_oh": 1.4285262498044298,
+    "banded_angle": 14.198488250364152,
+    "banded_thetas": [
+     16.0,
+     12.0
+    ],
+    "pareto": false,
+    "seconds": 11.4
+   }
+  }
+ },
+ {
+  "name": "허리 r=3",
+  "rho": 3.1951244884429815,
+  "cost": 4.561902577513388,
+  "dS": 1.4277699019284387,
+  "prominence": 0.5714285714285714,
+  "spread": 0.0030308341013006545,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 1.074155225185673,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.3226939912626428,
+    "banded_angle": 17.062320447159973,
+    "banded_thetas": [
+     28.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.5
+   },
+   "0.1": {
+    "uniform_oh": 1.074155225185673,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.3226939912626428,
+    "banded_angle": 17.062320447159973,
+    "banded_thetas": [
+     28.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.1
+   },
+   "0.2": {
+    "uniform_oh": 1.074155225185673,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.3226939912626428,
+    "banded_angle": 17.062320447159973,
+    "banded_thetas": [
+     28.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 9.4
+   },
+   "0.4": {
+    "uniform_oh": 1.074155225185673,
+    "uniform_angle": 20.0,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 1.170641167193876,
+    "banded_angle": 12.7067792140061,
+    "banded_thetas": [
+     20.0,
+     2.0
+    ],
+    "pareto": false,
+    "seconds": 10.1
+   }
+  }
+ },
+ {
+  "name": "허리 r=2",
+  "rho": 2.6835813275891978,
+  "cost": 2.324429514034386,
+  "dS": 0.8661669725219557,
+  "prominence": 0.7142857142857143,
+  "spread": 0.006007135222462677,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 1.0089569929468463,
+    "uniform_angle": 24.0,
+    "uniform_thetas": [
+     24.0
+    ],
+    "banded_oh": 0.32511674159282583,
+    "banded_angle": 18.574663348430846,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 8.4
+   },
+   "0.1": {
+    "uniform_oh": 1.0089569929468463,
+    "uniform_angle": 24.0,
+    "uniform_thetas": [
+     24.0
+    ],
+    "banded_oh": 0.32511674159282583,
+    "banded_angle": 18.574663348430846,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 8.4
+   },
+   "0.2": {
+    "uniform_oh": 1.0089569929468463,
+    "uniform_angle": 24.0,
+    "uniform_thetas": [
+     24.0
+    ],
+    "banded_oh": 0.32511674159282583,
+    "banded_angle": 18.574663348430846,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 8.0
+   },
+   "0.4": {
+    "uniform_oh": 1.0089569929468463,
+    "uniform_angle": 24.0,
+    "uniform_thetas": [
+     24.0
+    ],
+    "banded_oh": 1.1264339404402262,
+    "banded_angle": 14.853192344315811,
+    "banded_thetas": [
+     24.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 10.6
+   }
+  }
+ },
+ {
+  "name": "허리 r=1",
+  "rho": 0.8786311907003092,
+  "cost": 0.7162804789091959,
+  "dS": 0.8152231408246362,
+  "prominence": 0.8571428571428572,
+  "spread": 2.465413062155838e-16,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.9857510498131964,
+    "uniform_angle": 26.0,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 0.23903814619492889,
+    "banded_angle": 20.379839429086008,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 9.3
+   },
+   "0.1": {
+    "uniform_oh": 0.9857510498131964,
+    "uniform_angle": 26.0,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 0.23903814619492889,
+    "banded_angle": 20.379839429086008,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.3
+   },
+   "0.2": {
+    "uniform_oh": 0.9857510498131964,
+    "uniform_angle": 26.0,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 0.23903814619492889,
+    "banded_angle": 20.379839429086008,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.4
+   },
+   "0.4": {
+    "uniform_oh": 0.9857510498131964,
+    "uniform_angle": 26.0,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 1.128956167219355,
+    "banded_angle": 16.48933283159138,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 11.4
+   }
+  }
+ },
+ {
+  "name": "허리3 ×1.1",
+  "rho": 3.4144045213263237,
+  "cost": 6.410115404870847,
+  "dS": 1.8773743312584537,
+  "prominence": 0.5714285714285714,
+  "spread": 0.00303083410130077,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 1.3812028435016026,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.2753474215858147,
+    "banded_angle": 19.461452970002416,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.1
+   },
+   "0.1": {
+    "uniform_oh": 1.3812028435016026,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.2753474215858147,
+    "banded_angle": 19.461452970002416,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.6
+   },
+   "0.2": {
+    "uniform_oh": 1.3812028435016026,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.6343583969833231,
+    "banded_angle": 18.232983564421048,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.0
+   },
+   "0.4": {
+    "uniform_oh": 1.3812028435016026,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 1.5481010686572607,
+    "banded_angle": 13.20471220661097,
+    "banded_thetas": [
+     22.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 12.7
+   }
+  }
+ },
+ {
+  "name": "허리3 ×1.2",
+  "rho": 5.397239532800889,
+  "cost": 10.550042259262817,
+  "dS": 1.954710773006565,
+  "prominence": 0.5714285714285714,
+  "spread": 0.0030308341013007283,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 1.0166268809051355,
+    "uniform_angle": 25.999999999999996,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 0.0,
+    "banded_angle": 20.64061192847817,
+    "banded_thetas": [
+     34.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 12.7
+   },
+   "0.1": {
+    "uniform_oh": 1.0166268809051355,
+    "uniform_angle": 25.999999999999996,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 0.0,
+    "banded_angle": 20.64061192847817,
+    "banded_thetas": [
+     34.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 14.0
+   },
+   "0.2": {
+    "uniform_oh": 1.0166268809051355,
+    "uniform_angle": 25.999999999999996,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 1.1973124148602035,
+    "banded_angle": 15.745695763020864,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 12.8
+   },
+   "0.4": {
+    "uniform_oh": 1.0166268809051355,
+    "uniform_angle": 25.999999999999996,
+    "uniform_thetas": [
+     26.0
+    ],
+    "banded_oh": 1.1545442526415575,
+    "banded_angle": 17.976305871761728,
+    "banded_thetas": [
+     26.0,
+     6.0
+    ],
+    "pareto": false,
+    "seconds": 12.5
+   }
+  }
+ },
+ {
+  "name": "허리3 ×1.3",
+  "rho": 29.027100916626466,
+  "cost": 17.51469577299415,
+  "dS": 0.6033911489576931,
+  "prominence": 0.5714285714285714,
+  "spread": 0.003030834101300778,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.20575815774911674,
+    "uniform_angle": 33.99999999999999,
+    "uniform_thetas": [
+     34.0
+    ],
+    "banded_oh": 0.2816738269088937,
+    "banded_angle": 20.838305208730212,
+    "banded_thetas": [
+     34.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 16.3
+   },
+   "0.1": {
+    "uniform_oh": 0.20575815774911674,
+    "uniform_angle": 33.99999999999999,
+    "uniform_thetas": [
+     34.0
+    ],
+    "banded_oh": 0.6414161670350332,
+    "banded_angle": 19.366865024581394,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 15.7
+   },
+   "0.2": {
+    "uniform_oh": 0.20575815774911674,
+    "uniform_angle": 33.99999999999999,
+    "uniform_thetas": [
+     34.0
+    ],
+    "banded_oh": 0.6242422606522486,
+    "banded_angle": 20.150186728366165,
+    "banded_thetas": [
+     32.0,
+     2.0
+    ],
+    "pareto": false,
+    "seconds": 17.1
+   },
+   "0.4": {
+    "uniform_oh": 0.20575815774911674,
+    "uniform_angle": 33.99999999999999,
+    "uniform_thetas": [
+     34.0
+    ],
+    "banded_oh": 0.22279126949277103,
+    "banded_angle": 32.33681250165615,
+    "banded_thetas": [
+     34.0,
+     30.0
+    ],
+    "pareto": false,
+    "seconds": 17.2
+   }
+  }
+ },
+ {
+  "name": "허리3 ×1.5",
+  "rho": 63.759241822095845,
+  "cost": 41.54654542595925,
+  "dS": 0.651616051864049,
+  "prominence": 0.5714285714285714,
+  "spread": 0.0030308341013007833,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 36.0,
+    "uniform_thetas": [
+     36.0
+    ],
+    "banded_oh": 1.077033002516693,
+    "banded_angle": 19.504415880585498,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 19.3
+   },
+   "0.1": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 36.0,
+    "uniform_thetas": [
+     36.0
+    ],
+    "banded_oh": 1.077033002516693,
+    "banded_angle": 19.504415880585498,
+    "banded_thetas": [
+     32.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 17.5
+   },
+   "0.2": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 36.0,
+    "uniform_thetas": [
+     36.0
+    ],
+    "banded_oh": 0.0,
+    "banded_angle": 26.46049570946332,
+    "banded_thetas": [
+     36.0,
+     12.0
+    ],
+    "pareto": false,
+    "seconds": 19.9
+   },
+   "0.4": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 36.0,
+    "uniform_thetas": [
+     36.0
+    ],
+    "banded_oh": 0.0,
+    "banded_angle": 36.0,
+    "banded_thetas": [
+     36.0,
+     36.0
+    ],
+    "pareto": false,
+    "seconds": 20.5
+   }
+  }
+ },
+ {
+  "name": "허리3 ×2",
+  "rho": Infinity,
+  "cost": 79.04986764743465,
+  "dS": 0.0,
+  "prominence": 0.5714285714285714,
+  "spread": 0.0030308341013006545,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 41.99999999999999,
+    "uniform_thetas": [
+     42.0
+    ],
+    "banded_oh": 0.8089112926175794,
+    "banded_angle": 34.87401934963107,
+    "banded_thetas": [
+     42.0,
+     24.0
+    ],
+    "pareto": false,
+    "seconds": 35.5
+   },
+   "0.1": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 41.99999999999999,
+    "uniform_thetas": [
+     42.0
+    ],
+    "banded_oh": 1.569788239089775,
+    "banded_angle": 36.35889031877782,
+    "banded_thetas": [
+     42.0,
+     28.0
+    ],
+    "pareto": false,
+    "seconds": 36.7
+   },
+   "0.2": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 41.99999999999999,
+    "uniform_thetas": [
+     42.0
+    ],
+    "banded_oh": 1.5467518981730661,
+    "banded_angle": 37.15958595519979,
+    "banded_thetas": [
+     42.0,
+     30.0
+    ],
+    "pareto": false,
+    "seconds": 34.7
+   },
+   "0.4": {
+    "uniform_oh": 0.0,
+    "uniform_angle": 41.99999999999999,
+    "uniform_thetas": [
+     42.0
+    ],
+    "banded_oh": 0.0,
+    "banded_angle": 41.99999999999999,
+    "banded_thetas": [
+     42.0,
+     42.0
+    ],
+    "pareto": false,
+    "seconds": 41.6
+   }
+  }
+ },
+ {
+  "name": "허리3 로브0.1",
+  "rho": 3.8832410870988547,
+  "cost": 7.077878495060809,
+  "dS": 1.8226729518739844,
+  "prominence": 0.5714285714285714,
+  "spread": 0.18429795517379127,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.5520064870215219,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.16034494926425877,
+    "banded_angle": 18.29621487839147,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 11.7
+   },
+   "0.1": {
+    "uniform_oh": 0.5520064870215219,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.16034494926425877,
+    "banded_angle": 18.29621487839147,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 9.5
+   },
+   "0.2": {
+    "uniform_oh": 0.5520064870215219,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.5676616095040234,
+    "banded_angle": 14.451717576815508,
+    "banded_thetas": [
+     24.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 10.6
+   },
+   "0.4": {
+    "uniform_oh": 0.5520064870215219,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.6152080941380011,
+    "banded_angle": 13.245353258559298,
+    "banded_thetas": [
+     22.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 10.3
+   }
+  }
+ },
+ {
+  "name": "허리3 로브0.15",
+  "rho": 3.4949386857283087,
+  "cost": 7.088723795878509,
+  "dS": 2.028282734923372,
+  "prominence": 0.5714285714285714,
+  "spread": 0.2631097469444395,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.6142594329704568,
+    "uniform_angle": 19.999999999999996,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.18867322958458124,
+    "banded_angle": 18.303580976391505,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.2
+   },
+   "0.1": {
+    "uniform_oh": 0.6142594329704568,
+    "uniform_angle": 19.999999999999996,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.18867322958458124,
+    "banded_angle": 18.303580976391505,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 12.5
+   },
+   "0.2": {
+    "uniform_oh": 0.6142594329704568,
+    "uniform_angle": 19.999999999999996,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.4041916853641539,
+    "banded_angle": 15.849717212954948,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 11.5
+   },
+   "0.4": {
+    "uniform_oh": 0.6142594329704568,
+    "uniform_angle": 19.999999999999996,
+    "uniform_thetas": [
+     20.0
+    ],
+    "banded_oh": 0.60100974128314,
+    "banded_angle": 13.247590116315664,
+    "banded_thetas": [
+     22.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 11.8
+   }
+  }
+ },
+ {
+  "name": "허리3 로브0.2",
+  "rho": 4.582990859696456,
+  "cost": 8.415107828495705,
+  "dS": 1.8361607269391458,
+  "prominence": 0.5714285714285715,
+  "spread": 0.33535388940086686,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.5573914109625897,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.32473133335397386,
+    "banded_angle": 17.082848066008246,
+    "banded_thetas": [
+     28.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 11.2
+   },
+   "0.1": {
+    "uniform_oh": 0.5573914109625897,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.32473133335397386,
+    "banded_angle": 17.082848066008246,
+    "banded_thetas": [
+     28.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 10.8
+   },
+   "0.2": {
+    "uniform_oh": 0.5573914109625897,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.41738983039319655,
+    "banded_angle": 15.85572049440266,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 12.8
+   },
+   "0.4": {
+    "uniform_oh": 0.5573914109625897,
+    "uniform_angle": 22.0,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.6110822645122609,
+    "banded_angle": 14.845455074620585,
+    "banded_thetas": [
+     22.0,
+     4.0
+    ],
+    "pareto": false,
+    "seconds": 11.7
+   }
+  }
+ },
+ {
+  "name": "허리3 로브0.3",
+  "rho": 5.270113884569897,
+  "cost": 10.070402477696536,
+  "dS": 1.9108510173150461,
+  "prominence": 0.5714285714285714,
+  "spread": 0.46317044913146954,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.544222151049227,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.23972808611853352,
+    "banded_angle": 18.337499201183373,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 12.9
+   },
+   "0.1": {
+    "uniform_oh": 0.544222151049227,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.47779106497980106,
+    "banded_angle": 15.874560734462989,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 13.2
+   },
+   "0.2": {
+    "uniform_oh": 0.544222151049227,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.47779106497980106,
+    "banded_angle": 15.874560734462989,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 11.4
+   },
+   "0.4": {
+    "uniform_oh": 0.544222151049227,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.544222151049227,
+    "banded_angle": 22.000000000000004,
+    "banded_thetas": [
+     22.0,
+     22.0
+    ],
+    "pareto": false,
+    "seconds": 11.1
+   }
+  }
+ },
+ {
+  "name": "허리3 로브0.4",
+  "rho": 7.457414276011372,
+  "cost": 14.434281650441589,
+  "dS": 1.935561190005636,
+  "prominence": 0.5714285714285714,
+  "spread": 0.5727275003291288,
+  "outcomes": {
+   "0.05": {
+    "uniform_oh": 0.5876677501091437,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.28566260459497994,
+    "banded_angle": 18.368794995262984,
+    "banded_thetas": [
+     30.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 13.2
+   },
+   "0.1": {
+    "uniform_oh": 0.5876677501091437,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.5342858556060353,
+    "banded_angle": 15.89909817335271,
+    "banded_thetas": [
+     26.0,
+     0.0
+    ],
+    "pareto": true,
+    "seconds": 13.6
+   },
+   "0.2": {
+    "uniform_oh": 0.5876677501091437,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.6544347925691444,
+    "banded_angle": 13.443124587770377,
+    "banded_thetas": [
+     22.0,
+     0.0
+    ],
+    "pareto": false,
+    "seconds": 13.3
+   },
+   "0.4": {
+    "uniform_oh": 0.5876677501091437,
+    "uniform_angle": 22.000000000000004,
+    "uniform_thetas": [
+     22.0
+    ],
+    "banded_oh": 0.5876677501091437,
+    "banded_angle": 22.000000000000004,
+    "banded_thetas": [
+     22.0,
+     22.0
+    ],
+    "pareto": false,
+    "seconds": 12.3
+   }
+  }
+ }
+]
