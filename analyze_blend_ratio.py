@@ -82,13 +82,53 @@ def widen(mesh, lam):
     return center_on_axis(m)
 
 
-def build_specs():
+def lobe(mesh, a):
+    """방위각 로빙 `r → r·(1 + a·cos 2φ)` — **축비대칭**을 연속으로 조절한다.
+
+    단면이 타원처럼 되면서 같은 높이의 반경이 `[r(1−a), r(1+a)]` 로 퍼진다.
+    산포 `(max−min)/max = 2a/(1+a)` 이므로 팀메 실제 모델(l-shape·arch)의
+    0.24~0.31 은 `a ≈ 0.14~0.18` 에 해당한다.
+
+    왜 합성 모델인가: 실제 STL 은 비대칭'만' 바꿀 수 없어 원인 분리가 안 된다.
+    λ 축(widen)과 같은 설계 — 한 축만 움직이고 나머지는 고정한다.
+    """
+    m = mesh.copy()
+    x, y = m.vertices[:, 0].copy(), m.vertices[:, 1].copy()
+    r = np.hypot(x, y)
+    phi = np.arctan2(y, x)
+    r2 = r * (1.0 + a * np.cos(2 * phi))
+    m.vertices[:, 0] = r2 * np.cos(phi)
+    m.vertices[:, 1] = r2 * np.sin(phi)
+    m.fix_normals()
+    return center_on_axis(m)
+
+
+def radius_spread(mesh, n=40):
+    """중간 높이들에서 `(max−min)/max` 반경 산포의 중앙값 (축비대칭 정도)."""
+    v = np.asarray(mesh.vertices)
+    r = np.hypot(v[:, 0], v[:, 1])
+    z = v[:, 2]
+    z0, z1 = z.min(), z.max()
+    H = z1 - z0
+    out = []
+    for lo in np.linspace(z0 + 0.2 * H, z1 - 0.3 * H, n):
+        rr = r[(z >= lo) & (z < lo + 0.02 * H)]
+        if len(rr) >= 8 and rr.max() > 1e-9:
+            out.append((rr.max() - rr.min()) / rr.max())
+    return float(np.median(out)) if out else float("nan")
+
+
+def build_specs(asym=False):
     specs = [("구", _sphere)]
     for r in (7, 5, 4, 3, 2, 1):
         specs.append((f"허리 r={r:g}", (lambda rr: lambda: waisted_model(rr))(r)))
     for lam in (1.1, 1.2, 1.3, 1.5, 2.0):
         specs.append((f"허리3 ×{lam:g}",
                       (lambda l: lambda: widen(waisted_model(3.0), l))(lam)))
+    if asym:
+        for a in (0.10, 0.15, 0.20, 0.30, 0.40):
+            specs.append((f"허리3 로브{a:g}",
+                          (lambda aa: lambda: lobe(waisted_model(3.0), aa))(a)))
     return specs
 
 
@@ -112,8 +152,25 @@ def predictors(mesh, k=DEFAULT_K):
     rho = cost / dS if dS > 1e-9 else float("inf")
     blend_mm = sum(b - a for a, b in prof.blend_intervals())
 
-    return dict(prominence=prom, r_max=r_max, H=H, dS_ideal=dS,
-                cost=cost, rho=rho, blend_mm=blend_mm,
+    # 축비대칭 진단 두 개.
+    #   m_max  : 층간격 제약이 실제로 지켜지나 (정확성). 유도가 정점 단위 최악
+    #            경계라 축대칭을 전제하지 않는다 — 여기서 그것을 확인한다.
+    #   r_loose: r_b(구간 최대 반경) 경계가 얼마나 헐거운가 (보수성).
+    m_max = prof.max_spacing_factor(r_max, radius_profile=rp)
+    r_loose = float("nan")
+    ivs = prof.blend_intervals()
+    if ivs:
+        lo, hi = ivs[0]
+        v = np.asarray(mesh.vertices)
+        rr = np.hypot(v[:, 0], v[:, 1])
+        sel = (v[:, 2] >= lo) & (v[:, 2] <= hi)
+        if sel.sum() > 3 and rr[sel].mean() > 1e-9:
+            r_loose = float(rr[sel].max() / rr[sel].mean())
+
+    return dict(prominence=prom, spread=radius_spread(mesh), r_max=r_max, H=H,
+                dS_ideal=dS, cost=cost, rho=rho, blend_mm=blend_mm,
+                m_max=float(m_max), spacing_ok=bool(m_max <= MAX_SPACING_FACTOR + 1e-6),
+                r_loose=r_loose,
                 theta_uniform=uni["profile"], theta_ideal=band["profile"],
                 _rp=rp, _r_max=r_max)
 
@@ -158,12 +215,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--measure", action="store_true",
                     help="툴패스로 실제 승패까지 판정 (느림)")
+    ap.add_argument("--asym", action="store_true",
+                    help="축비대칭(방위각 로빙) 모델을 표본에 추가")
     ap.add_argument("--k", type=float, default=DEFAULT_K)
     ap.add_argument("--json", default=None, help="결과 JSON 저장 경로")
     args = ap.parse_args()
 
     rows = []
-    for name, build in build_specs():
+    for name, build in build_specs(asym=args.asym):
         mesh = build()
         t0 = time.time()
         p = predictors(mesh, args.k)
@@ -184,14 +243,26 @@ def main():
               f" blend={rec['blend_mm']:>6.2f}mm{tail}", flush=True)
 
     print()
-    hdr = (f"{'모델':<12}{'prom':>7}{'ΔS':>7}{'cost':>8}{'ρ':>9}{'blend':>8}"
+    hdr = (f"{'모델':<13}{'prom':>7}{'산포':>7}{'ΔS':>7}{'cost':>8}{'ρ':>9}"
+           f"{'blend':>8}{'m_max':>7}{'r_느슨':>7}"
            + ("  판정" if args.measure else ""))
     print(hdr)
-    print("-" * (len(hdr) + 4))
+    print("-" * (len(hdr) + 6))
     for r in sorted(rows, key=lambda x: x["rho"]):
         v = ("  " + ("승" if r["pareto"] else "패")) if args.measure else ""
-        print(f"{r['name']:<12}{r['prominence']:>7.3f}{r['dS_ideal']:>7.2f}"
-              f"{r['cost']:>8.2f}{r['rho']:>9.2f}{r['blend_mm']:>8.2f}{v}")
+        warn = "" if r["spacing_ok"] else "  ⚠제약위반"
+        print(f"{r['name']:<13}{r['prominence']:>7.3f}{r['spread']:>7.3f}"
+              f"{r['dS_ideal']:>7.2f}{r['cost']:>8.2f}{r['rho']:>9.2f}"
+              f"{r['blend_mm']:>8.2f}{r['m_max']:>7.3f}{r['r_loose']:>7.2f}{v}{warn}")
+
+    bad = [r["name"] for r in rows if not r["spacing_ok"]]
+    print(f"\n[층간격 제약]  {len(rows) - len(bad)}/{len(rows)} 모델에서 지켜짐"
+          f"  (m_max ≤ {MAX_SPACING_FACTOR})")
+    if bad:
+        print(f"  ⚠⚠ 위반: {', '.join(bad)} — 블렌드 폭 공식이 이 형상을 못 막는다")
+    else:
+        print("  → 블렌드 폭 하한은 **축대칭을 전제하지 않는다**. 유도가 정점 단위")
+        print("     최악 경계라 임의 형상에서 성립한다 (축비대칭 포함).")
 
     if args.measure:
         print("\n[분리 검정]  이 예측기가 승/패를 겹침 없이 가르나")
