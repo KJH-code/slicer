@@ -136,7 +136,7 @@ def sample_extrusions(items, width=0.45, return_types=False, return_layers=False
 # ─────────────────────────────────────────────────────────────
 def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
                   batch_samples=2000, vwin_factor=1.5,
-                  require_supported_below=False):
+                  require_supported_below=False, bed_factor=None):
     """각 샘플점의 지지 여부. 반환: supported(bool 배열), 통계 dict.
 
     '이전에 퇴적'은 G-code 순서를 엄밀히 따른다: 이전 배치들은 cKDTree 로,
@@ -158,6 +158,22 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
         ⚠ 이쪽이 '옳다' 고 단정하지 않는다 — 처진 비드도 부분적으로는 받친다.
           두 값의 **차이**가 이 근사의 크기다. 그래서 기본값은 안 바꿨다.
 
+    `bed_factor` (기본 None = `vwin_factor` 를 그대로 씀 → 예전 동작)
+        베드 지지 판정 높이 = 층고 × 이 값. **예전에는 지지 창과 같은 값을 썼고,
+        그게 비평면에서 결함이 된다** (2026-09-23, analyze_checker_assumptions.py):
+
+        · **평면** 슬라이싱이면 층이 z=상수라 `z ≤ 1.5h` 가 정확히 1 층만 잡는다
+          (2 층은 2h). 그래서 평면 대조군(원기둥·직육면체)은 멀쩡히 통과한다.
+        · **원뿔** 슬라이싱이면 한 층이 여러 z 에 걸쳐 있어 같은 규칙이 **2 층
+          일부까지 끌어온다.** 실측(`허리 r=1`): 베드 지지로 찍힌 136 점 중 48 점이
+          `(1.2h, 1.5h]` 에 있고, **그 48 점 전부 아래에 재료가 하나도 없다** —
+          공중인데 "낮으니 베드" 로 통과된다. 게다가 그것들이 위층의 지지 근거가
+          되어 연쇄를 지탱한다.
+
+        ⇒ **검사기가 평면 층을 가정한 채 비평면 출력을 검사하고 있었다.**
+        `bed_factor=1.0` 이면 첫 층만 베드로 인정한다.
+        ⚠ 기본값은 안 바꿨다 — 바꾸면 지금까지 발표한 모든 수치가 조용히 움직인다.
+
     ⚠ 기본값은 예전 동작과 **정확히 같다** (회귀 테스트가 강제).
     """
     n = len(pts)
@@ -165,7 +181,8 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
     if n == 0:
         return supported, {"unsupported_pct": 0.0, "layers": {}}
     vwin = layer_height * float(vwin_factor)
-    supported |= pts[:, 2] <= vwin + 1e-9          # 베드 지지
+    bed_h = vwin if bed_factor is None else layer_height * float(bed_factor)
+    supported |= pts[:, 2] <= bed_h + 1e-9         # 베드 지지
     radius = math.sqrt(width ** 2 + vwin ** 2)
 
     if require_supported_below:
