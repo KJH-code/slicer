@@ -162,10 +162,27 @@ def main():
             flips += 1
         print(f"  {m:<13}" + "".join(f"{x:>11}" for x in marks))
     print(f"\n  설정에 따라 판정이 바뀐 모델: **{flips}/{len(pairs)}**")
-    if flips == 0:
-        print("  → 공유는 사실이지만 **결과를 만들지는 않았다.** 결론이 창 값에 둔감하다.")
+
+    # 어느 손잡이가 뒤집었는지 **갈라서** 귀속한다 — 뭉뚱그리면 엉뚱한 상수를 범인으로 만든다.
+    win_names = [nm for nm, _vf, ch in SETTINGS if not ch]      # 창만 바꾼 설정들
+    chain_names = [nm for nm, _vf, ch in SETTINGS if ch]        # 연쇄를 켠 설정들
+    base = SETTINGS[0][0]
+
+    def flips_within(group):
+        return sum(1 for v in pairs.values()
+                   if len({verdict(v[1], v[2], nm) for nm in group}) > 1)
+
+    fw, fc = flips_within(win_names), flips_within([base] + chain_names)
+    print(f"  · 지지 창만 바꿨을 때({', '.join(win_names)}) 뒤집힌 모델: **{fw}/{len(pairs)}**")
+    print(f"  · 연쇄를 켰을 때 뒤집힌 모델: **{fc}/{len(pairs)}**")
+    if fw == 0:
+        print("  → 창 값(= MAX_SPACING_FACTOR 와 공유하는 상수)은 **결과를 만들지 않는다.**")
     else:
-        print("  → ⚠ 결론 일부가 **검사기 창 값에 딸려 있다.** 공유 상수가 문제다.")
+        print("  → ⚠ 결론 일부가 검사기 **창 값**에 딸려 있다.")
+    if fc:
+        print("  → ⚠⚠ 결론이 **지지 연쇄 가정**에 딸려 있다. 이건 결함이 아니라 모델링")
+        print("       선택이라 어느 쪽도 '옳다' 고 못 한다 — 현재값은 낙관적 하한,")
+        print("       연쇄는 비관적 상한이다. **실물 출력으로만 좁혀진다.**")
 
     if args.json:
         json.dump(rows, open(args.json, "w"), ensure_ascii=False, indent=1,
