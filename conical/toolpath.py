@@ -135,19 +135,42 @@ def sample_extrusions(items, width=0.45, return_types=False, return_layers=False
 # 검사기 A: 지지
 # ─────────────────────────────────────────────────────────────
 def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
-                  batch_samples=2000):
+                  batch_samples=2000, vwin_factor=1.5,
+                  require_supported_below=False):
     """각 샘플점의 지지 여부. 반환: supported(bool 배열), 통계 dict.
 
     '이전에 퇴적'은 G-code 순서를 엄밀히 따른다: 이전 배치들은 cKDTree 로,
     같은 배치 안의 앞선 점들은 브루트포스(작은 행렬)로 검사 — 근사 없음.
+
+    ── 공유 가정을 끊어 보기 위한 손잡이 둘 (2026-09-23) ──────────────
+    `vwin_factor` (기본 1.5)
+        지지 창 = 층고 × 이 값. **기본값이 `config.MAX_SPACING_FACTOR` 와 같은
+        수라는 것이 문제로 지적됐다** — 계획기가 블렌드 폭을 그 제약의 최소값으로
+        잡아 `m = 1.5` 를 정확히 물리므로, 계획기가 **검사기의 합격선에 붙여서**
+        계획하고 검사기가 그걸 통과시키는 구조가 된다.
+        값을 낮춰 재면 그 결과가 **공유 상수의 산물인지 아닌지** 갈린다.
+
+    `require_supported_below` (기본 False)
+        기본 동작은 **이전에 퇴적된 모든 점**을 지지 후보로 쓴다 —
+        `supported` 로 거르지 않는다. 즉 **미지지 상태로 퇴적된 재료가 위층을
+        지지한다고 센다.** 실제로는 처짐이 연쇄되는 자리다.
+        True 로 두면 **지지된 재료만** 후보가 되어 연쇄가 끊긴다.
+        ⚠ 이쪽이 '옳다' 고 단정하지 않는다 — 처진 비드도 부분적으로는 받친다.
+          두 값의 **차이**가 이 근사의 크기다. 그래서 기본값은 안 바꿨다.
+
+    ⚠ 기본값은 예전 동작과 **정확히 같다** (회귀 테스트가 강제).
     """
     n = len(pts)
     supported = np.zeros(n, dtype=bool)
     if n == 0:
         return supported, {"unsupported_pct": 0.0, "layers": {}}
-    vwin = layer_height * 1.5
+    vwin = layer_height * float(vwin_factor)
     supported |= pts[:, 2] <= vwin + 1e-9          # 베드 지지
     radius = math.sqrt(width ** 2 + vwin ** 2)
+
+    if require_supported_below:
+        _chained_support(pts, supported, vwin, width, radius, batch_samples)
+        return supported, _support_stats(pts, supported, weight, layer_height)
 
     tree = None
     for s0 in range(0, n, batch_samples):
@@ -177,9 +200,13 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
         supported[idx] |= ok.any(axis=1)
         tree = cKDTree(pts[:idx[-1] + 1])
 
+    return supported, _support_stats(pts, supported, weight, layer_height)
+
+
+def _support_stats(pts, supported, weight, layer_height):
+    """미지지 비율(무게 기준) + 층별 통계."""
     total = weight.sum()
     bad = weight[~supported].sum()
-    # 층별 통계 (z 를 layer_height 로 비닝)
     zbin = np.floor(pts[:, 2] / layer_height).astype(int)
     layers = {}
     for zb in np.unique(zbin):
@@ -187,8 +214,47 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
         wl = weight[m].sum()
         layers[int(zb)] = (float(weight[m & ~supported].sum() / wl * 100.0)
                           if wl > 0 else 0.0)
-    return supported, {"unsupported_pct": float(bad / total * 100.0),
-                       "layers": layers}
+    return {"unsupported_pct": float(bad / total * 100.0), "layers": layers}
+
+
+def _chained_support(pts, supported, vwin, width, radius, batch_samples):
+    """지지된 재료만 지지 후보로 쓰는 판정 (supported 를 제자리에서 갱신).
+
+    배치 벡터화가 안 되는 이유: 어떤 점의 지지가 **같은 배치 안의 앞선 점이
+    방금 지지로 바뀌었는지**에 달려 있어 순서 의존이 생긴다. 그래서 순차로
+    돌되, 오래된 지지점은 cKDTree 로 묶고 최근 것만 브루트포스로 본다.
+    """
+    n = len(pts)
+    tree = None
+    tree_pts = None
+    tail = []                 # 마지막 트리 재구성 이후 새로 지지된 점들
+
+    def _hit(p, q):
+        if len(q) == 0:
+            return False
+        dz = p[2] - q[:, 2]
+        horiz = np.hypot(p[0] - q[:, 0], p[1] - q[:, 1])
+        return bool(np.any((dz > 1e-9) & (dz <= vwin + 1e-9) &
+                           (horiz <= width + 1e-9)))
+
+    for i in range(n):
+        p = pts[i]
+        if not supported[i]:
+            found = False
+            if tree is not None:
+                nb = tree.query_ball_point(p, r=radius)
+                if nb:
+                    found = _hit(p, tree_pts[np.asarray(nb)])
+            if not found and tail:
+                found = _hit(p, np.asarray(tail))
+            supported[i] = found
+        if supported[i]:
+            tail.append(p)
+            if len(tail) >= batch_samples:
+                add = np.asarray(tail)
+                tree_pts = add if tree_pts is None else np.vstack([tree_pts, add])
+                tree = cKDTree(tree_pts)
+                tail = []
 
 
 def layer_cross_sections(pts, move_id, kinds, layer, width=0.45):
