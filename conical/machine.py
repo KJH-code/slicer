@@ -51,7 +51,13 @@ class MachineProfile:
 
     @classmethod
     def from_file(cls, path):
-        cp = configparser.ConfigParser()
+        # ⚠ `;` 를 주석 접두사에서 **뺀다.** 기본값은 ('#', ';') 인데 G-code 의
+        #   주석이 바로 `;` 라, 그대로 두면 start_gcode/end_gcode 안의 주석 줄이
+        #   **조용히 사라진다.** 실제로 템플릿의 `; TODO(5축): U/V 축 호밍 …` 이
+        #   출력 파일에서 없어지고 있었다(2026-09-24 발견). 기계로 나가는 파일에서
+        #   사람이 적은 줄이 말없이 빠지는 것은 이 저장소가 막기로 한 종류의 일이다.
+        #   → INI 자체의 주석은 `#` 로 쓴다 (machine.example.ini 가 그렇게 돼 있다).
+        cp = configparser.ConfigParser(comment_prefixes=("#",))
         # 키 이름의 대소문자를 보존한다 (치환 키와 1:1 로 맞추려고).
         cp.optionxform = str
         with open(path, encoding="utf-8") as fh:

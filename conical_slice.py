@@ -311,9 +311,24 @@ def main():
     head, tail = [], []
     if args.machine_profile:
         mp = MachineProfile.from_file(args.machine_profile)
-        ctx = {"layer_height": args.layer_height, "angle": f"{angle:.1f}",
+        # ⚠ 여기는 오래 **상수각만 가정**하고 있었다 — 가변각(`--profile`/`--auto-bands`)
+        #   이면 `angle` 이 None 이라 f"{angle:.1f}" 에서 죽었다. 즉 **이 연구의 핵심
+        #   전략(부위별 각도)을 실물용으로 뽑는 경로가 통째로 막혀 있었다.**
+        #   (tests/test_machine_profile_varangle.py 가 고정)
+        if profile is not None:
+            th = [float(t) for t in profile.thetas_deg]
+            a_max = max(th, key=abs)
+            angle_ctx = {"angle": f"{a_max:.1f}",      # 대표값 = |θ| 최대 (안전 기준)
+                         "angle_max": f"{a_max:.1f}",
+                         "angle_min": f"{min(th, key=abs):.1f}",
+                         "profile": prof_txt}
+        else:
+            angle_ctx = {"angle": f"{angle:.1f}", "angle_max": f"{angle:.1f}",
+                         "angle_min": f"{angle:.1f}",
+                         "profile": f"0:{angle:g}"}
+        ctx = {"layer_height": args.layer_height,
                "direction": direction, "mode": args.mode,
-               "source_stl": Path(args.stl).name}
+               "source_stl": Path(args.stl).name, **angle_ctx}
         head, tail = mp.start_items(ctx), mp.end_items(ctx)
         print(f"  기계        : {mp.name}  ({args.machine_profile})")
     gc.write(meta + head + real_items + tail, out_path)
