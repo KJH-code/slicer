@@ -15,6 +15,7 @@ toolpath_check.py — 출력 G-code 의 툴패스 가상 검증 (하드웨어 �
 """
 
 import argparse
+import json
 import re
 from pathlib import Path
 
@@ -30,11 +31,35 @@ from conical.toolpath import (sample_extrusions, check_support, check_nozzle,
 
 
 def detect_layer_height(lines, fallback=0.3):
-    for ln in lines[:20]:
-        m = re.search(r"layer_h=([\d.]+)", ln)
+    """G-code 에서 층고를 읽는다. 못 읽으면 `(fallback, False)`.
+
+    ⚠⚠ 2026-09-26 정정: 예전에는 `layer_h=` 패턴만 찾았는데 **우리 G-code 에 그런
+      문자열이 없다.** 자기기술 헤더는 `;CONICAL_META {... "layer_height":0.4 ...}`
+      이고 레거시 줄은 `; conical: angle=… chord_tol=…` 이다. 그래서 **항상 폴백
+      0.3 을 쓰고 있었고**, 0.3mm 로 뽑은 파일에서만 우연히 맞았다.
+
+      층고는 지지 창(`층고 × vwin_factor`)과 베드 판정에 직접 들어가므로, 0.4mm
+      파일을 0.3 으로 재면 **전부 다른 것을 재는 것이다.** 실제로 층고를 0.2→0.5 로
+      훑으면 진짜 오버행이 0.02 → 1.63 %p 로 움직인다(analyze_layer_height.py).
+
+      `;CONICAL_META` 는 바로 이런 용도로 넣은 것인데(P0, 자기기술 G-code) 정작
+      검사기가 안 읽고 있었다. 이제 그것을 **먼저** 본다.
+    """
+    head = lines[:40]
+    for ln in head:                                    # ① 자기기술 메타 (우선)
+        if ";CONICAL_META" in ln:
+            try:
+                meta = json.loads(ln.split(";CONICAL_META", 1)[1].strip())
+                v = float(meta["layer_height"])
+                if v > 0:
+                    return v, True
+            except (ValueError, KeyError, TypeError):
+                pass                                   # 깨진 메타는 조용히 넘기고 아래로
+    for ln in head:                                    # ② 예전 패턴 (외부 파일 호환)
+        m = re.search(r"layer_h(?:eight)?\s*[=:]\s*([\d.]+)", ln)
         if m:
-            return float(m.group(1))
-    return fallback
+            return float(m.group(1)), True
+    return fallback, False
 
 
 def main():
@@ -49,7 +74,14 @@ def main():
     args = ap.parse_args()
 
     lines = open(args.gcode).readlines()
-    lh = args.layer_height or detect_layer_height(lines)
+    if args.layer_height:
+        lh, known = args.layer_height, True
+    else:
+        lh, known = detect_layer_height(lines)
+    if not known:
+        # 조용히 틀린 층고로 재는 것을 막는다 — 지지 창과 베드 판정이 층고에 비례한다.
+        print(f"⚠⚠ 층고를 G-code 에서 못 읽었다 — 폴백 {lh} 을 쓴다. 이 값이 실제와")
+        print("   다르면 지지 창·베드 판정이 전부 어긋난다. --layer-height 로 줄 것.")
     items = gc.parse(lines)
     pts, mid, w, kinds, lay = sample_extrusions(items, width=args.width,
                                                 return_types=True,
