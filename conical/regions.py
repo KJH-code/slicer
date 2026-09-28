@@ -21,6 +21,7 @@ import numpy as np
 from .config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
 from .overhang import analyze_overhangs
 from .selector import evaluate_J
+from .varangle import angle_candidates
 
 
 # ─────────────────────────────────────────────────────────────

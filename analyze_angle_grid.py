@@ -48,13 +48,11 @@ import time
 
 import numpy as np
 
+from analyze_blend_ratio import widen
+from compare_waist import mean_abs_angle, run_pipeline, waisted_model
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
 from conical.meshio import RadiusProfile
 from conical.varangle import select_banded_j
-from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
-from compare_waist import waisted_model, run_pipeline, mean_abs_angle
-
-from analyze_blend_ratio import widen
-
 
 LAMBDAS = (1.16, 1.18, 1.19, 1.20, 1.21, 1.22, 1.24, 1.26, 1.28, 1.30)
 QUICK = (1.18, 1.19, 1.20, 1.21, 1.24, 1.30)
@@ -81,7 +79,7 @@ def outcome(mesh, k, step):
 
 def transitions(seq):
     """승/패 수열의 부호 전환 횟수. 단조면 0 또는 1."""
-    return sum(1 for a, b in zip(seq, seq[1:]) if a != b)
+    return sum(1 for a, b in zip(seq, seq[1:], strict=False) if a != b)
 
 
 def main():

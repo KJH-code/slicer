@@ -53,18 +53,15 @@ import time
 import numpy as np
 import trimesh
 
-from conical.meshio import RadiusProfile
-from conical.varangle import select_banded_j
-from conical.transform import transform_cone_profile
-from conical.planar_slicer import slice_mesh
-from conical.backtransform import backtransform
-from conical.toolpath import (sample_extrusions, check_support,
-                              support_breakdown)
-from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
-from compare_waist import LAYER_H
-
 from analyze_blend_ratio import build_specs
-
+from compare_waist import LAYER_H
+from conical.backtransform import backtransform
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
+from conical.meshio import RadiusProfile
+from conical.planar_slicer import slice_mesh
+from conical.toolpath import check_support, sample_extrusions, support_breakdown
+from conical.transform import transform_cone_profile
+from conical.varangle import select_banded_j
 
 QUICK = ("구", "허리 r=5", "허리 r=3", "허리3 ×1.2", "허리3 로브0.2")
 

@@ -41,13 +41,11 @@ import time
 
 import numpy as np
 
+from analyze_blend_ratio import lobe, predictors, widen
+from compare_waist import mean_abs_angle, run_pipeline, waisted_model
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
 from conical.meshio import RadiusProfile
 from conical.varangle import select_banded_j
-from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
-from compare_waist import waisted_model, run_pipeline, mean_abs_angle
-
-from analyze_blend_ratio import predictors, widen, lobe
-
 
 # 기존 17 케이스의 간격 (analyze_blend_ratio.py --measure --asym)
 GAP_RHO = (7.457, 8.144)
@@ -73,7 +71,7 @@ def scan(k):
     for axis, val, build in axes():
         mesh = build()
         p = predictors(mesh, k)
-        rp, r_max = p.pop("_rp"), p.pop("_r_max")
+        p.pop("_rp"), p.pop("_r_max")        # 예측기 내부값 — 기록에서 뺀다
         rec = dict(axis=axis, value=val, rho=p["rho"], cost=p["cost"],
                    dS=p["dS_ideal"], blend_mm=p["blend_mm"])
         out.append(rec)

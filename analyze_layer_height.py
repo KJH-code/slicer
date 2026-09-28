@@ -47,17 +47,15 @@ import time
 import numpy as np
 import trimesh
 
-from conical.meshio import RadiusProfile
-from conical.varangle import select_banded_j
-from conical.transform import transform_cone_profile
-from conical.planar_slicer import slice_mesh
-from conical.backtransform import backtransform
-from conical.toolpath import sample_extrusions, check_support, support_breakdown
-from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
-from compare_waist import waisted_model
-
 from analyze_blend_ratio import _sphere
-
+from compare_waist import waisted_model
+from conical.backtransform import backtransform
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
+from conical.meshio import RadiusProfile
+from conical.planar_slicer import slice_mesh
+from conical.toolpath import check_support, sample_extrusions, support_breakdown
+from conical.transform import transform_cone_profile
+from conical.varangle import select_banded_j
 
 HEIGHTS = (0.2, 0.25, 0.3, 0.35, 0.4, 0.5)
 CONTROL_HEIGHTS = (0.25, 0.3, 0.4, 0.5)

@@ -45,17 +45,16 @@ import sys
 import numpy as np
 import trimesh
 
-from conical import analytic
-from conical.meshio import RadiusProfile
-from conical.varangle import select_banded_j, blend_penalty
-from conical.transform import transform_cone_profile
-from conical.planar_slicer import slice_mesh
-from conical.backtransform import backtransform
-from conical.toolpath import sample_extrusions, check_support
-from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
-from compare_waist import LAYER_H
-
 from analyze_blend_ratio import build_specs
+from compare_waist import LAYER_H
+from conical import analytic
+from conical.backtransform import backtransform
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
+from conical.meshio import RadiusProfile
+from conical.planar_slicer import slice_mesh
+from conical.toolpath import check_support, sample_extrusions
+from conical.transform import transform_cone_profile
+from conical.varangle import select_banded_j
 
 
 def risk_values(mesh, prof, rp, limit=MAX_SPACING_FACTOR, direction="outward"):

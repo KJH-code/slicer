@@ -67,12 +67,12 @@ def test_variable_angle_with_machine_profile_produces_file():
 def test_angle_keys_filled_for_variable_angle():
     """③ 가변각이어도 {angle} 계열이 채워진다 (대표값 = |θ| 최대)."""
     g = _run(["--auto-bands", "2"])
-    start = [l for l in g.splitlines() if "TEST-START" in l][0]
+    start = [ln for ln in g.splitlines() if "TEST-START" in ln][0]
     assert "angle={angle}" not in start, "치환이 안 됐다"
     assert "angle=None" not in start, "None 이 그대로 들어갔다"
-    amax = [l for l in g.splitlines() if "angle_max=" in l][0]
+    amax = [ln for ln in g.splitlines() if "angle_max=" in ln][0]
     assert "angle_max={" not in amax and "None" not in amax
-    prof = [l for l in g.splitlines() if l.startswith("; profile=")][0]
+    prof = [ln for ln in g.splitlines() if ln.startswith("; profile=")][0]
     assert ":" in prof, f"프로필 문자열이 비었다: {prof!r}"
 
 
@@ -80,7 +80,7 @@ def test_constant_angle_still_works():
     """④ 고정각 경로 회귀."""
     g = _run(["--angle", "20"])
     assert "; TEST-START" in g and "; TEST-END" in g
-    start = [l for l in g.splitlines() if "TEST-START" in l][0]
+    start = [ln for ln in g.splitlines() if "TEST-START" in ln][0]
     assert "angle=20.0" in start, start
 
 

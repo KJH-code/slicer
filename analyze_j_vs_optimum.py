@@ -50,16 +50,25 @@ import time
 import numpy as np
 from scipy.stats import spearmanr
 
+from analyze_blend_ratio import _sphere, widen
+from compare_waist import mean_abs_angle, run_pipeline, waisted_model
+from conical.analytic import support_fraction
+from conical.config import (
+    BLEND_COST_K,
+    BLEND_SHIFT_RATIO,
+    DEFAULT_K,
+    MAX_SPACING_FACTOR,
+    THRESHOLD_DEG,
+)
 from conical.meshio import RadiusProfile
 from conical.profile import AngleProfile
-from conical.varangle import (assign_height_bands, select_banded_j,
-                              profile_objective, _merge_bands, blend_penalty)
-from conical.analytic import support_fraction
-from conical.config import (DEFAULT_K, MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO,
-                            BLEND_COST_K, THRESHOLD_DEG)
-from compare_waist import waisted_model, run_pipeline, mean_abs_angle
-
-from analyze_blend_ratio import _sphere, widen
+from conical.varangle import (
+    _merge_bands,
+    assign_height_bands,
+    blend_penalty,
+    profile_objective,
+    select_banded_j,
+)
 
 
 def models(quick):

@@ -24,13 +24,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 
+from compare_waist import waisted_model
 from conical import analytic
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
 from conical.meshio import RadiusProfile
 from conical.profile import AngleProfile
 from conical.varangle import select_banded_j
-from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
-from compare_waist import waisted_model
-
 
 # 대표 표본 3 개 — 전체 스윕은 analyze_blend_cost.py 가 한다 (느려서 테스트엔 부적합)
 NECKS = (1.0, 3.0, 5.0)

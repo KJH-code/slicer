@@ -51,12 +51,16 @@ import time
 import numpy as np
 import trimesh
 
-from conical.meshio import center_on_axis, RadiusProfile, waist_prominence
-from conical.varangle import (select_uniform, select_banded, select_banded_j,
-                              blend_penalty)
+from compare_waist import mean_abs_angle, run_pipeline, waisted_model
+from conical.config import BLEND_SHIFT_RATIO, DEFAULT_K, MAX_SPACING_FACTOR
+from conical.meshio import RadiusProfile, center_on_axis, waist_prominence
 from conical.profile import AngleProfile
-from conical.config import (DEFAULT_K, MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO)
-from compare_waist import waisted_model, run_pipeline, mean_abs_angle
+from conical.varangle import (
+    blend_penalty,
+    select_banded,
+    select_banded_j,
+    select_uniform,
+)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -124,7 +128,7 @@ def build_specs(asym=False):
         specs.append((f"허리 r={r:g}", (lambda rr: lambda: waisted_model(rr))(r)))
     for lam in (1.1, 1.2, 1.3, 1.5, 2.0):
         specs.append((f"허리3 ×{lam:g}",
-                      (lambda l: lambda: widen(waisted_model(3.0), l))(lam)))
+                      (lambda s: lambda: widen(waisted_model(3.0), s))(lam)))
     if asym:
         for a in (0.10, 0.15, 0.20, 0.30, 0.40):
             specs.append((f"허리3 로브{a:g}",

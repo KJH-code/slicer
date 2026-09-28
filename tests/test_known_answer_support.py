@@ -29,13 +29,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import trimesh
 
-from conical.meshio import center_on_axis
-from conical.profile import AngleProfile
-from conical.transform import transform_cone_profile
-from conical.planar_slicer import slice_mesh
-from conical.backtransform import backtransform
-from conical.toolpath import sample_extrusions, check_support, support_breakdown
 from compare_waist import LAYER_H
+from conical.backtransform import backtransform
+from conical.meshio import center_on_axis
+from conical.planar_slicer import slice_mesh
+from conical.profile import AngleProfile
+from conical.toolpath import check_support, sample_extrusions, support_breakdown
+from conical.transform import transform_cone_profile
 
 
 def _overhang(mesh, theta=0.0, chained=False, vwin_factor=1.5):
@@ -66,7 +66,7 @@ def _flaring_cone():
     H = 12.0
     r_bot, r_top = 2.0, 2.0 + H * np.tan(np.radians(60.0))
     pts = [(r, z) for r, z in zip(np.linspace(r_bot, r_top, 30),
-                                  np.linspace(0.0, H, 30))]
+                                  np.linspace(0.0, H, 30), strict=True)]
     pts += [(0.0, H)]
     m = trimesh.creation.revolve(np.array(pts), sections=64)
     m.merge_vertices()

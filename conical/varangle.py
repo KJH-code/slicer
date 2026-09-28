@@ -57,7 +57,6 @@ from .config import (
 from .profile import AngleProfile
 
 
-
 def angle_candidates(max_angle, step):
     """0 ~ max_angle 을 step 간격으로. **실수 step 을 받는다.**
 

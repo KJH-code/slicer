@@ -46,13 +46,10 @@ import time
 
 import numpy as np
 
-from conical.meshio import RadiusProfile
-from conical.varangle import select_banded_j
-from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
-from compare_waist import run_pipeline, mean_abs_angle
-
 from analyze_blend_ratio import build_specs, predictors
-
+from compare_waist import mean_abs_angle, run_pipeline
+from conical.config import DEFAULT_K, MAX_SPACING_FACTOR
+from conical.varangle import select_banded_j
 
 DEFAULT_KB = (0.05, 0.1, 0.2, 0.4)
 
@@ -80,7 +77,6 @@ def threshold(rows, kb):
     if not win or not lose:
         return None
     lo, hi = max(win), min(lose)
-    finite = [v for v in (lo, hi) if np.isfinite(v)]
     mid = float(np.sqrt(lo * hi)) if (np.isfinite(hi) and lo > 0) else float(lo)
     return dict(separates=bool(lo < hi), low=float(lo),
                 high=(float(hi) if np.isfinite(hi) else float("inf")),
@@ -131,7 +127,7 @@ def main():
     if len(summary) >= 2:
         prods = [p for _, _, p in summary]
         kb_lo, kb_hi = summary[0][0], summary[-1][0]
-        print(f"\n[가설 판정]  ρ* ≈ 1/k_blend 인가")
+        print("\n[가설 판정]  ρ* ≈ 1/k_blend 인가")
         print(f"  k_blend 를 {kb_lo:g} → {kb_hi:g} 로 {kb_hi/kb_lo:.0f}배 올렸을 때")
         print(f"  ρ* 는 {summary[0][1]['mid']:.2f} → {summary[-1][1]['mid']:.2f} "
               f"({summary[0][1]['mid']/summary[-1][1]['mid']:.1f}배 감소)")
