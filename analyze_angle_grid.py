@@ -127,20 +127,33 @@ def main():
 
     ts = [t for _s, t, _w, _m in summary]
     print(f"\n[판정]  전환 수 {ts[0]} → {ts[1]} → {ts[2]} (격자 2° → 1° → 0.5°)")
-    if ts[-1] < ts[0]:
+    # ⚠ 표본이 10 점이라 전환 수 ±1 은 노이즈다. 1 차이로 '늘었다/줄었다' 라고
+    #   말하면 앞서 한 점으로 "층고 조건부" 라고 과장한 것과 같은 실수가 된다.
+    if ts[-1] <= ts[0] - 2:
         print("  → **줄어든다. 원인은 각도 격자다.** ρ 반증은 '지표가 틀렸다' 보다")
-        print("    '선택기가 이산적이라 결과가 튄다' 에 가깝다. 다음 수는 격자를 줄이거나")
-        print("    J 를 매끄럽게 만드는 쪽이다.")
-    elif ts[-1] > ts[0]:
+        print("    '선택기가 이산적이라 결과가 튄다' 에 가깝다.")
+    elif ts[-1] >= ts[0] + 2:
         print("  → **늘어난다.** 촘촘히 할수록 더 튄다 — J 지형이 평평해서 미세한 차이로")
-        print("    해가 갈린다는 신호다 (TODO 의 '평평한 J 지형' 과 연결).")
+        print("    해가 갈린다는 신호다.")
     else:
-        print("  → **안 줄어든다. 격자가 아니다.** 남은 후보로 넘어간다 —")
-        print("    밴드 경계 linspace, 블렌드 경계 이동, 평평한 J 지형.")
+        print(f"  → **안 줄어든다 (차이 {ts[-1]-ts[0]:+d}, 표본 {len(lams)}점에서 노이즈 수준).**")
+        print("    **격자가 원인이 아니다.** 남은 후보로 넘어간다 —")
+        print("    밴드 경계 linspace, 블렌드 경계 이동, 그리고 J 자체.")
     print(f"  ⚠ 승 비율 {summary[0][2]:.0f}% → {summary[1][2]:.0f}% → {summary[2][2]:.0f}%,"
           f"  밴드2 오버행 중앙 {summary[0][3]:.3f} → {summary[1][3]:.3f} → {summary[2][3]:.3f}")
     print("    (격자를 촘촘히 하면 선택기가 더 좋은 해를 찾을 수도 있다 — 전환 수와")
     print("     섞지 말 것. 위 두 줄은 별개의 축이다.)")
+
+    # **균일 baseline 자체가 λ 에 비단조인가** — 그렇다면 불안정성은 '밴드 vs 균일'
+    # 비교가 아니라 J 의 argmax 에 있다. 이번 실험에서 데이터로 드러난 핵심이다.
+    print("\n[균일 baseline 도 흔들리나]  흔들리면 문제는 비교가 아니라 J 의 argmax 다")
+    for step in STEPS:
+        sub = [r for r in rows if r["step"] == step]
+        angs = [r["uniform_thetas"][0] for r in sub]
+        ohs = [r["uniform_oh"] for r in sub]
+        print(f"  격자 {step:>4.1f}°  균일 각도 {angs}")
+        print(f"{'':11}오버행 {min(ohs):.3f}~{max(ohs):.3f} "
+              f"(최대/최소 {max(ohs)/max(min(ohs),1e-9):.1f}배)")
 
     if args.json:
         json.dump(rows, open(args.json, "w"), ensure_ascii=False, indent=1)
