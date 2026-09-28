@@ -21,6 +21,7 @@ import numpy as np
 from .config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
 from .overhang import analyze_overhangs
 from .selector import evaluate_J
+from .varangle import angle_candidates
 
 
 # ─────────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ def best_angle_for_region(mesh, face_mask, orig_areas, k,
 
     best = None
     for direction in ["outward", "inward"]:
-        for angle in range(0, max_angle + 1, step):
+        for angle in angle_candidates(max_angle, step):
             sup = region_support_pct(angle, direction)
             J = evaluate_J(sup, baseline, angle, k)
             cand = {"angle": angle, "direction": direction,

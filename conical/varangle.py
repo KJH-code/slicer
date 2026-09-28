@@ -3,8 +3,26 @@ varangle.py — 높이 구간별 '변수각 원뿔' 전략 (부위별 각도의 
 
 왜 '높이 구간'인가 (물리적 실현):
     부위마다 각도를 다르게 하려면, 실제로는 각도가 '높이에 따라 변하는 함수' θ(z)여야
-    실제로 프린트할 수 있다. 이것이 RotBot의 변수각(var_angle) 방식이다. 그래서 영역을
-    '오버행 심한 정도'가 아니라 '높이 구간'으로 나눈다. (높이 구간 = θ(z)로 실현 가능)
+    실제로 프린트할 수 있다. 그래서 영역을 '오버행 심한 정도'가 아니라 '높이 구간'으로
+    나눈다. (높이 구간 = θ(z)로 실현 가능)
+
+⚠ 정정 (2026-09-21, RotBot 원문 대조):
+    이 주석은 앞서 "이것이 RotBot 의 변수각(var_angle) 방식이다" 라고 썼다. **틀렸다.**
+    RotBot 의 `Scripts for Variable Angle` 에서 'variable' 은 **실행마다 사용자가 고르는
+    상수각**이라는 뜻이지 높이의 함수가 아니다. 원문 확인:
+      · README `### Scripts for variable angle`:
+        "the cone angle **can be changed**. So it does not only work for 45° angle as used
+         for RotBot, but can also be used with much smaller angles (e.g. 15°)"
+      · `Transformation_STL_var_angle.py:13` `CONE_ANGLE = 16` — 스칼라 상수
+      · 같은 파일 `:18,:35` `transformation_kegel(points, cone_angle_rad, ...)`
+        → `np.tan(cone_angle_rad)`, z 의존성 없음
+      · `Backtransformation_GCode_var_angle.py:215–228` 도 스칼라
+      · 기본 `Backtransformation_GCode.py:40` "divided by **sqrt(2)**" = cos(45°) 하드코딩
+    즉 기본 스크립트가 45° 고정이고, var_angle 스크립트는 그것을 **임의 상수로 일반화**
+    한 것이다. **θ(z) 는 RotBot 에 없다 — 이 저장소의 확장이다.**
+    따름: 블렌드(각도 전환 구간)와 층간격 배율 m 은 RotBot 의 문제공간에 존재하지
+    않는다. 상수각이면 s = dT/dZ′ = 0 이라 m ≡ 1 이기 때문이다 (profile.py 참고).
+    ⚠ 논문 본문(Appl. Sci. 11(18):8760)의 future work 절은 아직 미확인(망 차단).
 
 평가 방식 (정직):
     각 구간은 '상수각'으로 독립 평가한다(그 구간 면들에 그 각도를 적용했다고 가정).
@@ -16,6 +34,8 @@ varangle.py — 높이 구간별 '변수각 원뿔' 전략 (부위별 각도의 
     균일각은 모델 전체에 대한 '타협값' 하나라 손해다. 구간별은 '각도 예산'을 오버행이
     심한 구간에만 몰아써서, 같은(또는 더 적은) 총 왜곡으로 서포트를 더 줄인다.
 """
+
+import math
 
 import numpy as np
 
@@ -36,6 +56,18 @@ from .config import (
 )
 from .profile import AngleProfile
 
+
+def angle_candidates(max_angle, step):
+    """0 ~ max_angle 을 step 간격으로. **실수 step 을 받는다.**
+
+    ⚠ 예전에는 `range(0, max_angle + 1, step)` 이라 **정수 step 만** 됐다.
+      각도 격자를 0.5° 로 줄여 보려다 TypeError 로 막혔고, 그때 알았다 —
+      "격자를 촘촘히 해 보자" 는 실험 자체가 **코드 때문에 불가능**했던 것이다
+      (analyze_angle_grid.py, 2026-09-28).
+      정수 step 에서는 예전과 **같은 값을 같은 순서로** 낸다(회귀 테스트가 강제).
+    """
+    n = int(math.floor(float(max_angle) / float(step) + 1e-9))
+    return [round(i * float(step), 9) for i in range(n + 1)]
 
 # ─────────────────────────────────────────────────────────────
 # 높이 구간 나누기
@@ -62,7 +94,7 @@ def best_angle_for_mask(mesh, mask, orig_areas, k,
 
     best = (-1e9, 0, "outward")   # (J, angle, direction)
     for c in ("outward", "inward"):
-        for a in range(0, max_angle + 1, step):
+        for a in angle_candidates(max_angle, step):
             need, _ = face_support_and_staircase(mesh, a, c, threshold_deg)
             pct = orig_areas[mask & need].sum() / band_area * 100.0
             J = (base_pct - pct) - k * a
@@ -138,12 +170,37 @@ def blend_penalty(mesh, profile, radius_profile=None,
                   spacing_limit=MAX_SPACING_FACTOR, direction="outward"):
     """블렌드 비용 = Σ (그 구간에 있는 표면적 %) × (m−1)/(limit−1).
 
-    (m−1)/(limit−1) 은 '허용된 층간격 여유를 얼마나 썼는가'(0~1)다. 각도 변화가
-    없으면 블렌드 구간 자체가 없어 0 이 되고, J 는 균일각 J 와 정확히 같아진다.
+    각도 변화가 없으면 블렌드 구간 자체가 없어 0 이 되고, J 는 균일각 J 와
+    정확히 같아진다.
 
-    ⚠ 왜 필요한가: analytic 의 판정은 면을 '그 높이의 국소 원뿔각'과만 비교하므로
-      블렌드에서 레이어가 벌어지는 것을 못 본다. 그 눈먼 부분을 메우는 항이다.
-    ⚠ 선형 가중은 유도된 물리가 아닌 휴리스틱 (analyze_blend_k.py 로 창 분석).
+    ⚠⚠ **이 항이 무엇인지 2026-09-22 에 다시 쟀다. 세 가지가 전부 틀렸다**
+        (`analyze_blend_cost.py`, docs/verification.md):
+
+    ① **`(m−1)/(limit−1)` 은 사실상 항등이다.** 계획기가 폭을 층간격 제약의
+       **최소값**으로 잡으므로 `m = limit` 이 정확히 물린다 → risk ≡ 1
+       (선택된 프로필 16/16, 값 1.0000). 즉 **'휴리스틱 선형 가중' 은 한 번도
+       작동한 적이 없다.** 남는 것은 `Σ(블렌드 구간 표면적 %)` 뿐이다.
+       (risk < 1 은 `min_blend` 바닥값이 제약보다 클 때만 가능하고, 이 표본에서는
+        한 번도 안 일어났다.)
+    ② **'레이어가 벌어져서 생기는 손상' 을 재는 게 아니다.** 층간격 제약이 이미
+       `m ≤ 1.5` 로 가두는데 그 1.5 가 **검사기 A 의 지지 창과 같은 값**이다
+       (`toolpath.check_support`: `vwin = layer_height * 1.5`). 즉 제약을 지키는
+       블렌드는 구조적으로 미지지를 못 만든다. 실측도 그렇다 — 블렌드 구간 **안**의
+       미지지 밀도가 **밖의 0.48 배**(중앙값, 16 모델)로 오히려 **낮다.**
+    ③ **해석식 예측의 오차를 메우는 보정항도 아니다.** 그 예측은 블렌드가 없는
+       상수 프로필에서도 실측과 1.5~4.6 배로 어긋난다(눈금이 안 맞는 순위 대리물).
+       축상 근사 때문도 아니다 — 정확 Z′ 판과 차이가 0 이다(analytic 참고).
+
+    ✅ **그럼 무엇인가: 정규화항이다.** 블렌드 폭이 `r_b·|Δtanθ|/(limit−1)` 이므로
+       이 항은 결국 **반경으로 가중한 각도 변화량**을 벌한다. 실제 기능은 탐색을
+       병리적 해에서 밀어내는 것이고, 그건 실측으로 확인된다 — `k_blend=0` 이면
+       구가 `[36°, −44°]`(방향 전환, 블렌드 19.9mm, 1.811%p)를 고른다.
+
+    ⇒ 따름: **`k_blend` 는 물리 계수가 아니라 정규화 세기다.** "왜 선형인가" 는
+       물을 필요가 없는 질문이었다(가중이 항등이므로). 물어야 할 것은 "정규화로서
+       세기가 맞나" 이고, 거기 답은 **전역값 하나로는 안 맞는다** 이다
+       (docs/verification.md 2026-09-22: 0.1→0.05 에서 허리 r=5 는 4.8 배 좋아지고
+        구는 4.2 배 나빠진다).
     """
     if spacing_limit is None or spacing_limit <= 1.0:
         return 0.0
@@ -227,7 +284,7 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
 
     # 후보 각도(부호 있음: 음수=inward). 0 은 한 번만.
     cands = sorted({float(sgn * a)
-                    for a in range(0, max_angle + 1, step)
+                    for a in angle_candidates(max_angle, step)
                     for sgn in (1, -1)})
 
     def build(thetas):
@@ -332,7 +389,7 @@ def select_fine(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
     best_stair = np.zeros(F)
     _, stair0 = face_support_and_staircase(mesh, 0, "outward", threshold_deg)
     for c in ("outward", "inward"):
-        for a in range(0, max_angle + 1, step):
+        for a in angle_candidates(max_angle, step):
             need, st = face_support_and_staircase(mesh, a, c, threshold_deg)
             # 면 단위 J: baseline에서 서포트가 사라지면 +1(=100%p*면), 각도비용 -k*a
             gain = (need0.astype(float) - need.astype(float)) * 100.0

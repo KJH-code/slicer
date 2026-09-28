@@ -63,12 +63,43 @@ def support_fraction(mesh, angle_deg, direction, threshold_deg=THRESHOLD_DEG):
 def support_fraction_profile(mesh, profile, threshold_deg=THRESHOLD_DEG):
     """가변각 프로필 θ(Z′)의 남은 서포트 넓이(%) 추정 (부호 있는 각도, c=+1).
 
-    ⚠ 정직: 각 면의 각도는 centroid 의 '축상 Z′≈z' 근사로 조회한다 — 축에서
-      먼 면은 실제 Z′가 r·tanθ 만큼 달라 경계 부근에서 어긋날 수 있다.
-      실질 영향은 툴패스 검사기가 판정한다.
+    ⚠ 각 면의 각도는 centroid 의 '축상 Z′≈z' 근사로 조회한다 — 축에서 먼 면은
+      실제 Z′가 r·tanθ 만큼 달라 경계 부근에서 어긋날 수 있다.
+
+    ✅ 그 오차의 실제 크기를 쟀다 (2026-09-22): **17 모델 × {균일, 밴드2} 에서
+      `support_fraction_profile_exact` 와 차이가 정확히 0 이다.** 근사가 무해한
+      이유는 우연이 아니라 설계다 — 계획기가 블렌드를 **반경이 작은 높이로
+      옮기고**(`BLEND_SHIFT_RATIO`), 오차 `r·tanθ` 가 작아지는 곳이 바로 거기다.
+      ⚠ 그래도 보장은 아니다. 경계를 손으로 큰 반경에 두면(`--spacing-limit 0`
+      등) 어긋날 수 있으므로, 의심되면 아래 exact 판을 써서 대조할 것.
     """
     fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
     th = np.radians(profile.theta_at(fz))
+    nz = mesh.face_normals[:, 2]
+    nr = radial_normal(mesh)
+    g = nz * np.cos(th) + nr * np.sin(th)
+    need = g < -np.sin(np.radians(threshold_deg))
+    areas = mesh.area_faces
+    return areas[need].sum() / areas.sum() * 100.0
+
+
+def support_fraction_profile_exact(mesh, profile, threshold_deg=THRESHOLD_DEG,
+                                   direction="outward"):
+    """위와 같되 **축상 근사를 쓰지 않는다** — 면마다 정확한 Z′ 를 푼다.
+
+    `support_fraction_profile` 은 면의 각도를 centroid 의 실공간 z 로 조회한다.
+    실제로 그 면이 놓이는 변환공간 높이는 `Z′ = z + c·r·tanθ(Z′)` 이고,
+    `profile.solve_forward` 가 그 방정식의 **정확 해**를 준다(조각별 선형이라
+    닫힌 형태, 이분법 없음). 그 Z′ 로 각도를 조회한다.
+
+    용도는 **속도가 아니라 검증**이다 — 근사판이 그 모델·프로필에서 실제로
+    무해한지 대조한다. 둘이 어긋나면 근사가 아니라 근사를 쓴 결론을 의심할 것.
+    (`tests/test_profile_axis_approx.py` 가 표본에서 일치를 고정한다.)
+    """
+    cent = mesh.vertices[mesh.faces].mean(axis=1)
+    fr = np.hypot(cent[:, 0], cent[:, 1])
+    zw = profile.solve_forward(cent[:, 2], fr, direction)
+    th = np.radians(profile.theta_at(zw))
     nz = mesh.face_normals[:, 2]
     nr = radial_normal(mesh)
     g = nz * np.cos(th) + nr * np.sin(th)
