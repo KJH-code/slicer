@@ -25,6 +25,7 @@ k를 어떻게 정하나:
 from .config import MAX_ANGLE_DEG, ANGLE_STEP, THRESHOLD_DEG
 # 판정 기준 통일(2026-07 리뷰): 변환공간 근사(sweep) 대신 해석식(실공간 국소
 # 레이어 각)을 쓴다. 시그니처 동일. 근거: docs/warped_threshold_finding.md
+from .varangle import angle_candidates
 from .analytic import support_fraction
 
 
@@ -53,7 +54,7 @@ def select_cone(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP, verbose=True)
 
     candidates = []
     for direction in ["outward", "inward"]:
-        for angle in range(0, max_angle + 1, step):
+        for angle in angle_candidates(max_angle, step):
             sup = support_fraction(mesh, angle, direction, THRESHOLD_DEG)
             J = evaluate_J(sup, baseline, angle, k)
             candidates.append({

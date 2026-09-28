@@ -35,6 +35,8 @@ varangle.py — 높이 구간별 '변수각 원뿔' 전략 (부위별 각도의 
     심한 구간에만 몰아써서, 같은(또는 더 적은) 총 왜곡으로 서포트를 더 줄인다.
 """
 
+import math
+
 import numpy as np
 
 from .config import (THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP,
@@ -45,6 +47,19 @@ from .analytic import face_support_and_staircase, support_fraction, \
     support_fraction_profile
 from .profile import AngleProfile
 
+
+
+def angle_candidates(max_angle, step):
+    """0 ~ max_angle 을 step 간격으로. **실수 step 을 받는다.**
+
+    ⚠ 예전에는 `range(0, max_angle + 1, step)` 이라 **정수 step 만** 됐다.
+      각도 격자를 0.5° 로 줄여 보려다 TypeError 로 막혔고, 그때 알았다 —
+      "격자를 촘촘히 해 보자" 는 실험 자체가 **코드 때문에 불가능**했던 것이다
+      (analyze_angle_grid.py, 2026-09-28).
+      정수 step 에서는 예전과 **같은 값을 같은 순서로** 낸다(회귀 테스트가 강제).
+    """
+    n = int(math.floor(float(max_angle) / float(step) + 1e-9))
+    return [round(i * float(step), 9) for i in range(n + 1)]
 
 # ─────────────────────────────────────────────────────────────
 # 높이 구간 나누기
@@ -71,7 +86,7 @@ def best_angle_for_mask(mesh, mask, orig_areas, k,
 
     best = (-1e9, 0, "outward")   # (J, angle, direction)
     for c in ("outward", "inward"):
-        for a in range(0, max_angle + 1, step):
+        for a in angle_candidates(max_angle, step):
             need, _ = face_support_and_staircase(mesh, a, c, threshold_deg)
             pct = orig_areas[mask & need].sum() / band_area * 100.0
             J = (base_pct - pct) - k * a
@@ -261,7 +276,7 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
 
     # 후보 각도(부호 있음: 음수=inward). 0 은 한 번만.
     cands = sorted({float(sgn * a)
-                    for a in range(0, max_angle + 1, step)
+                    for a in angle_candidates(max_angle, step)
                     for sgn in (1, -1)})
 
     def build(thetas):
@@ -366,7 +381,7 @@ def select_fine(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
     best_stair = np.zeros(F)
     _, stair0 = face_support_and_staircase(mesh, 0, "outward", threshold_deg)
     for c in ("outward", "inward"):
-        for a in range(0, max_angle + 1, step):
+        for a in angle_candidates(max_angle, step):
             need, st = face_support_and_staircase(mesh, a, c, threshold_deg)
             # 면 단위 J: baseline에서 서포트가 사라지면 +1(=100%p*면), 각도비용 -k*a
             gain = (need0.astype(float) - need.astype(float)) * 100.0
