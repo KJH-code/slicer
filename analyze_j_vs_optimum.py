@@ -53,7 +53,7 @@ from scipy.stats import spearmanr
 from conical.meshio import RadiusProfile
 from conical.profile import AngleProfile
 from conical.varangle import (assign_height_bands, select_banded_j,
-                              profile_objective, _merge_bands)
+                              profile_objective, _merge_bands, blend_penalty)
 from conical.analytic import support_fraction
 from conical.config import (DEFAULT_K, MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO,
                             BLEND_COST_K, THRESHOLD_DEG)
@@ -96,8 +96,50 @@ def enumerate_profiles(mesh, step, k, k_blend=BLEND_COST_K):
             m = profile_objective(mesh, prof, base_pct, k, k_blend, rp,
                                   MAX_SPACING_FACTOR, THRESHOLD_DEG)
             out.append(dict(t1=t1, t2=t2, prof=prof, J=m["J"],
+                            pen=m["blend_penalty"],
                             uniform=bool(abs(t1 - t2) < 1e-9)))
     return out, rp, r_max
+
+
+def blend_pen_of(mesh, thetas, rp, r_max):
+    """밴드 각도 → 그 프로필의 블렌드 벌점 (해석식이라 싸다). 재분석용."""
+    H = float(mesh.bounds[1][2] - mesh.bounds[0][2])
+    _labels, edges = assign_height_bands(mesh, 2)
+    prof = AngleProfile.from_bands(
+        _merge_bands(edges, [float(t) for t in thetas]), r_max, radius_profile=rp,
+        spacing_limit=MAX_SPACING_FACTOR, max_shift=BLEND_SHIFT_RATIO * H)
+    return float(blend_penalty(mesh, prof, rp, MAX_SPACING_FACTOR))
+
+
+def _dominates(a, b, keys):
+    """a 가 b 를 keys 전부에서 이기거나 비기고, 하나 이상에서 엄격히 이기나."""
+    tol = dict(overhang=1e-12, angle=1e-9, pen=1e-9)
+    return (all(a[x] <= b[x] + tol[x] for x in keys)
+            and any(a[x] < b[x] - tol[x] for x in keys))
+
+
+def judge(combos, sel_pt):
+    """판정 셋. ⚠ 2026-09-28 첫 전체 실행에서 스크립트 판정이 **두 번 틀렸다**:
+
+    ① '오버행 단독 최적해가 밴드인가' 가 **동점을 처리 못 했다.** 허리류에서
+       [40,0] 과 균일 40 이 둘 다 0.000%p 인데 min() 이 균일을 먼저 집어
+       "균일 고각이 최적" 이라고 했다. [40,0] 은 **왜곡이 25° vs 40°** 다 —
+       밴드가 균일을 **지배**한다. → 오버행 → 왜곡 순의 사전식으로 고친다.
+    ② 파레토를 **2 축**(오버행, 왜곡)으로만 봤다. J 는 **3 항**이다 — 블렌드
+       벌점이 셋째 축이다. 구에서 J 해가 '전선 밖' 으로 나온 것은 그 해를
+       지배하는 조합들이 **블렌드 면적을 70~96% 쓰기** 때문이고, 그걸 '순수한
+       손해' 라고 부르면 J 가 세는 축 하나를 무료로 친 것이다. → 3 축 전선을
+       같이 본다.
+    """
+    best = min(combos, key=lambda c: (c["overhang"], c["angle"]))
+    best_uni = min((c for c in combos if c["uniform"]),
+                   key=lambda c: (c["overhang"], c["angle"]))
+    band_wins = (not best["uniform"]) and _dominates(best, best_uni,
+                                                     ("overhang", "angle"))
+    dom2 = [c for c in combos if _dominates(c, sel_pt, ("overhang", "angle"))]
+    dom3 = [c for c in combos if _dominates(c, sel_pt, ("overhang", "angle", "pen"))]
+    return dict(best=best, best_uni=best_uni, band_wins=bool(band_wins),
+                dom2=dom2, dom3=dom3)
 
 
 def main():
@@ -106,7 +148,13 @@ def main():
     ap.add_argument("--step", type=float, default=None)
     ap.add_argument("--k", type=float, default=DEFAULT_K)
     ap.add_argument("--json", default="j_vs_optimum_results.json")
+    ap.add_argument("--reanalyze", metavar="JSON",
+                    help="저장된 격자로 판정만 다시 (툴패스 안 돌림)")
     args = ap.parse_args()
+    if args.reanalyze:
+        rows = reanalyze(args.reanalyze)
+        json.dump(rows, open(args.reanalyze, "w"), ensure_ascii=False, indent=1)
+        return
     step = args.step if args.step else (8.0 if args.quick else 4.0)
 
     allrows = []
@@ -129,105 +177,122 @@ def main():
                                                   breakdown=True)
         th_sel = [round(t, 1) for t in sel["thetas"]]
 
-        # ⚠ 오버행 단독 최소는 **J 를 탓하는 근거가 못 된다** — J 는 각도를 일부러
-        #   벌한다(− k·평균|θ|). 고각 균일은 오버행이 낮지만 왜곡이 크다.
-        #   진짜 질문은 **J 의 해가 (오버행, 왜곡) 파레토 전선 위에 있나** 다.
-        def dominates(a, b):
-            # a 가 b 를 두 축 모두에서 이기나 (하나는 엄격히)
-            return (a["overhang"] <= b["overhang"] + 1e-12
-                    and a["angle"] <= b["angle"] + 1e-9
-                    and (a["overhang"] < b["overhang"] - 1e-12
-                         or a["angle"] < b["angle"] - 1e-9))
-
-        front = [c for c in combos
-                 if not any(dominates(o, c) for o in combos if o is not c)]
-
-        best_oh = min(combos, key=lambda c: c["overhang"])
-        best_J = max(combos, key=lambda c: c["J"])
-        best_uni = min((c for c in combos if c["uniform"]),
-                       key=lambda c: c["overhang"])
-        rho, pval = spearmanr([c["J"] for c in combos],
-                             [c["overhang"] for c in combos])
-
-        print(f"  J 가 고른 해        θ={th_sel}  오버행 {oh_sel:.3f}%p")
-        print(f"  격자 J 최대         θ=[{best_J['t1']:g}, {best_J['t2']:g}]"
-              f"  오버행 {best_J['overhang']:.3f}%p  J={best_J['J']:.3f}")
-        print(f"  **오버행 최소**      θ=[{best_oh['t1']:g}, {best_oh['t2']:g}]"
-              f"  오버행 {best_oh['overhang']:.3f}%p  J={best_oh['J']:.3f}"
-              f"  {'← 균일' if best_oh['uniform'] else '← 밴드'}")
-        print(f"  최선 균일           θ={best_uni['t1']:g}"
-              f"  오버행 {best_uni['overhang']:.3f}%p")
-        gap = oh_sel - best_oh["overhang"]
-        print(f"  → J 의 손해 {gap:+.3f}%p"
-              f" ({oh_sel/max(best_oh['overhang'],1e-9):.1f}배)"
-              if best_oh["overhang"] > 1e-9 else f"  → J 의 손해 {gap:+.3f}%p")
-        print(f"  → 스피어만 ρ(J, 오버행) = **{rho:+.3f}** (p={pval:.1e})"
-              "   [−1 이면 J 가 순위를 잘 따라간다]")
-        band_wins = best_oh["overhang"] < best_uni["overhang"] - 1e-9
-        print(f"  → 오버행 단독 최적해가 밴드인가: "
-              f"**{'예' if band_wins else '아니오 (균일 고각이 최적)'}**")
-
-        # J 의 해가 파레토 전선 위에 있나 — 여기가 핵심 질문이다.
-        sel_pt = dict(overhang=oh_sel,
+        sel_pt = dict(overhang=oh_sel, pen=float(blend_penalty(
+                          mesh, sel["profile_obj"], rp, MAX_SPACING_FACTOR)),
                       angle=mean_abs_angle(mesh, sel["profile_obj"]))
-        dom = [c for c in combos if dominates(c, sel_pt)]
-        print(f"  파레토 전선 {len(front)}개 / 조합 {len(combos)}개")
-        print(f"  → **J 의 해가 전선 위에 있나: {'예' if not dom else '아니오'}**"
-              f"  (지배하는 조합 {len(dom)}개)")
-        if dom:
-            w = min(dom, key=lambda c: (c["overhang"], c["angle"]))
-            print(f"     가장 세게 지배: θ=[{w['t1']:g}, {w['t2']:g}] "
-                  f"오버행 {w['overhang']:.3f} (J 해 {oh_sel:.3f}) / "
-                  f"왜곡 {w['angle']:.1f}° (J 해 {sel_pt['angle']:.1f}°)")
-        print(f"     (J 해: 오버행 {oh_sel:.3f}%p, 왜곡 {sel_pt['angle']:.1f}°  |  "
-              f"오버행 최소: {best_oh['overhang']:.3f}%p, 왜곡 {best_oh['angle']:.1f}°)")
-
         allrows.append(dict(
-            model=name, step=step, n_combos=len(combos), spearman=float(rho),
-            j_pick=th_sel, j_pick_oh=oh_sel,
-            best_oh=[best_oh["t1"], best_oh["t2"]], best_oh_val=best_oh["overhang"],
-            best_J=[best_J["t1"], best_J["t2"]], best_J_oh=best_J["overhang"],
-            best_uniform=best_uni["t1"], best_uniform_oh=best_uni["overhang"],
-            band_beats_uniform=bool(band_wins),
-            j_pick_angle=sel_pt["angle"], best_oh_angle=best_oh["angle"],
-            n_front=len(front), j_on_front=bool(not dom), n_dominating=len(dom),
-            grid=[{kk: c[kk] for kk in ("t1", "t2", "J", "overhang", "angle", "uniform")}
-                  for c in combos]))
+            model=name, step=step, n_combos=len(combos),
+            j_pick=th_sel, j_pick_oh=oh_sel, j_pick_angle=sel_pt["angle"],
+            j_pick_pen=sel_pt["pen"],
+            grid=[{kk: c[kk] for kk in ("t1", "t2", "J", "overhang", "angle",
+                                        "pen", "uniform")} for c in combos]))
 
-    print("\n" + "=" * 68)
-    print(f"{'모델':<16}{'스피어만':>9}{'J해 전선위?':>12}{'지배조합':>9}"
-          f"{'오버행최소해':>14}{'밴드최적?':>10}")
-    print("-" * 74)
-    for r in allrows:
-        print(f"{r['model']:<16}{r['spearman']:>+9.3f}"
-              f"{('예' if r['j_on_front'] else '아니오'):>12}{r['n_dominating']:>9}"
-              f"{str([f'{v:g}' for v in r['best_oh']]):>14}"
-              f"{'예' if r['band_beats_uniform'] else '아니오':>10}")
-    nf = sum(1 for r in allrows if not r["j_on_front"])
-    print(f"\n[파레토 판정] J 의 해가 전선 **밖**인 모델 {nf}/{len(allrows)}")
-    if nf == 0:
-        print("  → J 는 전선 위의 한 점을 고른다. **'J 가 틀렸다' 가 아니라 '다른 교환점을")
-        print("    고른다' 다.** 오버행 단독 비교로 J 를 탓하면 안 된다.")
-    else:
-        print("  → ⚠ J 가 전선 밖의 해를 고른다. 두 축 모두에서 더 나은 조합이 있는데")
-        print("    못 찾는다는 뜻이고, 이건 순수한 손해다.")
-    rs = [r["spearman"] for r in allrows]
-    print(f"\n[판정] 스피어만 ρ(J, 오버행) 범위 {min(rs):+.3f} ~ {max(rs):+.3f}")
-    if max(rs) < -0.8:
-        print("  → J 가 오버행 순위를 **잘 따라간다.** J 는 문제가 아니다.")
-    elif min(rs) > -0.4:
-        print("  → J 가 오버행 순위를 **거의 못 따라간다.** 계통이 확정된다 —")
-        print("    문제는 지표가 아니라 **목적함수 J** 다.")
-    else:
-        print("  → 모델마다 다르다. J 가 어떤 형상에서 어긋나는지 따로 봐야 한다.")
-    nb = sum(1 for r in allrows if not r["band_beats_uniform"])
-    if nb:
-        print(f"  ⚠ {nb}/{len(allrows)} 모델에서 **전수 최적해가 균일**이다 —")
-        print("    거기서는 밴드가 애초에 이길 수 없다 (J 와 무관한 사실).")
-
+    report(allrows)
     if args.json:
         json.dump(allrows, open(args.json, "w"), ensure_ascii=False, indent=1)
         print(f"\n저장: {args.json}")
+
+
+def reanalyze(path):
+    """저장된 격자(툴패스 576 회, 40 분)를 다시 안 돌리고 판정만 다시 한다.
+    블렌드 벌점이 없던 옛 JSON 이면 해석식으로 채운다 (툴패스와 무관, 초 단위)."""
+    rows = json.load(open(path, encoding="utf-8"))
+    builds = dict(models(False))
+    for r in rows:
+        if "j_pick_pen" in r and all("pen" in c for c in r["grid"]):
+            continue
+        mesh = builds[r["model"]]()
+        rp = RadiusProfile(mesh)
+        r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
+        for c in r["grid"]:
+            c["pen"] = blend_pen_of(mesh, (c["t1"], c["t2"]), rp, r_max)
+        r["j_pick_pen"] = blend_pen_of(mesh, r["j_pick"], rp, r_max)
+    report(rows)
+    return rows
+
+
+def report(rows):
+    """모델별 판정 + 요약. 측정 경로와 재분석 경로가 **같은 판정 코드**를 쓴다."""
+    for r in rows:
+        combos = r["grid"]
+        sel_pt = dict(overhang=r["j_pick_oh"], angle=r["j_pick_angle"],
+                      pen=r["j_pick_pen"])
+        v = judge(combos, sel_pt)
+        best, uni = v["best"], v["best_uni"]
+        rho, pval = spearmanr([c["J"] for c in combos],
+                              [c["overhang"] for c in combos])
+        r.update(spearman=float(rho), band_beats_uniform=v["band_wins"],
+                 best_oh=[best["t1"], best["t2"]], best_oh_val=best["overhang"],
+                 best_oh_angle=best["angle"], best_uniform=uni["t1"],
+                 best_uniform_oh=uni["overhang"], best_uniform_angle=uni["angle"],
+                 j_on_front2=not v["dom2"], n_dominating2=len(v["dom2"]),
+                 j_on_front3=not v["dom3"], n_dominating3=len(v["dom3"]))
+
+        print(f"\n[{r['model']}]  격자 {r['step']:g}°  조합 {r['n_combos']}개")
+        print(f"  J 가 고른 해   θ={r['j_pick']}  오버행 {r['j_pick_oh']:.3f}%p  "
+              f"왜곡 {r['j_pick_angle']:.1f}°  블렌드 {r['j_pick_pen']:.1f}")
+        print(f"  오버행 최소    θ=[{best['t1']:g}, {best['t2']:g}]  "
+              f"오버행 {best['overhang']:.3f}%p  왜곡 {best['angle']:.1f}°  "
+              f"블렌드 {best['pen']:.1f}   (동점이면 왜곡이 작은 쪽)")
+        print(f"  최선 균일      θ={uni['t1']:g}  오버행 {uni['overhang']:.3f}%p  "
+              f"왜곡 {uni['angle']:.1f}°")
+        print(f"  → 스피어만 ρ(J, 오버행) = {rho:+.3f} (p={pval:.1e})")
+        print(f"  → 오버행 최적해가 균일을 지배하는 밴드인가: "
+              f"**{'예' if v['band_wins'] else '아니오'}**")
+        print(f"  → J 해가 2 축 전선(오버행, 왜곡) 위: "
+              f"{'예' if not v['dom2'] else '아니오'} (지배 {len(v['dom2'])}개)")
+        print(f"  → J 해가 3 축 전선(+블렌드) 위:     "
+              f"{'예' if not v['dom3'] else '아니오'} (지배 {len(v['dom3'])}개)")
+        if v["dom2"]:
+            w = min(v["dom2"], key=lambda c: (c["overhang"], c["angle"]))
+            print(f"     2 축에서 가장 세게 지배: θ=[{w['t1']:g}, {w['t2']:g}] "
+                  f"오버행 {w['overhang']:.3f} / 왜곡 {w['angle']:.1f}° / "
+                  f"**블렌드 {w['pen']:.1f}** (J 해 {sel_pt['pen']:.1f})")
+            pens = [c["pen"] for c in v["dom2"]]
+            print(f"     지배 조합 {len(pens)}개의 블렌드 {min(pens):.1f}~{max(pens):.1f}"
+                  "  ← J 는 이것을 비용으로 센다")
+
+    print("\n" + "=" * 74)
+    print(f"{'모델':<16}{'스피어만':>9}{'2축전선':>8}{'3축전선':>8}"
+          f"{'오버행최적해':>14}{'밴드우세':>9}")
+    print("-" * 74)
+    for r in rows:
+        print(f"{r['model']:<16}{r['spearman']:>+9.3f}"
+              f"{('예' if r['j_on_front2'] else '아니오'):>8}"
+              f"{('예' if r['j_on_front3'] else '아니오'):>8}"
+              f"{str([f'{x:g}' for x in r['best_oh']]):>14}"
+              f"{('예' if r['band_beats_uniform'] else '아니오'):>9}")
+
+    n2 = sum(1 for r in rows if not r["j_on_front2"])
+    n3 = sum(1 for r in rows if not r["j_on_front3"])
+    print(f"\n[파레토] J 해가 전선 밖: 2 축 {n2}/{len(rows)}, 3 축 {n3}/{len(rows)}")
+    if n3 == 0 and n2 > 0:
+        print("  → 2 축에서만 밖이다. **블렌드를 비용으로 세느냐** 에 판정이 달렸다 —")
+        print("    즉 그 모델들의 결론은 k_blend(정규화 세기) 에 달렸다. 순수한 손해가 아니다.")
+    elif n3 > 0:
+        # ⚠ 첫 판정 문구는 여기서 "순수한 손해" 라고 단정했다. 구에서 3 축으로
+        #   지배하는 [12,44] 는 오버행 0.035%p·왜곡 0.14° 차이였고, 블렌드 0 인
+        #   이유가 **층 압축(m=0.667)을 blend_penalty 가 안 세기** 때문이었다.
+        #   그래서 격차를 숫자로 보이고, 압축을 따로 알린다.
+        print("  → 3 축에서도 밖인 모델이 있다. 격차부터 본다 (작으면 사실상 동점):")
+        for r in rows:
+            if r["j_on_front3"]:
+                continue
+            sel = dict(overhang=r["j_pick_oh"], angle=r["j_pick_angle"],
+                       pen=r["j_pick_pen"])
+            for c in r["grid"]:
+                if _dominates(c, sel, ("overhang", "angle", "pen")):
+                    print(f"     {r['model']}: θ=[{c['t1']:g}, {c['t2']:g}]  "
+                          f"오버행 −{sel['overhang']-c['overhang']:.3f}%p  "
+                          f"왜곡 −{sel['angle']-c['angle']:.2f}°  블렌드 {c['pen']:.1f}")
+        print("    ⚠ blend_penalty 는 층간격 **팽창(m>1)만** 센다. 압축(m<1)은 0 이다 —")
+        print("      블렌드 0 인 지배 조합이 **압축 블렌드**인지 확인할 것.")
+    else:
+        print("  → J 는 모든 모델에서 전선 위의 한 점을 고른다.")
+    rs = [r["spearman"] for r in rows]
+    print(f"[순위] 스피어만 ρ(J, 오버행) {min(rs):+.3f} ~ {max(rs):+.3f}")
+    nb = sum(1 for r in rows if r["band_beats_uniform"])
+    print(f"[밴드] 오버행 최적해가 균일을 지배하는 밴드인 모델 {nb}/{len(rows)}")
 
 
 if __name__ == "__main__":
