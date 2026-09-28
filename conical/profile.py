@@ -430,7 +430,7 @@ class AngleProfile:
     def describe(self):
         """사람용 표: 구간·각도·블렌드 표시."""
         lines = []
-        for i, (z, th) in enumerate(zip(self.zs, self.thetas_deg)):
+        for _i, (z, th) in enumerate(zip(self.zs, self.thetas_deg, strict=True)):
             lines.append(f"    Z'={z:8.2f}  θ={th:6.1f}°")
         for a, b in self.blend_intervals():
             lines.append(f"    (블렌드 [{a:.2f}, {b:.2f}] 폭 {b - a:.2f} mm)")

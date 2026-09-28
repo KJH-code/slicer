@@ -21,7 +21,7 @@ analytic.py — 해석적(닫힌형) 오버행 판정 + 면별 임계각. 팀메
 
 import numpy as np
 
-from .config import THRESHOLD_DEG, MAX_ANGLE_DEG
+from .config import MAX_ANGLE_DEG, THRESHOLD_DEG
 
 
 def radial_normal(mesh):

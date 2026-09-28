@@ -31,8 +31,12 @@ from conical.gcode import Move
 from conical.meshio import center_on_axis
 from conical.open5x import PRUSA_UV, to_open5x
 from conical.planar_slicer import slice_mesh
-from conical.sync import (feed_cap_cost, machine_xy_span, rotary_demand,
-                          sync_error_budget)
+from conical.sync import (
+    feed_cap_cost,
+    machine_xy_span,
+    rotary_demand,
+    sync_error_budget,
+)
 from conical.transform import transform_cone
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -112,7 +116,7 @@ def test_feed_cap_cost_is_monotone():
     d = rotary_demand(*_circle(2.0, 30.0))        # ω ≈ 859 deg/s
     cost = feed_cap_cost(d, (180, 360, 720, 1440, 3600))
     ratios = [r["ratio"] for r in cost["rows"]]
-    assert all(a >= b - 1e-9 for a, b in zip(ratios, ratios[1:])), \
+    assert all(a >= b - 1e-9 for a, b in zip(ratios, ratios[1:], strict=False)), \
         f"한계를 올렸는데 시간이 늘었다: {ratios}"
     assert ratios[-1] == pytest.approx(1.0, abs=1e-6), \
         "요구보다 높은 한계인데 배수가 1 이 아니다"

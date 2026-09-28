@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from conical.gcode import parse
-from conical.toolpath import sample_extrusions, check_support
+from conical.toolpath import check_support, sample_extrusions
 
 LH = 0.3
 

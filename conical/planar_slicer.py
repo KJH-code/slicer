@@ -18,8 +18,7 @@ planar_slicer.py — 내장 미니 평면 슬라이서 (연구용 최소 기능)
 import math
 
 import numpy as np
-import trimesh
-from shapely.geometry import LineString, MultiPolygon, Polygon
+from shapely.geometry import LineString, MultiPolygon
 from shapely.ops import unary_union
 
 from .gcode import Move
@@ -68,7 +67,7 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
     z0, z1 = mesh.bounds[0][2], mesh.bounds[1][2]
     n_layers = max(1, int(round((z1 - z0) / layer_height)))
 
-    items = [("raw", f"; conical built-in planar slicer"),
+    items = [("raw", "; conical built-in planar slicer"),
              ("raw", f"; layers={n_layers} layer_h={layer_height} width={extrusion_width}"),
              ("raw", "G21"), ("raw", "G90"), ("raw", "M82")]  # mm, 절대좌표, 절대 E(M82)
     state = {"e": 0.0}

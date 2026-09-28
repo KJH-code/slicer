@@ -37,9 +37,16 @@ from conical.backtransform import backtransform
 from conical.gcode import Move
 from conical.meshio import center_on_axis
 from conical.planar_slicer import slice_mesh
-from conical.rep5x import (REP5X, Rep5xProfile, _c_of, add_c_rewinds,
-                           check_rep5x, cone_tool_direction, to_rep5x,
-                           tool_direction)
+from conical.rep5x import (
+    REP5X,
+    Rep5xProfile,
+    _c_of,
+    add_c_rewinds,
+    check_rep5x,
+    cone_tool_direction,
+    to_rep5x,
+    tool_direction,
+)
 from conical.transform import transform_cone
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -85,7 +92,7 @@ def test_tool_direction_matches_cone_normal():
                 want = cone_tool_direction(mv.x, mv.y, angle, direction)
                 # G-code 는 각도를 소수 3자리로 적는다 (0.001°). LB=54.67mm 에서
                 # 팁 변위 0.95µm 이므로 무해하지만, 허용오차는 그만큼 둬야 한다.
-                for g, w in zip(got, want):
+                for g, w in zip(got, want, strict=True):
                     assert abs(g - w) < 1e-5, (
                         f"{direction} {angle}° at ({mv.x},{mv.y}): "
                         f"공구 방향 {got} vs 원뿔 법선의 반대 {want}")
@@ -111,7 +118,7 @@ def test_coordinates_pass_through_unchanged():
     out, _st = to_rep5x(real, 20.0, "outward")
     src, dst = _moves(real), _moves(out)
     assert len(src) == len(dst)
-    for a, b in zip(src, dst):
+    for a, b in zip(src, dst, strict=True):
         assert (a.x, a.y, a.z, a.e, a.f, a.g) == (b.x, b.y, b.z, b.e, b.f, b.g)
 
 
@@ -120,7 +127,7 @@ def test_c_is_continuously_unwrapped():
     real = _pipeline("funnel.stl", 20.0)
     out, st = to_rep5x(real, 20.0, "outward")
     cs = [_c_of(m.extra, "C") for m in _moves(out)]
-    steps = [abs(b - a) for a, b in zip(cs, cs[1:])]
+    steps = [abs(b - a) for a, b in zip(cs, cs[1:], strict=False)]
     assert max(steps) < 360.0, f"한 이동에 {max(steps):.0f}° — unwrap 이 깨졌다"
     assert st["c_turns"] > 10.0, "실제 출력이면 C 가 크게 누적돼야 한다"
 
@@ -167,7 +174,7 @@ def test_rewind_preserves_toolpath():
 
     a, b = extruding_moves(out), extruding_moves(out2)
     assert len(a) == len(b), f"압출 이동 수가 달라졌다: {len(a)} → {len(b)}"
-    for m1, m2 in zip(a, b):
+    for m1, m2 in zip(a, b, strict=True):
         assert (m1.x, m1.y, m1.z, m1.e) == (m2.x, m2.y, m2.z, m2.e)
         d = abs(_c_of(m1.extra, "C") - _c_of(m2.extra, "C"))
         assert abs(d - round(d / 360.0) * 360.0) < 1e-6, \

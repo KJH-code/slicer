@@ -23,7 +23,6 @@ RotBot 의 검증된 3단계 구조에 우리 '자동 각도 결정'을 앞단�
 """
 
 import argparse
-import math
 import subprocess
 import tempfile
 from pathlib import Path
@@ -32,17 +31,22 @@ import numpy as np
 import trimesh
 
 from conical import analytic
-from conical.meshio import center_on_axis, RadiusProfile
-from conical.transform import transform_cone, transform_cone_profile
-from conical.planar_slicer import slice_mesh
-from conical.backtransform import backtransform
 from conical import gcode as gc
-from conical.selector import select_cone
-from conical.profile import AngleProfile
-from conical.varangle import select_banded, select_banded_j
+from conical.backtransform import backtransform
+from conical.config import (
+    BLEND_COST_K,
+    BLEND_SHIFT_RATIO,
+    DEFAULT_K,
+    MAX_SPACING_FACTOR,
+    THRESHOLD_DEG,
+)
 from conical.machine import MachineProfile
-from conical.config import (THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP, DEFAULT_K,
-                            MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, BLEND_COST_K)
+from conical.meshio import RadiusProfile, center_on_axis
+from conical.planar_slicer import slice_mesh
+from conical.profile import AngleProfile
+from conical.selector import select_cone
+from conical.transform import transform_cone, transform_cone_profile
+from conical.varangle import select_banded, select_banded_j
 
 
 def auto_select(mesh, k=DEFAULT_K):
@@ -143,7 +147,7 @@ def main():
         if args.profile is not None:
             profile = AngleProfile.parse(args.profile)
             if (args.direction or "outward") == "inward":
-                profile = AngleProfile(list(zip(profile.zs, -profile.thetas_deg)))
+                profile = AngleProfile(list(zip(profile.zs, -profile.thetas_deg, strict=True)))
             why = "수동 프로필"
         else:
             # 이동 예산은 모델 높이 기준 — 밴드 수와 무관 (config 주석 참조)
@@ -233,8 +237,6 @@ def main():
         print(f"  슬라이서    : 내장 (layer {args.layer_height}mm, "
               f"perim {args.perimeters}, infill {args.infill_spacing}mm)")
 
-    n_moves_planar = sum(1 for k, _ in items if k == "move")
-
     # [4] 역변환 (적응 현 분할; 프로필이면 점별 θ(Zw) + 블렌드 분할 2배)
     real_items, stats = backtransform(items, profile if profile is not None else angle,
                                       direction, chord_tol=args.chord_tol)
@@ -243,7 +245,7 @@ def main():
 
     # [5] 출력 모드
     if args.mode == "open5x":
-        from conical.open5x import to_open5x, add_v_rewinds, PRUSA_UV, VORON_BC
+        from conical.open5x import PRUSA_UV, VORON_BC, add_v_rewinds, to_open5x
         prof = PRUSA_UV if args.machine == "prusa-uv" else VORON_BC
         prof.pivot_depth = args.pivot_depth
         real_items, o5 = to_open5x(real_items, angle, direction, prof)
@@ -288,10 +290,10 @@ def main():
     # 한 줄 JSON (자기기술 G-code, 사이드카 파일 없음).
     import json as _json
     if profile is not None:
-        bps = [[float(z), float(t)] for z, t in zip(profile.zs, profile.thetas_deg)]
+        bps = [[float(z), float(t)] for z, t in zip(profile.zs, profile.thetas_deg, strict=True)]
         meta_dir = "outward"          # 부호 각도 규약 (음수=inward)
         prof_txt = ",".join(f"{z:g}:{t:g}"
-                            for z, t in zip(profile.zs, profile.thetas_deg))
+                            for z, t in zip(profile.zs, profile.thetas_deg, strict=True))
         legacy = f"; conical: profile={prof_txt} direction=outward " \
                  f"mode={args.mode} chord_tol={args.chord_tol}"
     else:

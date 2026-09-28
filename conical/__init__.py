@@ -14,19 +14,24 @@ conical — 형상 적응형 원뿔(conical) 슬라이싱 알고리즘 패키지
     meshio    : STL 로드 / 데모 구 생성 도우미
 """
 
-from . import config
-from .transform import transform_cone
-from .overhang import analyze_overhangs, support_area_fraction, summarize
+from . import analytic, config
+
 # 판정 기준 통일(2026-07 리뷰): 패키지 기본 export 는 해석식(analytic).
 # 레거시(변환공간)는 conical.sweep.support_fraction 처럼 모듈 경로로만 접근.
-from .analytic import support_fraction, sweep_table
-from .selector import evaluate_J, select_cone, k_sensitivity
-from .meshio import load_mesh_or_demo, center_on_axis
-from .analytic import face_support_and_staircase
-from .varangle import (select_uniform, select_banded, select_fine,
-                       select_banded_j, profile_objective, blend_penalty)
+from .analytic import face_support_and_staircase, support_fraction, sweep_table
+from .meshio import center_on_axis, load_mesh_or_demo
+from .overhang import analyze_overhangs, summarize, support_area_fraction
+from .selector import evaluate_J, k_sensitivity, select_cone
 from .strength import face_strength, part_strength
-from . import analytic
+from .transform import transform_cone
+from .varangle import (
+                       blend_penalty,
+                       profile_objective,
+                       select_banded,
+                       select_banded_j,
+                       select_fine,
+                       select_uniform,
+)
 
 __all__ = [
     "config",

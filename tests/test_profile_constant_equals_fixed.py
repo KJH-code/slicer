@@ -14,11 +14,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import trimesh
 
-from conical.transform import transform_cone, transform_cone_profile
-from conical.profile import AngleProfile
 from conical.backtransform import backtransform
-from conical.planar_slicer import slice_mesh
 from conical.meshio import center_on_axis
+from conical.planar_slicer import slice_mesh
+from conical.profile import AngleProfile
+from conical.transform import transform_cone, transform_cone_profile
 
 
 def test_mesh_warp_equal():

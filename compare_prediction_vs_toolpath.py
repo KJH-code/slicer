@@ -17,22 +17,23 @@ layer 0.4)을 돌리고 검사기 A(지지)를 실행해, '메시 기반 해석�
 import sys
 import time
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.stats import spearmanr
-from conical.plotstyle import L
 
 from conical import analytic
-from conical.meshio import center_on_axis
-from conical.transform import transform_cone, transform_cone_profile
-from conical.planar_slicer import slice_mesh
 from conical.backtransform import backtransform
+from conical.meshio import center_on_axis
+from conical.planar_slicer import slice_mesh
+from conical.plotstyle import L
 from conical.profile import AngleProfile
+from conical.toolpath import check_support, sample_extrusions
+from conical.transform import transform_cone, transform_cone_profile
 from conical.varangle import select_banded
-from conical.toolpath import sample_extrusions, check_support
 
 ANGLES = [0, 10, 20, 30, 36, 44]
 LAYER_H = 0.4
@@ -91,14 +92,14 @@ def main():
     print(f"  가변각(밴드2) [{prof_txt}] | 예측 {p_b:.2f}% | 툴패스 {m_b:.2f}%")
 
     # 균일 최적과 비교 코멘트
-    best_uni = min(zip(meas, ANGLES))
+    best_uni = min(zip(meas, ANGLES, strict=True))
     print(f"  균일 최적(툴패스 기준): {best_uni[1]}° → {best_uni[0]:.2f}%  "
           f"{'/ 가변각이 더 낫다' if m_b < best_uni[0] else '/ 가변각이 이기지 못함'}")
     print("  ⚠ 절대값 아닌 순위·경향 비교 (기하 판정, 브리징·수축 무시)")
 
     fig, ax = plt.subplots(figsize=(5.5, 5))
     ax.scatter(pred, meas, c="#4c72b0")
-    for a, x, y in zip(ANGLES, pred, meas):
+    for a, x, y in zip(ANGLES, pred, meas, strict=True):
         ax.annotate(f"{a}°", (x, y), fontsize=8,
                     textcoords="offset points", xytext=(4, 4))
     ax.scatter([p_b], [m_b], c="#55a868", marker="s", label="banded-2")

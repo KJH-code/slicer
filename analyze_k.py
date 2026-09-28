@@ -17,18 +17,19 @@ analyze_k.py — '구간별 각도의 이득'이 k에 어떻게 의존하나 (�
     python3 analyze_k.py model.stl  # 내 STL
 """
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L
 
-from conical.varangle import select_uniform, select_banded
 # 판정 기준 통일(2026-07 리뷰): metrics → analytic (해석식)
 from conical.analytic import face_support_and_staircase
+from conical.config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
 from conical.meshio import center_on_axis
-from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
+from conical.plotstyle import L
+from conical.varangle import select_banded, select_uniform
 
 
 def support_curve(mesh, cone_type="outward", threshold_deg=THRESHOLD_DEG):
@@ -106,7 +107,8 @@ def demo_models():
     models = {}
     models["sphere"] = trimesh.creation.icosphere(subdivisions=4, radius=10)
     s = trimesh.creation.icosphere(subdivisions=3, radius=8)
-    cyl = trimesh.creation.cylinder(radius=3, height=20); cyl.apply_translation([0, 0, 18])
+    cyl = trimesh.creation.cylinder(radius=3, height=20)
+    cyl.apply_translation([0, 0, 18])
     models["sphere+stalk"] = trimesh.util.concatenate([s, cyl])
     return models
 
@@ -121,7 +123,7 @@ if __name__ == "__main__":
         models = demo_models()
 
     fig, axes = plt.subplots(1, len(models), figsize=(6 * len(models), 4), squeeze=False)
-    for ax, (name, mesh) in zip(axes[0], models.items()):
+    for ax, (name, mesh) in zip(axes[0], models.items(), strict=True):
         analyze(name, mesh, ax)
     fig.suptitle(L("Banding advantage vs angle-cost k  (gain>0 only in a middle window)",
                    "각도 비용 k에 따른 밴딩 이득  (이득>0 구간이 중간에만 있다)"))

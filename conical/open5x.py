@@ -296,7 +296,10 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
     심각도는 "치명"(기계가 상할 수 있음) / "경고" / "정보".
     """
     findings, u_seen = [], []
-    xs, ys, zs, vs, feeds = [], [], [], [], []
+    # X 와 Y 는 따로 모으면 안 된다. G-code 의 한 이동이 X 만 지정할 수 있어서
+    # 길이가 어긋나고, 그러면 zip 이 엉뚱한 X-Y 를 짝지어 반경을 잰다.
+    # 짝으로 모아서 애초에 어긋날 수 없게 한다.
+    xys, zs, vs, feeds = [], [], [], []
     in_rewind, n_rewind, rewind_max = False, 0, 0.0
     dv_max, dv_at = 0.0, None
     v_prev, v_first = None, None
@@ -340,10 +343,8 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
                     elif dv > dv_max:
                         dv_max, dv_at = dv, (mv.x, mv.y, mv.z)
                 v_prev = v
-        if mv.x is not None:
-            xs.append(mv.x)
-        if mv.y is not None:
-            ys.append(mv.y)
+        if mv.x is not None and mv.y is not None:
+            xys.append((mv.x, mv.y))
         if mv.z is not None:
             zs.append(mv.z)
         if mv.f is not None:
@@ -402,8 +403,8 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
                          "Z 오프셋(원점을 띄우기)을 잡고 소프트리밋을 확인할 것"))
 
     # --- 베드 밖 ---
-    if bed_radius is not None and xs and ys:
-        r = max(math.hypot(a, b) for a, b in zip(xs, ys))
+    if bed_radius is not None and xys:
+        r = max(math.hypot(a, b) for a, b in xys)
         if r > bed_radius:
             findings.append(("치명", f"기계좌표 반경 {r:.1f}mm > 베드 반경 "
                                      f"{bed_radius}mm — 베드 밖으로 나간다"))
@@ -424,7 +425,7 @@ def check_open5x(items, profile=PRUSA_UV, bed_radius=None, max_dv_deg=30.0,
              "v_span_turns": ((max(vs) - min(vs)) / 360.0) if vs else 0.0,
              "v_max_step_deg": dv_max,
              "z_min": min(zs) if zs else None,
-             "xy_radius_max": (max(math.hypot(a, b) for a, b in zip(xs, ys))
-                               if xs and ys else None),
+             "xy_radius_max": (max(math.hypot(a, b) for a, b in xys)
+                               if xys else None),
              "moves": len(vs)}
     return findings, stats

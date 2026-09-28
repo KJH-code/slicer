@@ -29,8 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pytest
 
 from conical.gcode import Move
-from conical.motion import (AxisLimits, _displacements, limits_from_spec,
-                            plan_motion)
+from conical.motion import AxisLimits, _displacements, limits_from_spec, plan_motion
 
 # 저크·다른 축을 크게 열어 '한 축 사다리꼴' 만 남긴 한계
 FREE = AxisLimits(max_vel={"X": 1e9, "Y": 1e9, "Z": 1e9, "V": 1e9, "E": 1e9},

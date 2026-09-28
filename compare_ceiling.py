@@ -17,18 +17,19 @@ compare_ceiling.py — 결합 실험: 실현 가능한 밴드 계획 vs 이상�
 
 import time
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L
 
 from conical import analytic
-from conical.meshio import center_on_axis
+from conical.bandplan import evaluate_band_plan, plan_bands
 from conical.clusters import adaptive_ceiling
-from conical.bandplan import plan_bands, evaluate_band_plan
-from conical.config import THRESHOLD_DEG, MAX_ANGLE_DEG, ANGLE_STEP
+from conical.config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
+from conical.meshio import center_on_axis
+from conical.plotstyle import L
 
 
 def uniform_best(mesh):
@@ -45,12 +46,16 @@ def run_model(name, mesh):
     mesh = center_on_axis(mesh.copy())
     base = analytic.support_fraction(mesh, 0.0, "outward", THRESHOLD_DEG)
 
-    t0 = time.perf_counter(); uni = uniform_best(mesh); t_uni = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    uni = uniform_best(mesh)
+    t_uni = time.perf_counter() - t0
     t0 = time.perf_counter()
     bands = plan_bands(mesh)
     banded = evaluate_band_plan(mesh, bands) if bands else base
     t_band = time.perf_counter() - t0
-    t0 = time.perf_counter(); ceil_pct, _ = adaptive_ceiling(mesh); t_ceil = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    ceil_pct, _ = adaptive_ceiling(mesh)
+    t_ceil = time.perf_counter() - t0
 
     prof = " ".join(f"{b['angle']:.0f}{b['direction'][:3]}" for b in bands) or "-"
     print(f"{name:16s} | {base:5.1f} | {uni[0]:5.1f} ({uni[2][:3]}{uni[1]:2.0f}°) "
@@ -67,13 +72,17 @@ def demo_models():
     funnel.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
     m["funnel"] = funnel
     s = trimesh.creation.icosphere(subdivisions=3, radius=8)
-    cyl = trimesh.creation.cylinder(radius=3, height=20); cyl.apply_translation([0, 0, 18])
+    cyl = trimesh.creation.cylinder(radius=3, height=20)
+    cyl.apply_translation([0, 0, 18])
     m["sphere+stalk"] = trimesh.util.concatenate([s, cyl])
-    stem = trimesh.creation.cylinder(radius=2, height=14); stem.apply_translation([0, 0, 7])
-    cap = trimesh.creation.cylinder(radius=8, height=3); cap.apply_translation([0, 0, 15.5])
+    stem = trimesh.creation.cylinder(radius=2, height=14)
+    stem.apply_translation([0, 0, 7])
+    cap = trimesh.creation.cylinder(radius=8, height=3)
+    cap.apply_translation([0, 0, 15.5])
     m["mushroom"] = trimesh.util.concatenate([stem, cap])
     a = trimesh.creation.icosphere(subdivisions=3, radius=6)
-    b = trimesh.creation.icosphere(subdivisions=3, radius=6); b.apply_translation([0, 0, 30])
+    b = trimesh.creation.icosphere(subdivisions=3, radius=6)
+    b.apply_translation([0, 0, 30])
     m["two-spheres"] = trimesh.util.concatenate([a, b])
     m["torus"] = trimesh.creation.torus(major_radius=10, minor_radius=4)
     return m

@@ -132,8 +132,8 @@ def to_rep5x(items, cone_angle_deg, cone_type, profile=REP5X):
     b = profile.tilt_sign * c_dir * cone_angle_deg
 
     out = [("raw", "; REP5X 5-axis conical mode [EXPERIMENTAL]"),
-           ("raw", f"; head-head kinematics: firmware does the IK "
-                   f"(PENTA_AXIS_HH), X/Y/Z = nozzle tip"),
+           ("raw", "; head-head kinematics: firmware does the IK "
+                   "(PENTA_AXIS_HH), X/Y/Z = nozzle tip"),
            ("raw", f"; {profile.tilt_axis}={b:.3f}deg fixed tilt, "
                    f"{profile.rot_axis} tracks azimuth (continuous, unwrapped)"),
            ("raw", f"; LB={profile.lb} LC={profile.lc} "
@@ -581,7 +581,7 @@ def check_rewind_sweep(items, profile=REP5X, hotend=None, width=0.45,
 
     반환: (findings, stats). 되감기가 없으면 빈 목록.
     """
-    from .toolpath import HotendProfile, check_nozzle, sample_extrusions
+    from .toolpath import HotendProfile, sample_extrusions
 
     h = hotend or HotendProfile()
     pts, _mid, _wt = sample_extrusions(items, width=width)

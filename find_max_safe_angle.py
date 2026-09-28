@@ -13,14 +13,13 @@ config.MAX_ANGLE_DEG(전역 상수)를 모델별 계산값으로 대체할 수 �
 
 import argparse
 
-import numpy as np
 import trimesh
 
-from conical.meshio import center_on_axis
-from conical.transform import transform_cone
-from conical.planar_slicer import slice_mesh
 from conical.backtransform import backtransform
-from conical.toolpath import (sample_extrusions, check_nozzle, HotendProfile)
+from conical.meshio import center_on_axis
+from conical.planar_slicer import slice_mesh
+from conical.toolpath import HotendProfile, check_nozzle, sample_extrusions
+from conical.transform import transform_cone
 
 
 def run_pipeline(mesh, angle, direction="outward", layer_height=0.4):

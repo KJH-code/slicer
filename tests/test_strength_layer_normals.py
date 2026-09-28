@@ -16,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import trimesh
 
-from conical.strength import layer_normals
 from conical import analytic
 from conical.meshio import center_on_axis
+from conical.strength import layer_normals
 
 
 def test_layer_normal_matches_analytic():

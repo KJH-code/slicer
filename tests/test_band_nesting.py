@@ -22,14 +22,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 
+from compare_waist import waisted_model
 from conical.analytic import support_fraction
-from conical.config import (BLEND_COST_K, BLEND_SHIFT_RATIO, DEFAULT_K,
-                            MAX_SPACING_FACTOR, THRESHOLD_DEG)
+from conical.config import (
+    BLEND_COST_K,
+    BLEND_SHIFT_RATIO,
+    DEFAULT_K,
+    MAX_SPACING_FACTOR,
+    THRESHOLD_DEG,
+)
 from conical.meshio import RadiusProfile
 from conical.profile import AngleProfile
-from conical.varangle import (_merge_bands, assign_height_bands,
-                              profile_objective)
-from compare_waist import waisted_model
+from conical.varangle import _merge_bands, assign_height_bands, profile_objective
 
 
 def _interior_fractions(mesh, n):

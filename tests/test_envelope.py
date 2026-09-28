@@ -28,9 +28,16 @@ import pytest
 import trimesh
 
 from conical.backtransform import backtransform
-from conical.envelope import (MachineEnvelope, check_planar_stacking,
-                              constraints_at, layer_machine_z, machine_xz,
-                              max_angle, part_samples, requirement)
+from conical.envelope import (
+    MachineEnvelope,
+    check_planar_stacking,
+    constraints_at,
+    layer_machine_z,
+    machine_xz,
+    max_angle,
+    part_samples,
+    requirement,
+)
 from conical.meshio import center_on_axis
 from conical.open5x import PRUSA_UV, MachineProfile, _map_point, to_open5x
 from conical.planar_slicer import slice_mesh
@@ -83,7 +90,7 @@ def test_layer_machine_z_is_monotone_in_layer_index():
     """레이어 순서대로 기계 Z 가 **증가**해야 한다 (감소하면 노즐이 파고든다)."""
     for theta in (0.0, 20.0, 45.0, 80.0):
         zs = [layer_machine_z(z0, theta) for z0 in np.arange(0, 50, 0.3)]
-        assert all(b > a for a, b in zip(zs, zs[1:])), f"θ={theta} 에서 비단조"
+        assert all(b > a for a, b in zip(zs, zs[1:], strict=False)), f"θ={theta} 에서 비단조"
 
 
 def test_real_gcode_is_planar_stacking():
@@ -122,7 +129,7 @@ def test_spans_do_not_depend_on_pivot_depth():
             # 위치는 실제로 바뀐다 (약분되는 것이 스팬뿐임을 같이 고정)
             assert q["bed_center_x"] == pytest.approx(
                 -math.sin(math.radians(theta)) * d, rel=1e-9)
-        for a, b in zip(spans, spans[1:]):
+        for a, b in zip(spans, spans[1:], strict=False):
             assert a[0] == pytest.approx(b[0], rel=1e-9), f"X 스팬이 d 에 의존: {spans}"
             assert a[1] == pytest.approx(b[1], rel=1e-9), f"Z 스팬이 d 에 의존: {spans}"
 

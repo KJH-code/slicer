@@ -44,8 +44,7 @@ from conical.backtransform import backtransform
 from conical.gcode import Move
 from conical.meshio import center_on_axis
 from conical.planar_slicer import slice_mesh
-from conical.rep5x import (REP5X, check_rewind_sweep, move_tool_frames,
-                           to_rep5x)
+from conical.rep5x import REP5X, check_rewind_sweep, move_tool_frames, to_rep5x
 from conical.toolpath import HotendProfile, check_nozzle, sample_extrusions
 from conical.transform import transform_cone
 

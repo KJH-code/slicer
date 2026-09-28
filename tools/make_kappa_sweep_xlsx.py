@@ -28,9 +28,9 @@ import trimesh
 from openpyxl import Workbook
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from conical.meshio import center_on_axis            # noqa: E402
-from conical.clusters import overhang_clusters       # noqa: E402
-from conical.analytic import radial_normal           # noqa: E402
+from conical.analytic import radial_normal  # noqa: E402
+from conical.clusters import overhang_clusters  # noqa: E402
+from conical.meshio import center_on_axis  # noqa: E402
 
 KMAX_VALUES = np.round(np.arange(0.1, 1.01, 0.1), 2)      # x축 (10개)
 Q0_VALUES = np.round(np.arange(0.2, 3.01, 0.2), 2)        # y축 (15개)
@@ -91,7 +91,7 @@ def sweep_model(mesh):
             ang_area = 0.0
             bad_area = 0.0
             worst = 0.0
-            for faces, area, q in cluster_info:
+            for faces, _area, q in cluster_info:
                 kappa = -kmax * q / (q + q0)          # 팀메의 적응형 임계
                 nz = nz_all[faces]
                 best = None                            # 방향: 나은 쪽 채택
@@ -140,8 +140,10 @@ def demo_models():
     funnel = trimesh.creation.cone(radius=14, height=5)
     funnel.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
     m["funnel"] = funnel
-    stem = trimesh.creation.cylinder(radius=2, height=14); stem.apply_translation([0, 0, 7])
-    cap = trimesh.creation.cylinder(radius=8, height=3); cap.apply_translation([0, 0, 15.5])
+    stem = trimesh.creation.cylinder(radius=2, height=14)
+    stem.apply_translation([0, 0, 7])
+    cap = trimesh.creation.cylinder(radius=8, height=3)
+    cap.apply_translation([0, 0, 15.5])
     m["mushroom"] = trimesh.util.concatenate([stem, cap])
     return m
 

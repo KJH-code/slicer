@@ -18,20 +18,23 @@ analyze_blend_k.py — J의 '블렌드 비용' 가중치 k_blend 는 얼마여�
 ⚠ 두 모델 표본으로 고른 값이다 — 모델이 늘면 재검토 대상.
 """
 
-import sys
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L
 
-from conical.meshio import center_on_axis, RadiusProfile
-from conical.varangle import select_banded_j
-from conical.config import (MAX_SPACING_FACTOR, BLEND_SHIFT_RATIO, DEFAULT_K,
-                            BLEND_COST_K)
 from compare_waist import waisted_model
+from conical.config import (
+    BLEND_COST_K,
+    DEFAULT_K,
+    MAX_SPACING_FACTOR,
+)
+from conical.meshio import RadiusProfile, center_on_axis
+from conical.plotstyle import L
+from conical.varangle import select_banded_j
 
 K_BLENDS = [0.0, 0.1, 0.2, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 3.0]
 
@@ -39,7 +42,6 @@ K_BLENDS = [0.0, 0.1, 0.2, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 3.0]
 def analyze(mesh, k=DEFAULT_K, n_bands=2):
     rp = RadiusProfile(mesh)
     r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
-    h = mesh.bounds[1][2] - mesh.bounds[0][2]
     out = []
     for kb in K_BLENDS:
         r = select_banded_j(mesh, k, n_bands, r_max, rp, MAX_SPACING_FACTOR,
@@ -85,7 +87,7 @@ def main():
     print("⚠ 표본 2개로 고른 값 — 모델이 늘면 재검토 대상.")
 
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
-    for (name, (rows, want)), mark in zip(table.items(), ["o", "s"]):
+    for (name, (rows, _want)), mark in zip(table.items(), ["o", "s"], strict=True):
         xs = [r["k_blend"] for r in rows]
         ys = [r["gain"] for r in rows]
         lbl = (L("sphere (no waist)", "구 (허리 없음)") if "구" in name

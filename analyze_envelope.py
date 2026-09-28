@@ -24,20 +24,25 @@ analyze_envelope.py — 5축에서 최대 원뿔각을 정하는 것이 무엇�
 import argparse
 import math
 
+import matplotlib
 import numpy as np
 import trimesh
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from conical.plotstyle import L as _L
 
 from conical.backtransform import backtransform
-from conical.envelope import (MachineEnvelope, check_planar_stacking,
-                              constraints_at, machine_xz, max_angle,
-                              part_samples, requirement)
+from conical.envelope import (
+    MachineEnvelope,
+    check_planar_stacking,
+    max_angle,
+    part_samples,
+    requirement,
+)
 from conical.meshio import center_on_axis
 from conical.open5x import PRUSA_UV, to_open5x
 from conical.planar_slicer import slice_mesh
+from conical.plotstyle import L as _L
 from conical.transform import transform_cone
 
 ANGLES = (0, 15, 30, 45, 60, 75)
@@ -109,7 +114,7 @@ def main():
             print(f"   {stl.split('/')[-1]:<12} {ang:>4.0f}° | {st['n_layers']:>5} "
                   f"{st['layer_dz']:>8.4f} {exp:>8.4f} {st['flat']:>10.1e} "
                   f"{('✅ 단조' if st['monotone'] else '❌ 내려감'):>10}")
-    print(f"\n   층간격이 정확히 h·cosθ 이고, 층 내부 편차가 1e-13 수준이다")
+    print("\n   층간격이 정확히 h·cosθ 이고, 층 내부 편차가 1e-13 수준이다")
     print("   = **한 레이어가 기계 Z 값 하나.** 그리고 압출 순서대로 기계 Z 가 한 번도")
     print("   안 내려간다 → 이미 놓인 것이 전부 노즐 팁보다 아래거나 같은 높이다.")
     print(f"   **3축에서 각도를 24° 로 막던 간섭이 5축에서는 정의상 불가능해진다.** "
@@ -135,7 +140,7 @@ def main():
               f"{math.hypot(R, H):.1f}mm** (θ=atan(H/R) 에서). 틸트는 부품 경계상자를"
               f"\n       기계공간에서 그냥 **θ 만큼 회전**시키는 것이라 그렇다.")
 
-        print(f"\n  ② 지금 G-code 를 그대로 걸면 (원점=베드중심, Z=0=베드면)")
+        print("\n  ② 지금 G-code 를 그대로 걸면 (원점=베드중심, Z=0=베드면)")
         res = max_angle(r, z, fixed, prof)
         print(f"     최대 각도: {res['max_angle']}°   막는 것: {', '.join(res['blockers'])}")
         if res["max_angle"] is not None and res["max_angle"] < 1.0:
@@ -143,16 +148,16 @@ def main():
                   f"{-d:.0f}·(1−cosθ) 만큼 내려가는데,")
             print(f"        소프트리밋이 0 이면 그대로 잘린다. θ=20° 에서만 해도 "
                   f"{-d * (1 - math.cos(math.radians(20))):.2f}mm.")
-            print(f"        → **기계 Z 영점을 베드면보다 아래로 두거나 음수 Z 를 "
-                  f"허용해야 한다.** 제작 전에 정할 것.")
+            print("        → **기계 Z 영점을 베드면보다 아래로 두거나 음수 Z 를 "
+                  "허용해야 한다.** 제작 전에 정할 것.")
 
         print(f"\n  ③ 기계를 아직 만들기 전이면 (X {args.x_travel:.0f} / "
               f"Z {args.z_travel:.0f} / 베드반경 {args.bed_radius:.0f} 이동만 맞추면 됨)")
         res = max_angle(r, z, free, prof)
         print(f"     최대 각도: {res['max_angle']}°   막는 것: "
               f"{', '.join(res['blockers'])}")
-        print(f"     (스팬에는 피벗 깊이 d 가 **약분돼 안 들어간다** — d 는 위치만"
-              f" 정한다)")
+        print("     (스팬에는 피벗 깊이 d 가 **약분돼 안 들어간다** — d 는 위치만"
+              " 정한다)")
 
     # ④ 부품이 커지면 어디서 막히나
     print("=" * 78)
@@ -168,12 +173,12 @@ def main():
         print(f"   {R:>5.0f} × {H:<4.0f} {math.hypot(R, H):>7.1f} "
               f"{str(ang) + '°':>8}  {', '.join(res['blockers'])}")
     lim = min(args.x_travel, args.z_travel)
-    print(f"\n   **규칙: 0~90° 전 구간을 쓰려면 X·Z 이동이 둘 다 부품 대각선")
+    print("\n   **규칙: 0~90° 전 구간을 쓰려면 X·Z 이동이 둘 다 부품 대각선")
     print(f"   √(R²+H²) 이상이어야 한다.** 여기서는 {lim:.0f}mm — 위 표가 정확히")
-    print(f"   그 경계에서 갈린다 (80×160 은 대각 178.9 로 통과, 90×200 은 219.3")
-    print(f"   으로 7.25° 에서 막힌다). 틸트가 부품 경계상자를 회전시키는 것이므로,")
-    print(f"   어느 각도에선가 대각선이 X 축과, 또 어느 각도에선가 Z 축과 나란해진다.")
-    print(f"   (70개 조합에서 불일치 0건 — `tests/test_envelope.py` 가 고정한다)")
+    print("   그 경계에서 갈린다 (80×160 은 대각 178.9 로 통과, 90×200 은 219.3")
+    print("   으로 7.25° 에서 막힌다). 틸트가 부품 경계상자를 회전시키는 것이므로,")
+    print("   어느 각도에선가 대각선이 X 축과, 또 어느 각도에선가 Z 축과 나란해진다.")
+    print("   (70개 조합에서 불일치 0건 — `tests/test_envelope.py` 가 고정한다)")
 
     # 그림
     fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.5))

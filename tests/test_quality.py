@@ -29,8 +29,12 @@ import trimesh
 
 from conical.analytic import support_fraction
 from conical.meshio import center_on_axis
-from conical.quality import (cone_normal, cusp_compare, cusp_heights,
-                             rotary_resolution_error)
+from conical.quality import (
+    cone_normal,
+    cusp_compare,
+    cusp_heights,
+    rotary_resolution_error,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 
