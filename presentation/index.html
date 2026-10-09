@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="4축 3D 프린터의 적응형 원뿔 슬라이싱 — 2026 R&E 중간 성과공유회 발표 자료">
+  <title>적응형 원뿔 슬라이싱 · 중간 성과공유회</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2307111f'/%3E%3Cpath d='M16 5 L27 25 H5 Z' fill='none' stroke='%232de2c5' stroke-width='2.5'/%3E%3Cpath d='M9.5 17 H22.5' stroke='%23ff9d45' stroke-width='2.5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/vendor/reveal/reveal.css">
+  <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="rep5x.css">
+</head>
+<body>
+  <a class="skip-link" href="#slide-1">첫 슬라이드로 이동</a>
+  <div id="presentation-status" class="presentation-status" role="status" aria-live="polite" hidden></div>
+
+  <main class="reveal" aria-label="적응형 원뿔 슬라이싱 중간 성과공유회 발표">
+    <div class="slides">
+
+      <!-- 1. 표지 -->
+      <section id="slide-1" class="slide title-slide" aria-labelledby="slide-1-title">
+        <div class="fx-layer" data-fx="galaxy" aria-hidden="true"></div>
+        <div class="title-copy">
+          <p class="eyebrow">2026 과학영재 창의연구(R&amp;E) 중간 성과공유회 · 서울과학고등학교</p>
+          <h1 id="slide-1-title">4축 3D 프린터의<br>
+            <span class="fuzzy-host" data-fuzzy="적응형 원뿔 슬라이싱">적응형 원뿔 슬라이싱</span></h1>
+          <p class="subtitle">STL 형상에 맞는 원뿔각을 <strong>자동으로, 가볍게, 투명하게</strong></p>
+          <div class="presenter-placeholder" aria-label="발표자 정보">
+            <span>김재혁 · 나준우 · 김진우</span>
+            <span>지도교사 김주성</span>
+            <span>AI-017</span>
+          </div>
+        </div>
+        <div class="cover-geometry" aria-hidden="true">
+          <div class="cover-axis"></div>
+          <div class="cover-ring ring-1"></div>
+          <div class="cover-ring ring-2"></div>
+          <div class="cover-ring ring-3"></div>
+          <div class="cover-path path-1"></div>
+          <div class="cover-path path-2"></div>
+          <div class="cover-path path-3"></div>
+          <div class="cover-nozzle"></div>
+        </div>
+        <p class="cover-pipeline">해결한 것 → 지금 하는 것 → 다음에 할 것</p>
+      </section>
+
+      <!-- 2. 저번 문제와 현재 -->
+      <section id="slide-2" class="slide" aria-labelledby="slide-2-title">
+        <header class="slide-header">
+          <p class="section-label">발표의 뼈대</p>
+          <h2 id="slide-2-title">저번에 제기한 문제, 지금 어떻게 되었나</h2>
+        </header>
+        <div class="spine-table" role="table" aria-label="지난 발표 문제와 현재 상태">
+          <div class="spine-row spine-head" role="row"><span>저번 발표에서 제기한 문제</span><span>지금</span><span>어디서</span></div>
+          <div class="spine-row" role="row">
+            <span class="spine-q">각도를 <b>평가할 기준</b>이 없었다</span>
+            <span class="spine-a"><i class="chip chip--done">해결</i>검증 계층 5층을 쌓았다</span>
+            <span class="spine-p">3쪽</span>
+          </div>
+          <div class="spine-row" role="row">
+            <span class="spine-q">모델 <b>하나</b>로만 확인했다</span>
+            <span class="spine-a"><i class="chip chip--done">해결</i>세 형상에서 이기는 조건을 찾았다</span>
+            <span class="spine-p">4쪽</span>
+          </div>
+          <div class="spine-row" role="row">
+            <span class="spine-q">코드가 <b>따로 놀았다</b></span>
+            <span class="spine-a"><i class="chip chip--done">해결</i>STL→G-code 한 줄기로 합쳤다</span>
+            <span class="spine-p">5쪽</span>
+          </div>
+          <div class="spine-row" role="row">
+            <span class="spine-q">어떤 기계로 출력할지 <b>정해지지 않았다</b></span>
+            <span class="spine-a"><i class="chip chip--now">지금</i>기준 기계를 정하고 설계를 읽는다</span>
+            <span class="spine-p">6~10쪽</span>
+          </div>
+          <div class="spine-row" role="row">
+            <span class="spine-q">실물 출력 데이터가 없었다</span>
+            <span class="spine-a"><i class="chip chip--next">다음</i>제작 여건이 아직 없다 — 계산으로 갈 수 있는 끝까지</span>
+            <span class="spine-p">12쪽</span>
+          </div>
+        </div>
+        <aside class="slide-takeaway">고친 것은 대부분 <strong>“무엇으로 판정하는가”</strong>였다.</aside>
+      </section>
+
+      <!-- 3. 검증용 코드 설계 -->
+      <section id="slide-3" class="slide" aria-labelledby="slide-3-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--done">해결</i> 검증용 코드 설계</p>
+          <h2 id="slide-3-title">하드웨어 없이 “맞다”를 세우는 법</h2>
+        </header>
+        <div class="verify-layout">
+          <div class="verify-layers">
+            <article class="verify-layer">
+              <span class="layer-no">①</span>
+              <div><h3>단위 테스트 12종</h3><small>못 하는 것 — 수식이 물리적으로 맞는지</small></div>
+            </article>
+            <article class="verify-layer verify-layer--key">
+              <span class="layer-no">②</span>
+              <div><h3>툴패스 가상 검사기</h3>
+                <p>예측과 <strong>재는 대상이 다른</strong> 독립 지표</p>
+                <small>못 하는 것 — 예측기와 같이 틀릴 가능성</small></div>
+            </article>
+            <article class="verify-layer">
+              <span class="layer-no">③</span>
+              <div><h3>브라우저 독립 재구현</h3><p><strong data-countup="26727" data-comma>0</strong>점 <strong data-countup="100" data-decimals="4" data-suffix="%">0%</strong> 일치</p>
+                <small>못 하는 것 — 둘 다 같은 AI 도구로 작성</small></div>
+            </article>
+            <article class="verify-layer">
+              <span class="layer-no">④</span>
+              <div><h3>사람 손계산</h3><p>AI를 거치지 않는 유일한 경로</p>
+                <small>못 하는 것 — 전수 검사가 아님</small></div>
+            </article>
+            <article class="verify-layer">
+              <span class="layer-no">⑤</span>
+              <div><h3>팀원 독립 구현 대조</h3><p><strong data-countup="22000" data-comma>0</strong>면 · 차이 <strong>1.4×10⁻¹⁴°</strong></p>
+                <small>못 하는 것 — 둘이 같은 오해를 했을 가능성</small></div>
+            </article>
+          </div>
+          <aside class="verify-proof">
+            <h3>②층이 실제로 일했다</h3>
+            <figure>
+              <img src="assets/images/prediction_vs_toolpath.png" alt="예측과 툴패스 실측의 상관 산점도">
+              <figcaption>초록 점 하나만 예측 0.5% ↔ 실측 <strong data-countup="25.5" data-decimals="1" data-suffix="%">0%</strong></figcaption>
+            </figure>
+            <div class="verify-callout">
+              각 층이 <em>보증 못 하는 것</em>을 같이 적는다.<br>안 적으면 그냥 테스트를 많이 짠 것이다.
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 4. 다양한 모델 검증 -->
+      <section id="slide-4" class="slide" aria-labelledby="slide-4-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--done">해결</i> 다중 모델 검증</p>
+          <h2 id="slide-4-title">여러 형상에서 재보니, 이기는 조건이 있었다</h2>
+        </header>
+        <div class="angle-check-layout">
+          <figure class="angle-figure">
+            <img src="assets/images/compare_waist.png" alt="구와 램프에서 전략별 페리미터 미지지 비율">
+            <figcaption>구 · 램프에서 전략별 <strong>페리미터 미지지 %</strong></figcaption>
+          </figure>
+          <figure class="angle-figure">
+            <img src="assets/images/compare_bands.png" alt="밴드 수에 따른 성능 곡선">
+            <figcaption>구간을 늘려도 <strong>구는 그대로</strong>, 램프만 좋아진다</figcaption>
+          </figure>
+          <div class="angle-findings">
+            <article class="finding-key">
+              <h3>이기는 조건 = ‘허리’</h3>
+              <p>각도를 바꾸려면 전이 구간이 필요하고, 그 폭은 <strong>그 높이의 반경에 비례</strong>한다. 구는 어디나 뚱뚱해 전이가 높이의 73%를 먹는다.</p>
+            </article>
+            <article>
+              <h3>팀 안의 이견도 측정으로</h3>
+              <p>두 임계 규칙을 토론 대신 실측 순위상관으로 판정 — <strong>같은 눈금에서 만났다</strong>.</p>
+            </article>
+            <article class="finding-guard">
+              <h3>안전판</h3>
+              <p>결과가 <strong>최선 균일 원뿔보다 나쁠 수 없다</strong>. 회귀 테스트로 강제.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 통합 파이프라인 -->
+      <section id="slide-5" class="slide" aria-labelledby="slide-5-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--done">해결</i> 통합 파이프라인</p>
+          <h2 id="slide-5-title">STL 하나를 넣으면 G-code까지</h2>
+        </header>
+        <ol class="pipeline-flow" aria-label="슬라이싱 파이프라인">
+          <li><span>01</span><h3>축 센터링</h3><p>축 밖 모델은 각도가 무의미해진다</p></li>
+          <li><span>02</span><h3>각도 결정</h3><p>해석식으로 예측하고 J로 고른다</p></li>
+          <li><span>03</span><h3>정변환</h3><p>tanθ 선형 보간 → 이분법 없이 정확해</p></li>
+          <li><span>04</span><h3>평면 슬라이싱</h3><p>PrusaSlicer를 감싼다</p></li>
+          <li><span>05</span><h3>역변환</h3><p>오차 기준 적응 분할 <span class="mono">L=2√(2rε)</span></p></li>
+          <li><span>06</span><h3>G-code</h3><p>자기기술 헤더 + 압출 종류 태그</p></li>
+          <li><span>07</span><h3>검사·시각화</h3><p>같은 파일을 독립으로 다시 평가</p></li>
+        </ol>
+        <div class="pipeline-notes">
+          <article><h3>재발명하지 않았다</h3><p>슬라이서는 외부 것을 쓰고, 우리는 <strong>앞뒤만</strong> 만든다.</p></article>
+          <article><h3>손잡이는 한 곳에</h3><p>튜닝 상수가 전부 <span class="mono">config.py</span>에 근거와 함께 있다.</p></article>
+          <article><h3>가중치는 ‘창’으로</h3><p>값을 찍지 않고 <strong>답이 바뀌는 구간</strong>을 쟀다.</p></article>
+        </div>
+        <aside class="slide-takeaway">일곱 단계 전부 <strong>한 번씩 실제로 터진 뒤에</strong> 지금 모양이 됐다.</aside>
+      </section>
+
+      <!-- 6. 지금 하는 것: 기준 기계를 정한다 -->
+      <section id="slide-6" class="slide" aria-labelledby="slide-6-title">
+        <div class="fx-layer fx-ascii" data-fx="ascii" data-text="5 AXIS" aria-hidden="true"></div>
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--now">지금</i> 이번 단계의 핵심</p>
+          <h2 id="slide-6-title">출력할 기계를 정한다 — 3D 프린터 설계</h2>
+        </header>
+        <div class="core-shift">
+          <article class="shift-before">
+            <span class="shift-tag">문제</span>
+            <h3>기계가 없으면 상수가 전부 가정값이다</h3>
+            <ul>
+              <li>최대 안전 원뿔각 — 가정</li>
+              <li>노즐 충돌 기하 — <strong>3축 가정</strong></li>
+              <li>G-code 축 이름·한계 — 가정</li>
+            </ul>
+          </article>
+          <div class="shift-arrow" aria-hidden="true">→</div>
+          <article class="shift-after">
+            <span class="shift-tag shift-tag--now">이번 단계</span>
+            <h3>기준 기계를 <strong>Rep5x</strong>로 확정</h3>
+            <ul>
+              <li>CAD·BOM·펌웨어가 전부 공개 — 숫자를 읽을 수 있다</li>
+              <li>연속 회전 C + 90° 넘는 틸트 B</li>
+              <li>기성 프린터 개조라 <strong>기구를 새로 설계하지 않는다</strong></li>
+            </ul>
+          </article>
+        </div>
+        <div class="core-why">
+          <p class="core-note"><b>실물 제작은 지금 불가능하다.</b> 그래서 이번 범위는 <strong>설계까지</strong>다 — 기계를 확정해 가정값을 실제 숫자로 바꾸고, 그 기계가 받는 형식으로 출력 경로를 다시 설계한다.</p>
+        </div>
+      </section>
+
+      <!-- 7. Rep5x -->
+      <section id="slide-7" class="slide" aria-labelledby="slide-7-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--now">지금</i> 기준 기계</p>
+          <h2 id="slide-7-title">Rep5x — 공개된 5축 개조 설계</h2>
+        </header>
+        <div class="site-layout">
+          <figure class="browser-mock" aria-label="Rep5x 공개 문서 화면 재현">
+            <div class="browser-bar" aria-hidden="true">
+              <i class="dot dot-r"></i><i class="dot dot-y"></i><i class="dot dot-g"></i>
+              <span class="url">rep5x.com</span>
+              <span class="browser-tag">화면 재현</span>
+            </div>
+            <div class="browser-page">
+              <div class="mock-hero">
+                <div>
+                  <p class="mock-badge">Open Source · GPL v3</p>
+                  <h3>Open-Source 5-Axis Printing</h3>
+                  <p class="mock-lead">기성 데스크톱 프린터에 회전 2축을 더하는 개조 설계. CAD·BOM·펌웨어·조립 문서가 전부 공개되어 있다.</p>
+                </div>
+                <div class="mock-hero-art" aria-hidden="true">
+                  <img src="assets/images/rep5x/printer-complete.jpg" alt="">
+                </div>
+              </div>
+              <div class="mock-cards">
+                <article><strong>회전 2축</strong><span>연속 요(C) + 90° 초과 틸트(B)</span></article>
+                <article><strong>서포트 감소</strong><span>기울여 쌓아 오버행을 줄인다</span></article>
+                <article><strong>모듈 설계</strong><span>기종 의존이 마운트 한 부품에</span></article>
+              </div>
+            </div>
+          </figure>
+          <aside class="site-facts">
+            <h3>왜 이 설계인가</h3>
+            <dl>
+              <div><dt>공개</dt><dd>GPL v3 — 치수·펌웨어 설정까지 읽을 수 있다</dd></div>
+              <div><dt>기구학</dt><dd><strong>헤드 회전</strong>식. 펌웨어가 역기구학을 처리한다</dd></div>
+              <div><dt>대상 기종</dt><dd>Ender 3 V3 SE — 우리가 아는 기계</dd></div>
+              <div><dt>선행</dt><dd>U. Twente 다축 프린팅 연구 위에 세워짐</dd></div>
+              <div><dt>상태</dt><dd>Beta — 동작 프로토타입 2기종</dd></div>
+              <div><dt>제어</dt><dd>Marlin 2.1.x · BTT Octopus V1.1</dd></div>
+              <div><dt>부품</dt><dd>공용 6종 + 기종 전용 4종을 직접 출력</dd></div>
+            </dl>
+            <div class="site-note">
+              <strong>가져오는 것 / 우리가 하는 것</strong>
+              <p><b>가져온다</b> — 기구 설계·CAD·5축 기구학<br>
+              <b>우리가 한다</b> — 원뿔각 결정, θ(z) 프로필, 역변환, 이 기계용 경로 생성</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 8. 설계 구성 -->
+      <section id="slide-8" class="slide" aria-labelledby="slide-8-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--now">지금</i> 설계 읽기</p>
+          <h2 id="slide-8-title">기계가 어떻게 생겼나</h2>
+        </header>
+        <div class="design-layout">
+          <figure class="design-hero">
+            <img src="assets/images/rep5x/printer-complete.jpg" alt="Rep5x 개조가 완료된 5축 프린터">
+            <figcaption>기존 XYZ 위에 회전 헤드가 얹힌다</figcaption>
+          </figure>
+          <div class="design-gallery">
+            <figure><img src="assets/images/rep5x/hotend-b-arm-assembly.jpg" alt="핫엔드와 B암"><figcaption>핫엔드 + B암</figcaption></figure>
+            <figure><img src="assets/images/rep5x/a-axis-stepper-installed.jpg" alt="C축 스테퍼와 벨트"><figcaption>C축 스테퍼·벨트</figcaption></figure>
+            <figure><img src="assets/images/rep5x/final-assembly-complete.jpg" alt="최종 조립 상태"><figcaption>최종 조립</figcaption></figure>
+            <figure><img src="assets/images/rep5x/cable-management-progress.jpg" alt="배선 정리"><figcaption>배선 정리</figcaption></figure>
+          </div>
+          <aside class="design-spec">
+            <h3>우리가 얻은 숫자</h3>
+            <ul class="spec-list">
+              <li><b>B 틸트</b><span data-countup="135" data-prefix="±" data-suffix="°">±0°</span></li>
+              <li><b>C 요</b><span><b data-countup="360" data-prefix="±" data-suffix="°">±0°</b>, 슬립링으로 연속</span></li>
+              <li><b>작업 영역</b><span>200 × 200 × <b data-countup="174.6" data-decimals="1">0</b> mm</span></li>
+              <li><b>피벗 LB</b><span><b data-countup="47.9" data-decimals="1">0</b> mm (노즐 끝 → B축)</span></li>
+              <li><b>제어</b><span>Marlin 2.1.x · Octopus V1.1</span></li>
+            </ul>
+            <p class="spec-note">전부 <strong>가정값이던 것</strong>이 실제 값이 됐다.</p>
+          </aside>
+        </div>
+        <aside class="slide-takeaway">XYZ는 그대로 두고 <strong>핫엔드 쪽만</strong> 바꾼다. 기종 의존은 마운트 하나에 모여 있다.</aside>
+      </section>
+
+      <!-- 9. 설계에서 코드가 읽는 것 -->
+      <section id="slide-9" class="slide interactive-slide" aria-labelledby="slide-9-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--now">지금</i> 설계 읽기</p>
+          <h2 id="slide-9-title">설계에서 우리 코드가 읽어야 할 것</h2>
+        </header>
+        <div class="parts-explorer">
+          <nav class="parts-list interactive-zone" role="tablist" aria-label="부품 선택">
+            <button type="button" class="active" data-part="b-arm" role="tab">
+              <b>B암</b>
+              <span>충돌 검사기가 <em>무엇을</em> 검사해야 하나</span>
+            </button>
+            <button type="button" data-part="slip-ring-holder" role="tab">
+              <b>슬립링 홀더</b>
+              <span>C를 <em>계속 누적해도</em> 되나</span>
+            </button>
+            <button type="button" data-part="e3v3se-carriage-mount" role="tab">
+              <b>캐리지 마운트</b>
+              <span>기종을 바꾸면 <em>무엇이</em> 바뀌나</span>
+            </button>
+            <p class="parts-caveat">출력할 부품 목록이 아니다.<br>
+              공개된 설계에서 <strong>우리 코드가 쓸 값</strong>을 읽는 것이다.</p>
+          </nav>
+          <div class="part-stage">
+            <div id="part-viewer" class="stl-viewer interactive-zone" aria-label="선택한 부품의 3D 모델 뷰어">
+              <div class="stl-canvas"></div>
+              <div class="viewer-placeholder">
+                <strong id="part-expected-name">b-arm.stl</strong>
+                <span>부품 3D 모델을 불러오는 중…</span>
+              </div>
+              <div class="viewer-status" aria-live="polite">드래그: 회전 · 휠: 확대</div>
+            </div>
+            <div class="viewer-controls interactive-zone">
+              <button id="part-camera-reset" type="button">카메라 초기화</button>
+              <button id="part-reload" type="button">다시 불러오기</button>
+              <span class="part-dims" id="part-dims">—</span>
+            </div>
+          </div>
+          <article class="part-detail">
+            <div class="part-detail-head">
+              <h3 id="part-title">B암</h3>
+              <span class="part-version" id="part-version">v1.1.0</span>
+            </div>
+            <p id="part-role">역할</p>
+            <ul class="part-points" id="part-points"></ul>
+            <figure class="part-photo">
+              <img id="part-photo-img" src="assets/images/rep5x/b-arm-bearings-microswitch.jpg" alt="선택한 부품의 조립 사진">
+              <figcaption id="part-photo-cap">조립 사진</figcaption>
+            </figure>
+            <p class="part-source" id="part-source"></p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 10. 코드 -->
+      <section id="slide-10" class="slide" aria-labelledby="slide-10-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--now">지금</i> 코드 연결</p>
+          <h2 id="slide-10-title">기계가 정해지자 코드가 달라졌다</h2>
+        </header>
+        <div class="code-layout">
+          <div class="code-compare">
+            <article class="machine-card machine-card--old">
+              <span class="machine-tag">기존 · <span class="mono">open5x.py</span></span>
+              <h3>베드가 움직인다</h3>
+              <ul>
+                <li>펌웨어가 기구학을 안 한다 → <strong>슬라이서가 기계좌표를 계산</strong></li>
+                <li>회전축이 한 방향으로 누적 — 구 데모 <strong>약 149회전</strong></li>
+              </ul>
+            </article>
+            <article class="machine-card machine-card--new">
+              <span class="machine-tag machine-tag--now">설계 중 · <span class="mono">rep5x.py</span></span>
+              <h3>헤드가 회전한다</h3>
+              <ul>
+                <li>펌웨어가 역기구학 수행 → 슬라이서는 <strong>노즐 끝 좌표 + 각도</strong>만</li>
+                <li><strong>슬립링</strong> 덕분에 배선 감김 문제가 사라진다</li>
+                <li>한계가 실제 값이 된다: B ±135°, C ±360°</li>
+              </ul>
+            </article>
+          </div>
+          <div class="code-map">
+            <h3>원뿔 레이어 → 5축 명령</h3>
+            <pre class="code-block"><code>B = theta_at(z)          # 틸트 = 그 높이의 원뿔각
+C = unwrap(phi, C_prev)  # 요  = 방위각, 연속 누적
+
+emit(f"G1 X{x} Y{y} Z{z} B{B} C{C} E{e}")</code></pre>
+            <p class="code-note">노즐 끝 좌표를 그대로 쓴다 — 피벗 보정은 펌웨어가 한다.</p>
+          </div>
+          <div class="demo-row">
+            <figure class="kin-demo" aria-label="원뿔 레이어를 따라 도는 노즐 자세 애니메이션">
+              <div class="kin-stage interactive-zone">
+                <canvas id="kin-canvas" role="img"
+                  aria-label="원뿔 레이어 위를 도는 압출점에서 노즐이 B만큼 기울고 C가 방위각을 따라가는 애니메이션"></canvas>
+                <div class="kin-readout" aria-live="off">
+                  <span>B<b id="kin-b">0.0°</b></span>
+                  <span>C<b id="kin-c">0.0°</b></span>
+                  <span class="kin-theta">θ(z)<b id="kin-theta">0.0°</b></span>
+                </div>
+                <code class="kin-gcode" id="kin-gcode">G1 …</code>
+                <button id="kin-toggle" type="button" class="kin-toggle" aria-pressed="true">일시정지</button>
+              </div>
+              <figcaption>위 코드를 그대로 계산한 자세. θ(z)가 변하면 <strong>B가 따라 변한다</strong>.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. 남은 문제 -->
+      <section id="slide-11" class="slide" aria-labelledby="slide-11-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--now">지금</i> 남아 있는 문제</p>
+          <h2 id="slide-11-title">지금 걸려 있는 것</h2>
+        </header>
+        <div class="problem-grid">
+          <article><span>01</span><h3>물리 검증 0건</h3><p>제작이 불가능해 브리징·수축·접착은 여전히 미검증. 결론은 <strong>‘경향’</strong>으로만 쓴다.</p></article>
+          <article><span>02</span><h3>기구학 모듈 미구현</h3><p><span class="mono">open5x.py</span>는 베드 틸트 전제라 못 쓴다. 헤드 회전용은 설계만 되어 있다.</p></article>
+          <article><span>03</span><h3>충돌 검사기가 3축</h3><p>헤드가 기울면 히트블록·B암 전체가 충돌 기하에 들어와야 한다.</p></article>
+          <article><span>04</span><h3>가변각 × 5축</h3><p>θ(z)가 변하면 B도 계속 변한다. 지금 가변각은 3축 소각도에서만 된다.</p></article>
+          <article><span>05</span><h3>모델 표본이 둘</h3><p>튜닝 상수를 구·램프 두 개로 정했다. 표본이 늘면 재검토 대상.</p></article>
+          <article><span>06</span><h3>블렌드 비용이 휴리스틱</h3><p>선형 가중은 유도된 물리가 아니다. 근거를 더 세워야 한다.</p></article>
+        </div>
+      </section>
+
+      <!-- 12. 앞으로 -->
+      <section id="slide-12" class="slide" aria-labelledby="slide-12-title">
+        <header class="slide-header">
+          <p class="section-label"><i class="chip chip--next">다음</i> 앞으로의 계획</p>
+          <h2 id="slide-12-title">계산으로 갈 수 있는 끝까지</h2>
+        </header>
+        <div class="next-grid">
+          <article class="next-card next-card--main">
+            <span class="chip chip--next">1순위</span>
+            <h3>Rep5x 기구학 모듈 구현·검증</h3>
+            <p>설계만 되어 있는 <span class="mono">rep5x.py</span>를 짜고, 공개된 기계 파라미터로 <strong>출력 좌표를 손계산과 대조</strong>한다.</p>
+          </article>
+          <article class="next-card">
+            <span class="chip chip--next">2순위</span>
+            <h3>5축 충돌 기하</h3>
+            <p>B암·핫엔드 실제 치수로 충돌 검사기를 다시 쓰고, 최대 안전각을 이 기계 값으로.</p>
+          </article>
+          <article class="next-card">
+            <span class="chip chip--next">3순위</span>
+            <h3>모델 표본 확대</h3>
+            <p>허리 있는/없는 형상을 더 모아 튜닝 상수를 다시 잰다.</p>
+          </article>
+          <article class="next-card next-card--hold">
+            <span class="chip chip--hold">여건 생기면</span>
+            <h3>실물 출력</h3>
+            <p>제작이 가능해지는 시점에 예측 → 검사기 → <strong>실측</strong> 3단 대조를 완성한다.</p>
+          </article>
+        </div>
+        <aside class="slide-takeaway">최종 보고서까지의 목표는 “더 좋은 각도”가 아니라 <strong>“어디까지 믿을 수 있는 각도인가”</strong>다.</aside>
+      </section>
+
+      <!-- 13. 출처 -->
+      <section id="slide-13" class="slide reference-slide" aria-labelledby="slide-13-title">
+        <div class="fx-layer" data-fx="ballpit" aria-hidden="true"></div>
+        <header class="slide-header">
+          <h2 id="slide-13-title">출처</h2>
+        </header>
+        <div class="source-grid">
+          <article class="source-column">
+            <div class="reference-column-header">
+              <span class="reference-type-badge paper-badge">HARDWARE</span>
+              <h3>프린터 설계</h3>
+            </div>
+            <ul class="source-list">
+              <li><cite>Rep5x</cite><p>Dennis Klappe · GPL v3<br>홈페이지 문구, 조립 사진, 3D 부품 모델, 기계 수치</p></li>
+              <li><cite>Marlin 5축 기구학</cite><p>DerAndere · Rep5x-Marlin</p></li>
+              <li><cite>Open5x (CHI 2022)</cite><p>Hong, F. et al. — 베드 틸트 비교 대상</p></li>
+            </ul>
+          </article>
+          <article class="source-column">
+            <div class="reference-column-header">
+              <span class="reference-type-badge paper-badge">PAPER</span>
+              <h3>알고리즘 선행 연구</h3>
+            </div>
+            <ul class="source-list">
+              <li><cite>RotBot</cite><p>Wüthrich et al. — <strong>원뿔 변환식은 이 연구의 것</strong></p></li>
+              <li><cite>CurviSlicer · S³ · Neural Slicer</cite><p>자동 곡면 방향 결정</p></li>
+              <li><cite>Wu 2020 외</cite><p><strong>복잡도–성능 곡선은 Wu 2020의 것</strong></p></li>
+            </ul>
+            <p class="source-axis">우리 축은 하나다 — 저들이 <em>이산 방향</em>을 고르는 자리에서 우리는 <em>연속 원뿔각 θ(z)</em>를 고른다.</p>
+          </article>
+          <article class="source-column">
+            <div class="reference-column-header">
+              <span class="reference-type-badge paper-badge">CODE</span>
+              <h3>저장소와 도구</h3>
+            </div>
+            <ul class="source-list">
+              <li><cite>KJH-code/slicer</cite><p>파이프라인·검증기·실험</p></li>
+              <li><cite>find_conical_angle</cite><p>팀원의 독립 구현 — 검증 ⑤층</p></li>
+              <li><cite>PrusaSlicer · Three.js · Reveal.js</cite><p>파이프라인과 이 발표가 쓰는 오픈소스</p></li>
+            </ul>
+            <div class="license-note">
+              사진·3D 모델은 Rep5x(GPL v3)의 것이며 저작권은 원저작자에게 있다. 변환 절차는 저장소 <span class="mono">NOTICE.md</span>에 적었다.
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <nav class="presentation-nav" aria-label="발표 슬라이드 이동">
+    <button id="prev-slide" type="button" aria-label="이전 슬라이드">←</button>
+    <div class="slide-counter" aria-live="polite">
+      <span id="current-slide">1</span><i></i><span id="total-slides">13</span>
+    </div>
+    <button id="next-slide" type="button" aria-label="다음 슬라이드">→</button>
+    <button id="fullscreen-toggle" class="fullscreen-button" type="button" aria-label="전체 화면 전환">⛶</button>
+  </nav>
+  <div class="global-progress" aria-hidden="true"><i id="global-progress-bar"></i></div>
+
+  <script src="assets/vendor/reveal/reveal.js"></script>
+  <script src="assets/vendor/three/three.min.js"></script>
+  <script src="assets/vendor/three/OrbitControls.js"></script>
+  <script src="assets/vendor/three/STLLoader.js"></script>
+  <script src="rep5x-deck.js"></script>
+  <script src="presentation.js"></script>
+  <script src="stl-viewer.js"></script>
+  <script src="rep5x-parts.js"></script>
+  <script src="rep5x-motion.js"></script>
+  <script src="rep5x-fx.js"></script>
+  <script src="rep5x-live.js"></script>
+</body>
+</html>

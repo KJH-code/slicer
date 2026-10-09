@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="4축 3D 프린터의 적응형 원뿔 슬라이싱 연구 발표">
+  <title>4축 3D 프린터의 적응형 원뿔 슬라이싱</title>
+  <link rel="stylesheet" href="assets/vendor/reveal/reveal.css">
+  <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#slide-1">첫 슬라이드로 이동</a>
+  <div id="presentation-status" class="presentation-status" role="status" aria-live="polite" hidden></div>
+
+  <main class="reveal" aria-label="4축 3D 프린터의 적응형 원뿔 슬라이싱 발표">
+    <div class="slides">
+      <!-- 1. 표지 -->
+      <section id="slide-1" class="slide title-slide" aria-labelledby="slide-1-title">
+        <div class="title-copy">
+          <p class="eyebrow">R&E 온라인 멘토링 발표 자료 · 서울과학고등학교 · 2026/07/27</p>
+          <h1 id="slide-1-title">4축 3D 프린터의<br><span>적응형 원뿔 슬라이싱</span></h1>
+          <p class="subtitle">STL 형상 분석을 통한 원뿔각 자동 선택과 슬라이싱 파이프라인 개발</p>
+          <div class="presenter-placeholder" aria-label="발표자 정보">
+            <span>발표자: 김재혁, 나준우, 김진우</span>
+            <span>지도교사: 김주성 선생님</span>
+            <span>팀번호: AI-017</span>
+          </div>
+        </div>
+        <div class="cover-geometry" aria-hidden="true">
+          <div class="cover-axis"></div>
+          <div class="cover-ring ring-1"></div>
+          <div class="cover-ring ring-2"></div>
+          <div class="cover-ring ring-3"></div>
+          <div class="cover-path path-1"></div>
+          <div class="cover-path path-2"></div>
+          <div class="cover-path path-3"></div>
+          <div class="cover-nozzle"></div>
+        </div>
+        <p class="cover-pipeline">STL → 형상 분석 → 각도 선택 → 구간 분할 → G-code → 시각화 → 평가</p>
+      </section>
+
+      <!-- 2. 목차 -->
+      <section id="slide-2" class="slide" aria-labelledby="slide-2-title">
+        <header class="slide-header">
+          <h2 id="slide-2-title">발표 목차</h2>
+        </header>
+        <div class="agenda-list" aria-label="발표 목차">
+          <article><span>01</span><h2>연구 배경</h2><p>3·4·5축 구조와 다양한 슬라이싱 방법</p></article>
+          <article><span>02</span><h2>연구 목표와 선행 연구</h2><p>원뿔각 자동 선택이 필요한 이유</p></article>
+          <article><span>03</span><h2>중간 연구 성과</h2><p>시각화와 원뿔각 선택 코드</p></article>
+          <article><span>04</span><h2>진행중인 검증</h2><p>G-code 생성과 물리학적 분석</p></article>
+          <article><span>05</span><h2>향후 연구 계획</h2><p>3D 프린터 설계와 실제 출력 검증</p></article>
+        </div>
+      </section>
+
+      <!-- 3. 3·4·5축 -->
+      <section id="slide-3" class="slide" aria-labelledby="slide-3-title">
+        <header class="slide-header">
+          <p class="section-label">01 · 연구 배경</p>
+          <h2 id="slide-3-title">3축·4축·5축 프린터의 구조와 자유도</h2>
+        </header>
+        <div class="axis-cards">
+          <article class="axis-card">
+            <div class="axis-card-head"><span>3축</span><strong>XYZ</strong></div>
+            <figure class="open5x-figure">
+              <img src="assets\images\3d_printer_2026-07-27.png">
+            </figure>
+            <p>노즐 방향이 고정되어 수평 레이어를 반복 적층한다.</p>
+          </article>
+          </article>
+          <article class="axis-card axis-card--focus">
+            <div class="axis-card-head"><span>4축</span><strong>XYZ + 회전축</strong></div>
+            <div class="axis-photo-pair">
+              <figure>
+                <img src="assets/images/core-rtheta.png" alt="Core-RΘ 4축 Polar 3D Printer">
+                <figcaption>Core-RΘ 4-Axis Polar</figcaption>
+              </figure>
+              <figure>
+                <img src="assets/images/rotbot.png" alt="RotBot의 회전축 출력 개념">
+                <figcaption>RotBot</figcaption>
+              </figure>
+            </div>
+            <p>하나의 회전 자유도를 추가하여 단순한 기구로 원뿔 경로를 구현한다.</p>
+          </article>
+          <article class="axis-card">
+            <div class="axis-card-head"><span>5축</span><strong>XYZ + 2회전축</strong></div>
+            <figure class="open5x-figure">
+              <img src="assets/images/open5x.png" alt="Open5x 5축 프린터 구조">
+              <figcaption>Open5x</figcaption>
+            </figure>
+            <p>다양한 노즐 자세를 사용할 수 있지만 기구와 제어가 복잡하다.</p>
+          </article>
+        </div>
+        <aside class="slide-takeaway">4축은 5축보다 자유도는 낮지만, 원뿔 슬라이싱을 적용할 수 있는 현실적인 절충점이다.</aside>
+      </section>
+
+      <!-- 4. 네 가지 슬라이싱 -->
+      <section id="slide-4" class="slide" aria-labelledby="slide-4-title">
+        <header class="slide-header">
+          <p class="section-label">01 · 연구 배경</p>
+          <h2 id="slide-4-title">평면·Angled·Conical·곡면 슬라이싱 비교</h2>
+        </header>
+        <div class="slicing-method-grid">
+          <article class="slice-method-card">
+            <div class="slice-card-heading"><span>01</span><h3>평면 슬라이싱</h3></div>
+            <div class="slice-3d-stage" data-slicing-scene="planar" role="img"
+              aria-label="불투명한 3D 모델을 수평면으로 순차 절단하고 교선을 누적하는 애니메이션">
+              <div class="slice-3d-canvas" aria-hidden="true"></div>
+              <div class="slice-3d-meta"><span>PLANE</span><strong>0°</strong></div>
+              <div class="slice-3d-status" aria-live="polite">3D 모델을 불러오는 중…</div>
+            </div>
+            <p>xy평면과 평행한 방향으로 슬라이싱</p>
+            <span class="slice-feature-label">특징</span>
+            <p>가장 단순하면서 많이 사용함<br>많은 오버행이 발생할 수 있음</p>
+          </article>
+          <article class="slice-method-card">
+            <div class="slice-card-heading"><span>02</span><h3>Angled slicing</h3></div>
+            <div class="slice-3d-stage" data-slicing-scene="angled" role="img"
+              aria-label="불투명한 3D 모델을 20도 경사면으로 순차 절단하고 교선을 누적하는 애니메이션">
+              <div class="slice-3d-canvas" aria-hidden="true"></div>
+              <div class="slice-3d-meta"><span>PLANE</span><strong>20°</strong></div>
+              <div class="slice-3d-status" aria-live="polite">3D 모델을 불러오는 중…</div>
+            </div>
+            <p>지정한 각도로 기울어진 평행층으로 슬라이싱</p>
+            <span class="slice-feature-label">특징</span>
+            <p>한방향으로 오버행된 모델을 슬라이싱하기 적합함</p>
+          </article>
+          <article class="slice-method-card slice-method-card--focus">
+            <div class="slice-card-heading"><span>03</span><h3>Conical slicing</h3></div>
+            <div class="slice-3d-stage" data-slicing-scene="conical" role="img"
+              aria-label="불투명한 3D 모델을 중심축 주위의 30도 원뿔면으로 순차 절단하고 교선을 누적하는 애니메이션">
+              <div class="slice-3d-canvas" aria-hidden="true"></div>
+              <div class="slice-3d-meta"><span>CONE</span><strong>30°</strong></div>
+              <div class="slice-3d-status" aria-live="polite">3D 모델을 불러오는 중…</div>
+            </div>
+            <p>지정한 각도의 원뿔각을 갖는 원뿔면으로 슬라이싱</p>
+            <span class="slice-feature-label">특징</span>
+            <p>원점을 대칭으로 오버행된 모델을 슬라이싱하기 적합함</p>
+            <p></p>
+          </article>
+          <article class="slice-method-card">
+            <div class="slice-card-heading"><span>04</span><h3>곡면 슬라이싱</h3></div>
+            <div class="slice-3d-stage" data-slicing-scene="curved" role="img"
+              aria-label="불투명한 3D 모델을 중심 0, 0, -30의 동심 구면으로 순차 절단하고 교선을 누적하는 애니메이션">
+              <div class="slice-3d-canvas" aria-hidden="true"></div>
+              <div class="slice-3d-meta"><span>SPHERE</span></div>
+              <div class="slice-3d-status" aria-live="polite">3D 모델을 불러오는 중…</div>
+            </div>
+            <p>3d 모델을 분석해 그에 최적화된 슬라이싱</p>
+            <span class="slice-feature-label">특징</span>
+            <p>오버행을 방지하도록 적응형 슬라이싱 <br> 3,4축 프린터에 적용하기에는 자유도가 부족함</p>
+          </article>
+        </div>
+        <div class="reference-strip">
+          <span>참고 사례</span>
+          <img src="assets/images/slicing-reference-angled-conical.png" alt="Angled와 Conical slicing 비교 참고 이미지">
+          <img src="assets/images/slicing-reference-curved.png" alt="곡면 슬라이싱 참고 이미지">
+          <small>제공 이미지 · 상세 출처 추가 필요</small>
+        </div>
+      </section>
+
+      <!-- 5. 연구 목표 -->
+      <section id="slide-5" class="slide" aria-labelledby="slide-5-title">
+        <header class="slide-header">
+          <p class="section-label">02 · 연구 목표</p>
+          <h2 id="slide-5-title">STL 형상에 따른 원뿔각과 구간의 자동 결정</h2>
+        </header>
+        <div class="goal-layout">
+          <div class="benefit-list">
+            <article><span>01</span><div><h3>서포트 감소 가능성</h3><p>출력 방향을 바꾸어 큰 오버행에 대응한다.</p></div></article>
+            <article><span>02</span><div><h3>표면 품질 개선 가능성</h3><p>형상 방향과 레이어 방향의 불일치를 줄인다.</p></div></article>
+            <article><span>03</span><div><h3>4축 구조 활용</h3><p>하나의 회전축으로 원뿔형 경로를 구현한다.</p></div></article>
+          </div>
+          <article class="goal-statement">
+            <p class="goal-label">RESEARCH GOAL</p>
+            <h3>사용자가 원뿔각을 직접 정하지 않는 시스템</h3>
+            <p>STL의 오버행 구조를 분석하여 적합한 원뿔각과 높이 구간을 자동으로 결정한다.</p>
+            <div class="goal-pipeline">
+              <span>STL</span><i>→</i><span>오버행 분석</span><i>→</i><strong>구간별 \(\alpha\)*</strong>
+              <i>→</i><span>G-code</span><i>→</i><span>검증</span>
+            </div>
+            <small>형상 분석과 프린터 제약을 모두 반영하는 것이 최종 목표</small>
+          </article>
+        </div>
+      </section>
+
+      <!-- 6. 선행 연구 -->
+      <section id="slide-6" class="slide" aria-labelledby="slide-6-title">
+        <header class="slide-header">
+          <p class="section-label">02 · 선행 연구</p>
+          <h2 id="slide-6-title">원뿔·비평면 경로 생성 연구와 남은 자동 선택 문제</h2>
+        </header>
+        <div class="research-grid research-grid--compact">
+          <article>
+            <h3>RotBot / ZHAW</h3>
+            <dl><div><dt>서지</dt><dd>Wüthrich 외, <em>Applied Sciences</em> 11(18):8760, 2021 · DOI 10.3390/app11188760</dd></div>
+              <div><dt>방식</dt><dd>원뿔 변환 → 평면 슬라이싱 → G-code 역변환 (3단계)</dd></div>
+              <div><dt>의미</dt><dd><b>본 연구는 이 변환식을 그대로 쓴다 — 우리 기여가 아니다</b></dd></div>
+              <div><dt>한계</dt><dd>각도가 고정(45°) — 형상별 자동 결정은 별도 문제</dd></div></dl>
+          </article>
+          <article>
+            <h3>Slicer4RTN</h3>
+            <dl><div><dt>서지</dt><dd>Rene K. Mueller · github.com/Spiritdude/Slicer4RTN (LGPL-3.0)</dd></div>
+              <div><dt>방식</dt><dd>평면 슬라이서를 감싸 원뿔 G-code 생성 (3/4/5축)</dd></div>
+              <div><dt>의미</dt><dd>본 연구 G-code 생성 단계의 선례</dd></div>
+              <div><dt>한계</dt><dd><b>원뿔각을 외부에서 사람이 지정</b></dd></div></dl>
+          </article>
+          <article>
+            <h3>Open5x</h3>
+            <dl><div><dt>서지</dt><dd>CHI EA 2022 · DOI 10.1145/3491101.3519782 · arXiv:2202.11426 (MIT)</dd></div>
+              <div><dt>방식</dt><dd>회전 갠트리 위의 베드 틸트(U)+회전(V), 접근 가능한 5축 개조</dd></div>
+              <div><dt>의미</dt><dd>본 연구에서는 <b>틸트 한계 근거의 출처</b> (Voron판 펌웨어 ±110°, 시연 90°)</dd></div>
+              <div><dt>한계</dt><dd>펌웨어가 역기구학을 하지 않아 슬라이서가 기계좌표를 직접 계산</dd></div></dl>
+          </article>
+          <article>
+            <h3>자동화 계열</h3>
+            <dl><div><dt>서지</dt><dd>S³-Slicer <em>TOG</em> 41(6), 2022 · Neural Slicer <em>TOG</em> 43(4), 2024 · Wu <em>T-ASE</em> 2020 · Han <em>Micromachines</em> 16(12), 2025</dd></div>
+              <div><dt>방식</dt><dd>변형장·신경망 최적화, 또는 부위별 <b>이산</b> 빌드 방향 분해</dd></div>
+              <div><dt>의미</dt><dd>복잡도–성능 곡선은 이들이 이미 그렸다 (Wu의 빔폭, Han의 Pareto)</dd></div>
+              <div><dt>한계</dt><dd>무겁다 — GPU 학습·beam search. 노트북에서 재현 불가</dd></div></dl>
+          </article>
+        </div>
+        <aside class="research-position">
+          <strong>본 연구의 자리</strong>
+          <p>변환식은 ZHAW(2021), 복잡도–성능 곡선은 Wu(2020)·Han(2025)의 코드를 참고
+            <br>앞으로 개선 방향: <b>자동 각도·구간 선택과 그 한계의 정량화</b>
+          </p>
+          <small>CNC Kitchen(2022)은 RotBot 소개 글에서 “형상에 따라 부품을 자동으로 구획해
+            원뿔·경사·일반 슬라이싱을 배분하는 알고리즘이 앞으로 필요하다”는 취지로 이를 미해결 문제로 언급했다.</small>
+        </aside>
+      </section>
+
+      <!-- 7. 세부 목표 -->
+      <section id="slide-7" class="slide" aria-labelledby="slide-7-title">
+        <header class="slide-header">
+          <p class="section-label">02 · 연구 목표</p>
+          <h2 id="slide-7-title">세부 연구 계획</h2>
+        </header>
+        <div class="objective-grid">
+          <article class="objective-primary"><span>01</span><h3>최적 conical angle 반환</h3><p>형상 분석으로 구간별 원뿔각을 자동 선택</p><b>핵심 알고리즘</b></article>
+          <article><span>02</span><h3>G-code 생성</h3><p>선택된 각도와 높이 구간을 실제 명령 경로로 변환</p></article>
+          <article><span>03</span><h3>G-code 시각화</h3><p>압출·이동·레이어 경로를 3차원으로 검토</p></article>
+          <article><span>04</span><h3>물리학적 검증</h3><p>출력 안정성, 운동시간, 충돌 가능성을 평가</p></article>
+          <article><span>05</span><h3>시뮬레이션 및 통계</h3><p>모델·각도·조건별 결과를 비교하고 민감도 분석</p></article>
+          <article class="objective-summary"><span>06</span><h3>하나의 입력·출력 규격</h3><p>다섯 기능을 공통 JSON과 로그 형식으로 연결한다.</p></article>
+        </div>
+      </section>
+
+      <!-- 8. 모델과 시각화 도구 -->
+      <section id="slide-8" class="slide interactive-slide" aria-labelledby="slide-8-title">
+        <header class="slide-header">
+          <p class="section-label">03 · 중간 연구 성과</p>
+          <h2 id="slide-8-title">테스트 STL 모델과 두 가지 경로 시각화 도구</h2>
+        </header>
+        <div class="models-tools-layout">
+          <article class="model-browser">
+            <div class="panel-heading"><h3>테스트 STL 모델</h3><span>대략 20개의 실험 모델중 대표 6개</span></div>
+            <div class="model-tabs interactive-zone" role="tablist" aria-label="STL 모델 선택">
+              <button type="button" class="active" data-model="arch-01" role="tab">아치형 1</button>
+              <button type="button" data-model="arch-02" role="tab">아치형 2</button>
+              <button type="button" data-model="arch-03" role="tab">아치형 3</button>
+              <button type="button" data-model="l-shape-01" role="tab">ㄱ자형 1</button>
+              <button type="button" data-model="l-shape-02" role="tab">ㄱ자형 2</button>
+              <button type="button" data-model="l-shape-03" role="tab">ㄱ자형 3</button>
+            </div>
+            <div id="model-viewer" class="stl-viewer interactive-zone" aria-label="선택한 STL 모델 3D 뷰어">
+              <div class="stl-canvas"></div>
+              <div class="viewer-placeholder">
+                <strong id="model-expected-name">arch-01.stl</strong>
+                <span>STL 모델 파일 추가 예정</span>
+              </div>
+              <div class="viewer-status" aria-live="polite">마우스 드래그: 회전 · 휠: 확대/축소</div>
+            </div>
+            <div class="viewer-controls interactive-zone">
+              <label class="file-button">STL 직접 선택<input id="model-file-input" type="file" accept=".stl"></label>
+              <button id="model-path-load" type="button">폴더에서 불러오기</button>
+              <button id="model-camera-reset" type="button">카메라 초기화</button>
+            </div>
+          </article>
+          <article class="tool-browser">
+            <div class="panel-heading"><h3>시각화 도구</h3><span>역할 구분</span></div>
+            <div class="tool-tabs interactive-zone" role="tablist" aria-label="시각화 도구 선택">
+              <button type="button" class="active" data-tool="intersection">STL 교선</button>
+              <button type="button" data-tool="gcode">G-code 경로</button>
+            </div>
+            <div class="tool-stage">
+              <figure class="tool-view active" data-tool-view="intersection">
+                <img src="assets/images/intersection-viewer.png" alt="STL과 원뿔면의 교선 시각화 도구">
+                <figcaption><strong>STL + 구간별 각도</strong><span>여러 높이 구간의 원뿔 교선을 한 모델에 누적 표시</span></figcaption>
+              </figure>
+              <figure class="tool-view" data-tool-view="gcode">
+                <img src="assets/images/gcode-viewer.png" alt="G-code 경로 시각화 도구">
+                <figcaption><strong>G-code + 선택적 STL</strong><span>실제 명령의 압출·이동·레이어 경로를 검토</span></figcaption>
+              </figure>
+            </div>
+            <p class="tool-warning">교선 시각화는 기하 경로이며 실제 출력 가능한 G-code를 의미하지 않는다.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 9. 평가함수 -->
+      <section id="slide-9" class="slide" aria-labelledby="slide-9-title">
+        <header class="slide-header">
+          <p class="section-label">08 · 원뿔각 반환 알고리즘 A</p>
+          <h2 id="slide-9-title">평가함수 기반 최적 원뿔각 선택</h2>
+        </header>
+
+        <div class="s9-main-layout">
+          <!-- 왼쪽: 서포트 그래프 + 평가식 -->
+          <div class="s9-left-column">
+            <article class="s9-support-panel">
+              <header class="s9-card-header">
+                <span>01</span>
+                <div>
+                  <small>각도 변화</small>
+                  <h3>남은 서포트 면적</h3>
+                </div>
+              </header>
+
+              <figure>
+                <img
+                  src="assets/images/angle-sweep.png"
+                  alt="원뿔각에 따른 inward와 outward의 남은 서포트 면적 변화"
+                >
+              </figure>
+            </article>
+
+            <article class="s9-formula-panel">
+              <div class="s9-formula-title">
+                <span>평가식</span>
+                <small>서포트 감소 이득 - 원뿔각 비용</small>
+              </div>
+
+              <strong class="s9-main-formula">
+                \(J(\alpha,d) = \Delta S(\alpha,d) - k|\alpha|\)
+              </strong>
+
+              <div class="s9-formula-legend">
+                <span><b>\(\Delta S\)</b> 서포트 감소량</span>
+                <span><b>k</b> 각도 비용 가중치</span>
+                <span><b>d</b> inward/outward</span>
+              </div>
+            </article>
+          </div>
+
+          <!-- 오른쪽: 실제 G-code 원본 영상 -->
+          <article class="s9-video-panel">
+            <video
+              id="slide-9-gcode-video"
+              autoplay muted loop playsinline
+              src="assets/videos/gcode.mp4"
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="auto"
+              aria-label="G-code 시각화 원본 전체 영상"
+            ></video>
+          </article>
+        </div>
+
+        <!-- 기존 02·03의 내용을 통합 -->
+        <!-- 하단: 최종 결과 2×2 + k 선택 근거 -->
+        <div class="s9-bottom-layout">
+          <!-- 왼쪽: 최종 결과 2×2 -->
+          <aside class="s9-final-grid" aria-label="최종 선택 결과">
+            <article class="s9-result-card is-primary">
+              <span>FINAL SELECTION</span>
+              <strong>outward 32°</strong>
+              <small>k = 0.20</small>
+            </article>
+
+            <article class="s9-result-card">
+              <span>남은 서포트</span>
+              <div class="s9-result-inline">
+                <b>14.7%</b>
+                <i>→</i>
+                <strong>1.3%</strong>
+              </div>
+              <small>\(\Delta S = 13.5%p\)</small>
+            </article>
+
+            <article class="s9-result-card">
+              <span>평가점수</span>
+              <div class="s9-result-inline">
+                <b>13.5</b>
+                <i>-</i>
+                <b class="is-cost">6.4</b>
+                <i>=</i>
+                <strong>7.06</strong>
+              </div>
+              <small>서포트 이득 - 0.2×32°</small>
+            </article>
+
+            <article class="s9-result-card">
+              <span>상위 후보 비교</span>
+              <div class="s9-candidate-pair">
+                <p class="is-winner">
+                  <b>32°</b>
+                  <strong>J 7.06</strong>
+                </p>
+                <p>
+                  <b>34°</b>
+                  <strong>J 7.01</strong>
+                </p>
+              </div>
+              <small>점수 차이 +0.05</small>
+            </article>
+          </aside>
+
+          <!-- 오른쪽: 평가함수가 필요한 이유 -->
+          <aside class="s9-k-reason-panel">
+            <header>
+              <span>WHY k?</span>
+              <h3>각도 비용이 필요한 이유</h3>
+            </header>
+
+            <div class="s9-trap-comparison">
+              <div class="is-trap">
+                <span>서포트만 최소화</span>
+                <strong>최대각 44°</strong>
+              </div>
+
+              <i>→</i>
+
+              <div class="is-balanced">
+                <span>이득 - 각도 비용</span>
+                <strong>최적각 32°</strong>
+              </div>
+            </div>
+
+            <div class="s9-k-meaning">
+              <span>k의 의미</span>
+              <strong>
+                각도 1° ↔ 서포트 k%p
+              </strong>
+            </div>
+
+            <div class="s9-natural-k">
+              <div class="s9-natural-k-title">
+                <span>자연 k 스케일</span>
+                <small>모델별 서포트 곡선 기울기</small>
+              </div>
+
+              <div class="s9-natural-track">
+                <i class="k-mark k-mark--selected"></i>
+                <i class="k-mark k-mark--stalk"></i>
+                <i class="k-mark k-mark--sphere"></i>
+              </div>
+
+              <div class="s9-natural-labels">
+                <span class="is-selected">
+                  <b>0.20</b>
+                  선택값
+                </span>
+                <span>
+                  <b>0.23</b>
+                  sphere+stalk
+                </span>
+                <span>
+                  <b>0.33</b>
+                  sphere
+                </span>
+              </div>
+            </div>
+
+            <small class="s9-bottom-source">
+              KJH-code/slicer · conical/selector.py · analyze_k.py
+            </small>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 10. 연결 성분 -->
+      <section id="slide-10" class="slide interactive-slide" aria-labelledby="slide-10-title">
+        <header class="slide-header">
+          <p class="section-label">03 · 중간 연구 성과 B</p>
+          <h2 id="slide-10-title">
+            연결 성분 I<sub>c</sub> 기반 원뿔각 및 구간 계산
+          </h2>
+        </header>
+
+        <div class="component-flow" aria-label="연결 성분 알고리즘 흐름">
+          <span>n<sub>z</sub> &lt; 0 면 추출</span>
+          <i>→</i>
+          <span>공유 변 인접 그래프</span>
+          <i>→</i>
+          <span>BFS로 I<sub>c</sub> 계산</span>
+          <i>→</i>
+          <span>허용각 집합 계산</span>
+          <i>→</i>
+          <strong>α<sub>c</sub><sup>*</sup> 선택 · h 구간 병합</strong>
+        </div>
+
+        <div class="component-detail-layout">
+          <article class="component-view-panel">
+            <div
+              id="component-viewer"
+              class="stl-viewer component-viewer interactive-zone"
+              aria-label="연결 성분 색상 표시 STL 뷰어"
+            >
+              <div class="stl-canvas"></div>
+
+              <div class="viewer-placeholder">
+                <strong>STL + components.json</strong>
+                <span>두 파일을 함께 넣으면 각 삼각형을 연결 성분별로 표시한다.</span>
+              </div>
+
+              <div class="viewer-status" aria-live="polite">
+                회색: 일반 면 · 색상: 연결 성분 I<sub>c</sub>
+              </div>
+            </div>
+
+            <div class="component-load-controls interactive-zone">
+              <label class="file-button">
+                STL 선택
+                <input id="component-stl-input" type="file" accept=".stl">
+              </label>
+
+              <label class="file-button">
+                JSON 선택
+                <input
+                  id="component-json-input"
+                  type="file"
+                  accept=".json,application/json"
+                >
+              </label>
+
+              <button id="component-files-load" type="button">
+                선택 파일 적용
+              </button>
+
+              <button id="component-path-load" type="button">
+                폴더에서 불러오기
+              </button>
+            </div>
+
+            <div
+              id="component-legend"
+              class="component-legend"
+              aria-live="polite"
+            >
+              <span>
+                <i style="--legend:#73879a"></i>
+                일반 면
+              </span>
+              <span class="legend-placeholder">
+                연결 성분 JSON이 없으면 일반 색상으로 표시
+              </span>
+            </div>
+          </article>
+
+          <article class="component-analysis">
+            <div class="formula-stack formula-stack--four" aria-label="연결 성분과 원뿔각 선택 수식">
+              <div class="formula formula--step formula--component">
+                <span class="formula-step-label formula-step-label--component"><b>01</b>연결 성분 I<sub>c</sub></span>
+                <div class="formula-math formula-math--component">
+                  \[
+                  \displaystyle
+                  \begin{array}{ll}
+                  G^-=(V^-,E^-)
+                  &amp;
+                  V^-=\left\{i\mid n_{z,i}\lt0\right\}
+                  \\[4pt]
+                  E^-=
+                  \left\{(i,j)\mid
+                  \operatorname{edge}(f_i)\cap
+                  \operatorname{edge}(f_j)\ne\varnothing
+                  \right\}
+                  &amp;
+                  I_c\in\operatorname{CC}(G^-)
+                  \end{array}
+                  \]
+                </div>
+              </div>
+
+              <div class="formula formula--step formula--focus formula--interval">
+                <span class="formula-step-label formula-step-label--interval"><b>02</b>면별 허용각 구간</span>
+                <div class="formula-math formula-math--interval">
+                  \[
+                  \displaystyle
+                  \begin{aligned}
+                  R_i
+                  &amp;=
+                  \sqrt{n_{z,i}^{\,2}+n_{r,i}^{\,2}},
+                  &amp;\qquad
+                  \phi_i
+                  &amp;=
+                  \operatorname{atan2}(d\,n_{r,i},n_{z,i})
+                  \\[5pt]
+                  \alpha_i^-
+                  &amp;=
+                  \phi_i-\cos^{-1}
+                  \left(\dfrac{\kappa_c}{R_i}\right),
+                  &amp;\qquad
+                  \alpha_i^+
+                  &amp;=
+                  \phi_i+\cos^{-1}
+                  \left(\dfrac{\kappa_c}{R_i}\right)
+                  \\[5pt]
+                  &amp;
+                  \end{aligned}
+                  \]
+                </div>
+              </div>
+
+              <div class="formula formula--step formula--threshold">
+                <span class="formula-step-label formula-step-label--threshold"><b>03</b>연결 성분의 허용 임계값</span>
+                <div class="formula-math formula-math--threshold">
+                  \[
+                  \displaystyle
+                  \begin{aligned}
+                  \kappa_c
+                  &amp;=
+                  -\kappa_\mathrm{max}\frac{B_c^\downarrow}{B_c^\downarrow+q_0\sqrt{A_c}}
+                  &amp;\qquad
+                  \theta_{i,j}
+                  &amp;=
+                  \cos^{-1}\left(\frac{\kappa_c}{R_i}\right)
+                  \end{aligned}
+                  \\[5pt]
+                  \alpha_{i,\mathrm{min}}, \alpha_{i,\mathrm{max}}=\phi_{i,d}\mp\theta_{i,c}
+                  \]
+                </div>
+              </div>
+              <div class="formula formula--step formula--result formula--selection">
+                <span class="formula-step-label formula-step-label--selection">
+                  <b>04</b>허용각 교집합과 대표각 선택
+                </span>
+
+                <div class="formula-math formula-math--selection">
+                  \[
+                  \displaystyle
+                  \begin{aligned}
+                  \mathcal A_c(q_0,\kappa_{\max})
+                  &amp;=
+                  [\alpha_{\min},\alpha_{\max}]
+                  \cap
+                  \bigcap_{i\in I_c}
+                  [\alpha_i^-,\alpha_i^+]
+                  \\[6pt]
+                  \alpha_c^\star
+                  &amp;=
+                  \max\left(
+                  \operatorname*{arg\,min}_{
+                  \alpha\in\mathcal A_c(q_0,\kappa_{\max})
+                  }
+                  |\alpha|
+                  \right)
+                  \end{aligned}
+                  \]
+                </div>
+              </div>
+            </div>
+
+            <div class="strength-limit strength-limit--compact">
+              <div>
+                <h3>강점</h3>
+                <ul>
+                  <li>형상이 분할 개수와 구간을 결정</li>
+                  <li>서로 다른 오버행 구조를 분리</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3>한계</h3>
+                <ul>
+                  <li>메시 연결 품질에 민감</li>
+                  <li>구간 전환 경로 검증 필요</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 11. 중간 결과 -->
+      <section id="slide-11" class="slide" aria-labelledby="slide-11-title">
+        <header class="slide-header">
+          <p class="section-label">03 · 중간 연구 성과</p>
+          <h2 id="slide-11-title">k 변화에 따른 선택각과 모델별 분석 결과</h2>
+        </header>
+        <div class="result-halves">
+          <article class="result-half result-half--k-analysis">
+            <div class="result-heading">
+              <span>A</span>
+              <h3>k 변화에 따른 선택각</h3>
+            </div>
+            <figure class="analyze-k-result">
+              <img
+                src="assets/images/analyze-k.png"
+                alt="실제 분석 데이터로 계산한 k값에 따른 모델별 선택 원뿔각 변화"
+              >
+              <figcaption>
+                k 증가에 따른 모델별 선택 원뿔각 변화
+              </figcaption>
+            </figure>
+          </article>
+          <article class="result-half">
+            <div class="result-heading"><span>B</span><h3>연결 성분 기반 모델별 결과</h3></div>
+            <div class="excel-result-chain">
+              <div class="excel-file-card">
+                <span>XLSX</span>
+                <img src="assets\images\excel_2026-07-26.png">
+              </div>
+              <i class="result-arrow">→</i>
+              <figure class="excel-result-crop">
+                <img src="assets/images/excel-result-viewer.png" alt="Excel 결과를 불러온 3D 표면 비교 화면">
+                <figcaption>아치형 3가지 모델에서 선택각 변화</figcaption>
+              </figure>
+            </div>
+            <div class="result-metrics">
+              <div><span>특징</span><strong data-result-field="input">모델에 따른 구조 반영</strong></div>
+              <div><span>입력 변수</span><strong data-result-field="metric">stl 모델과 반복하는 상수값</strong></div>
+              <div><span>결과</span><strong data-result-field="finding">오버행의 각도가 늘어날수록 원뿔각이 커짐</strong></div>
+            </div>
+          </article>
+        </div>
+        <p class="result-data-note">왼쪽: 실제 데이터로 측정한 k-선택각 관계 · 오른쪽: Excel 결과를 이용한 모델별·파라미터별 비교</p>
+      </section>
+
+      <!-- 12. 두 분할 방식 -->
+      <section id="slide-12" class="slide" aria-labelledby="slide-12-title">
+        <header class="slide-header">
+          <p class="section-label">03 · 중간 연구 성과</p>
+          <h2 id="slide-12-title">공간 분할 알고리즘</h2>
+        </header>
+        <div class="partition-comparison">
+          <article class="evaluation-k-analysis">
+            <div class="partition-heading">
+              <span>A</span>
+              <h3>평가함수 기반 해석</h3>
+            </div>
+
+            <p class="evaluation-k-lead">
+              <i>k</i> 값에 따라 단일각과 구간 분할의 선택 기준이 달라진다
+            </p>
+
+            <div
+              class="evaluation-k-regimes"
+              aria-label="k 값 구간별 평가함수 해석"
+            >
+              <div class="evaluation-k-regime">
+                <div class="evaluation-k-label">
+                  <strong>작은 <i>k</i></strong>
+                  <span>각도 비용이 작음</span>
+                </div>
+
+                <p>
+                  평가함수 차이가 작아 단일각과 구간 분할의
+                  결과 차이가 크지 않다.
+                </p>
+              </div>
+
+              <div class="evaluation-k-regime is-focus">
+                <div class="evaluation-k-label">
+                  <strong>중간 <i>k</i></strong>
+                  <span>분할 이득이 최대</span>
+                </div>
+
+                <p>
+                  구간별 각도 선택의 이점이 커지며
+                  서포트 감소 효과가 가장 크게 나타난다.
+                </p>
+              </div>
+
+              <div class="evaluation-k-regime">
+                <div class="evaluation-k-label">
+                  <strong>큰 <i>k</i></strong>
+                  <span>각도 비용이 지배적</span>
+                </div>
+
+                <p>
+                  추가 분할의 이득이 줄어들어
+                  모델 형상에 따라 최적 선택이 달라진다.
+                </p>
+              </div>
+            </div>
+
+            <div class="evaluation-k-conclusion">
+              <strong>평가함수의 역할</strong>
+
+              <p>
+                <b>서포트 감소 효과</b>와
+                <b>분할 복잡도</b>의 균형을
+                <i>k</i>로 조절해 최종 전략을 결정한다.
+              </p>
+            </div>
+          </article>
+
+          <article class="partition-focus">
+            <div class="partition-heading">
+              <span>B</span>
+              <h3>I<sub>c</sub> 기반 분할</h3>
+            </div>
+
+            <div
+              class="partition-diagram component-partition"
+              aria-label="연결 성분 기반 분할 개념도"
+            >
+              <div class="partition-object"></div>
+
+              <div class="component-band band-a">
+                <span>I<sub>c1</sub></span>
+              </div>
+
+              <div class="component-band band-b">
+                <span>I<sub>c2</sub></span>
+              </div>
+
+              <div class="component-band band-c">
+                <span>I<sub>c3</sub></span>
+              </div>
+            </div>
+
+            <ul>
+              <li>오버행 연결 구조로 구간 결정</li>
+              <li>분할 개수를 자동 결정</li>
+              <li>구간별 다중 원뿔각 적용</li>
+              <li>교선 시각화 도구에서 직접 확인</li>
+            </ul>
+          </article>
+        </div>
+        <div class="partition-verdict">
+          <strong>선택 기준</strong>
+          <p>공간적 오버행 구조를 보존하고 구간별 각도를 선택하는 목적에서는 I<sub>c</sub> 기반 분할이 더 적합하다.</p>
+          <span>두 방식 모두 G-code 생성은 별도 단계</span>
+        </div>
+      </section>
+
+      <!-- 13. 진행 중인 연구 -->
+      <section id="slide-13" class="slide" aria-labelledby="slide-13-title">
+        <header class="slide-header">
+          <p class="section-label">04 · 진행중인 검증</p>
+          <h2 id="slide-13-title">운동시간·충돌·G-code 후처리 연구 현황</h2>
+        </header>
+        <div class="work-status-grid">
+          <article><span class="status status--doing">진행 중</span><h3>운동시간 평가</h3><p>G-code를 X, Y, Z, θ 경로로 변환하고 TOPPRA로 속도·가속도 제한을 반영한다.</p><small>후속: jerk가 중요하면 Ruckig 비교</small></article>
+          <article><span class="status status--planning">설계 중</span><h3>충돌 검사</h3><p>노즐·회전 구조·출력물 사이의 기하 충돌을 FCL 기반으로 검사한다.</p><small>연속 이동 구간의 충돌 시점 검토</small></article>
+          <article><span class="status status--done">해결</span><h3>비지지 출력물 판정</h3><p>비지지 영역 생성 여부를 형상 분석 단계에서 판정하는 로직을 구성했다.</p><small>실제 출력 안정성과의 비교는 필요</small></article>
+          <article><span class="status status--done">구현</span><h3>G2·G3 원호 병합</h3><p>연속 G1 경로를 중심축 원호로 복원하여 G-code 용량과 경로 점 수를 줄인다.</p><small>병합 오차와 장비 호환성 검증 필요</small></article>
+          <article><span class="status status--hold">보류</span><h3>쿼터니언 행동 코드</h3><p>현재 4축은 X, Y, Z, θ를 우선 사용하고 5축 확장 시 자세 표현을 다시 검토한다.</p><small>현재 우선순위에서 제외</small></article>
+        </div>
+      </section>
+
+      <!-- 14. 문제점 -->
+      <section id="slide-14" class="slide" aria-labelledby="slide-14-title">
+        <header class="slide-header">
+          <p class="section-label">04 · 진행중인 검증</p>
+          <h2 id="slide-14-title">현재 파이프라인에서 해결해야 할 기술적 문제</h2>
+        </header>
+        <div class="problem-grid">
+          <article><span>01</span><h3>G-code 생성 연결</h3><p>구간별 원뿔각 결과를 Slicer4RTN 또는 자체 경로 생성 코드에 전달하는 공통 형식이 필요하다.</p></article>
+          <article><span>02</span><h3>평면 슬라이싱 호환성</h3><p>평면 구간과 원뿔 구간이 만나는 경계에서 경로의 연속성과 압출량을 맞춰야 한다.</p></article>
+          <article><span>03</span><h3>구간 경계 처리</h3><p>겹치는 I<sub>c</sub>를 병합한 뒤 대표 각도와 전환 레이어를 결정하는 규칙이 필요하다.</p></article>
+          <article><span>04</span><h3>기하학적 분석과 물리학적 분석의 차이</h3><p>교선이 생성되더라도 층간 접착과 실제 출력 안정성을 보장하지 않는다.</p></article>
+          <article><span>05</span><h3>운동학과 충돌</h3><p>축 속도·가속도·회전량과 노즐 충돌을 각도 평가에 함께 반영해야 한다.</p></article>
+          <article><span>06</span><h3>데이터와 메시 민감도</h3><p>실제 출력 데이터가 부족하며 삼각형 분할 방식이 I<sub>c</sub> 결과에 영향을 줄 수 있다.</p></article>
+        </div>
+      </section>
+
+      <!-- 15. 연구 계획 -->
+      <section id="slide-15" class="slide" aria-labelledby="slide-15-title">
+        <header class="slide-header">
+          <p class="section-label">05 · 향후 연구 계획</p>
+          <h2 id="slide-15-title">실제 출력 결과로 각도 선택과 운동학 평가를 보정</h2>
+        </header>
+        <div class="validation-loop" aria-label="실제 출력 검증 기반 연구 계획">
+          <article><span>1</span><h3>테스트 모델과 조건 고정</h3><p>아치형·ㄱ자형 모델과 각도·레이어 조건을 구성</p></article>
+          <i>→</i>
+          <article><span>2</span><h3>실제 4축 출력</h3><p>표면 품질·출력 시간·서포트·실패 구간 측정</p></article>
+          <i>→</i>
+          <article><span>3</span><h3>예측과 실험 비교</h3><p>TOPPRA 기반 시간 측정, FCL 기반 충돌 여부 판단</p></article>
+          <i>→</i>
+          <article><span>4</span><h3>각도 알고리즘 보정</h3><p>구간 분할·병합 규칙 수정</p></article>
+          <i>→</i>
+          <article><span>5</span><h3>반복 검증</h3><p>다양한 메시 해상도와 형상에서 재검증</p></article>
+        </div>
+        <div class="plan-principle">
+          <strong>평가 방향</strong>
+          <span>기하학적 가능성</span><i>+</i><span>운동학적 실행 가능성</span><i>+</i><span>실제 출력 품질</span>
+        </div>
+      </section>
+
+      <!-- 16. 결론 -->
+      <section id="slide-16" class="slide conclusion-slide" aria-labelledby="slide-16-title">
+        <header class="slide-header">
+          <p class="section-label">05 · 향후 연구 계획</p>
+          <h2 id="slide-16-title">구현 현황과 남은 검증 과제</h2>
+        </header>
+        <div class="progress-table" role="table" aria-label="연구 구현 현황">
+          <div class="progress-row progress-head" role="row"><span>항목</span><span>현재까지 진행</span><span>남은 과제</span></div>
+          <div class="progress-row" role="row"><strong>형상·각도 분석</strong><span>Z축 분할과 \(I_c\) 기반 후보 계산</span><span>최종적인 시뮬레이션 결과 또는 선택 각도 평가</span></div>
+          <div class="progress-row" role="row"><strong>공간 분할</strong><span>연결 성분과 높이 범위 기반 구간 결정</span><span>겹침 병합과 경계 전환 규칙 검증</span></div>
+          <div class="progress-row" role="row"><strong>경로·시각화</strong><span>교선 시각화, G-code 시각화, G2·G3 병합</span><span>구간별 G-code 생성 형식 통합</span></div>
+          <div class="progress-row" role="row"><strong>물리·운동학</strong><span>TOPPRA·FCL 적용 구조 검토</span><span>축 제약과 충돌을 각도 평가에 반영</span></div>
+          <div class="progress-row" role="row"><strong>실험 검증</strong><span>분석·비교 도구 구성</span><span>실제 4축 출력 데이터 확보</span></div>
+        </div>
+        <blockquote class="final-message">
+          STL 형상에 맞는 원뿔각과 구간을 자동으로 선택하는 기반은 마련했으며,<br>
+          <strong>실제 출력과 운동학적 검증을 통해 “출력 가능한 최적각”으로 완성해야 한다.</strong>
+        </blockquote>
+      </section>
+      <!-- 17. 참고문헌 및 오픈소스 -->
+      <section id="slide-17"
+              class="slide reference-slide"
+              aria-labelledby="slide-17-title">
+
+        <header class="slide-header">
+          <h2 id="slide-17-title">참고 논문과 오픈소스</h2>
+        </header>
+
+        <div class="reference-grid">
+
+          <!-- 왼쪽 열: 논문 및 학술 자료 6개 -->
+          <article class="reference-column reference-papers"
+                  aria-labelledby="paper-reference-title">
+
+            <div class="reference-column-header">
+              <span class="reference-type-badge paper-badge">PAPER</span>
+              <h3 id="paper-reference-title">논문·학술 자료</h3>
+            </div>
+
+            <ol class="reference-list paper-reference-list">
+
+              <li>
+                <span class="reference-number">P1</span>
+                <div>
+                  <cite>Novel 4-axis 3D printing process to print overhangs without support material</cite>
+                  <span class="linked-paper-label">4축 프린터</span>
+                  <p>Wüthrich, M., Elspass, W. J., Bos, P., &amp; Holdener, S. (2020)</p>
+                  <a href="https://doi.org/10.1007/978-3-030-54334-1_10"
+                    target="_blank" rel="noopener noreferrer">
+                    DOI: 10.1007/978-3-030-54334-1_10
+                  </a>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">P2</span>
+                <div>
+                  <cite>A novel slicing strategy to print overhangs without support material</cite>
+                  <span class="linked-paper-label">원뿔 슬라이싱</span>
+                  <p>Wüthrich, M., Gubser, M., Elspass, W. J., &amp; Jaeger, C. (2021)</p>
+                  <a href="https://doi.org/10.3390/app11188760"
+                    target="_blank" rel="noopener noreferrer">
+                    Applied Sciences, 11(18), 8760
+                  </a>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">P3</span>
+                <div>
+                  <cite>Open5x: Accessible 5-axis 3D printing and conformal slicing</cite>
+                  <span class="linked-paper-label">5축·곡면 슬라이싱</span>
+                  <p>Hong, F., Hodges, S., Myant, C., &amp; Boyle, D. E. (2022)</p>
+                  <a href="https://doi.org/10.1145/3491101.3519782"
+                    target="_blank" rel="noopener noreferrer">
+                    DOI: 10.1145/3491101.3519782
+                  </a>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">P4</span>
+                <div>
+                  <cite>Nonplanar slicing and path generation methods for robotic additive manufacturing</cite>
+                  <span class="linked-paper-label">비평면 경로</span>
+                  <p>Zhao, G. et al. (2018)</p>
+                  <a href="https://doi.org/10.1007/s00170-018-1772-9"
+                    target="_blank" rel="noopener noreferrer">
+                    DOI: 10.1007/s00170-018-1772-9
+                  </a>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">P5</span>
+                <div>
+                  <cite>A New Approach to Time-Optimal Path Parameterization Based on Reachability Analysis</cite>
+                  <span class="linked-paper-label">운동시간 평가</span>
+                  <p>Pham, H., &amp; Pham, Q.-C. (2018)</p>
+                  <a href="https://doi.org/10.1109/TRO.2018.2819195"
+                    target="_blank" rel="noopener noreferrer">
+                    IEEE Transactions on Robotics, 34(3), 645–659
+                  </a>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">P6</span>
+                <div>
+                  <cite>FCL: A general purpose library for collision and proximity queries</cite>
+                  <span class="linked-paper-label">충돌 검사</span>
+                  <p>Pan, J., Chitta, S., &amp; Manocha, D. (2012)</p>
+                  <a href="https://doi.org/10.1109/ICRA.2012.6225337"
+                    target="_blank" rel="noopener noreferrer">
+                    DOI: 10.1109/ICRA.2012.6225337
+                  </a>
+                </div>
+              </li>
+
+            </ol>
+          </article>
+
+          <!-- 오른쪽 열: GitHub 및 오픈소스 6개 -->
+          <article class="reference-column reference-opensource"
+                  aria-labelledby="opensource-reference-title">
+
+            <div class="reference-column-header">
+              <span class="reference-type-badge github-badge">GITHUB</span>
+              <h3 id="opensource-reference-title">GitHub·오픈소스</h3>
+            </div>
+
+            <ol class="reference-list opensource-reference-list">
+
+              <li>
+                <span class="reference-number">G1</span>
+                <div>
+                  <strong>Slicer4RTN · RotBot Transform</strong>
+                  <span class="linked-paper-label">원뿔 변환 참고</span>
+                  <p>평면 슬라이서 전후의 형상·G-code 변환 구조</p>
+                  <div class="reference-link-row">
+                    <a href="https://github.com/Spiritdude/Slicer4RTN"
+                      target="_blank" rel="noopener noreferrer">
+                      Slicer4RTN
+                    </a>
+                    <a href="https://github.com/RotBotSlicer/Transform"
+                      target="_blank" rel="noopener noreferrer">
+                      RotBot Transform
+                    </a>
+                  </div>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">G2</span>
+                <div>
+                  <strong>다축 프린터·슬라이서 사례</strong>
+                  <span class="linked-paper-label">비교 시스템</span>
+                  <p>4축·5축 하드웨어와 비평면·다방향 경로 생성 비교</p>
+                  <div class="reference-link-row">
+                    <a href="https://github.com/FreddieHong19/Open5x"
+                      target="_blank" rel="noopener noreferrer">
+                      Open5x
+                    </a>
+                    <a href="https://github.com/jyjblrd/4-Axis-Polar-3D-Printer"
+                      target="_blank" rel="noopener noreferrer">
+                      Core-RΘ
+                    </a>
+                    <a href="https://github.com/jyjblrd/S4_Slicer"
+                      target="_blank" rel="noopener noreferrer">
+                      S4 Slicer
+                    </a>
+                    <a href="https://github.com/fractalrobotics/Fractal-5-Pro"
+                      target="_blank" rel="noopener noreferrer">
+                      Fractal 5 Pro
+                    </a>
+                  </div>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">G3</span>
+                <div>
+                  <strong>PrusaSlicer</strong>
+                  <span class="linked-paper-label">G-code 생성 연동</span>
+                  <p>변환된 STL의 평면 슬라이싱과 G-code 생성</p>
+                  <a href="https://github.com/prusa3d/PrusaSlicer"
+                    target="_blank" rel="noopener noreferrer">
+                    prusa3d/PrusaSlicer
+                  </a>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">G4</span>
+                <div>
+                  <strong>Cura · CuraEngine · OrcaSlicer</strong>
+                  <span class="linked-paper-label">판정 기준 비교</span>
+                  <p>오버행 각도 정의와 레이어별 윤곽 비교 방식 검토</p>
+                  <div class="reference-link-row">
+                    <a href="https://github.com/Ultimaker/Cura"
+                      target="_blank" rel="noopener noreferrer">
+                      Cura
+                    </a>
+                    <a href="https://github.com/Ultimaker/CuraEngine"
+                      target="_blank" rel="noopener noreferrer">
+                      CuraEngine
+                    </a>
+                    <a href="https://github.com/OrcaSlicer/OrcaSlicer"
+                      target="_blank" rel="noopener noreferrer">
+                      OrcaSlicer
+                    </a>
+                  </div>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">G5</span>
+                <div>
+                  <strong>검증·발표 구현 도구</strong>
+                  <span class="linked-paper-label">사용·검토 도구</span>
+                  <p>TOPPRA·FCL은 검증 후보, Three.js·Reveal.js는 발표 구현에 사용</p>
+                  <div class="reference-link-row">
+                    <a href="https://github.com/hungpham2511/toppra"
+                      target="_blank" rel="noopener noreferrer">
+                      TOPPRA
+                    </a>
+                    <a href="https://github.com/flexible-collision-library/fcl"
+                      target="_blank" rel="noopener noreferrer">
+                      FCL
+                    </a>
+                    <a href="https://github.com/mrdoob/three.js"
+                      target="_blank" rel="noopener noreferrer">
+                      Three.js
+                    </a>
+                    <a href="https://github.com/hakimel/reveal.js"
+                      target="_blank" rel="noopener noreferrer">
+                      Reveal.js
+                    </a>
+                  </div>
+                </div>
+              </li>
+
+              <li>
+                <span class="reference-number">G6</span>
+                <div>
+                  <strong>본 연구에서 개발한 코드</strong>
+                  <span class="linked-paper-label">직접 개발</span>
+                  <p>각도 분석, 슬라이싱 실험, STL·G-code 시각화 및 발표 자료</p>
+                  <div class="reference-link-row">
+                    <a href="https://github.com/KJH-code/slicer"
+                      target="_blank" rel="noopener noreferrer">
+                      KJH-code/slicer
+                    </a>
+                    <a href="https://github.com/26037-arch/find_conical_angle"
+                      target="_blank" rel="noopener noreferrer">
+                      find_conical_angle
+                    </a>
+                    <a href="https://github.com/26037-arch/conical-slice-viewer"
+                      target="_blank" rel="noopener noreferrer">
+                      conical-slice-viewer
+                    </a>
+                    <a href="https://github.com/26037-arch/adaptive-conical-slicing-presentation"
+                      target="_blank" rel="noopener noreferrer">
+                      presentation
+                    </a>
+                  </div>
+                </div>
+              </li>
+
+            </ol>
+          </article>
+        </div>
+
+        <footer class="reference-footer">
+          <p>
+            <strong>직접 사용·연동:</strong>
+            KJH-code/slicer, find_conical_angle, PrusaSlicer,
+            Three.js, Reveal.js
+          </p>
+          <p>
+            <strong>비교·검토:</strong>
+            RotBot, Slicer4RTN, Open5x, Core-RΘ, S4 Slicer,
+            Fractal 5 Pro, Cura 계열, TOPPRA, FCL
+          </p>
+          <p>
+            <strong>사진 사용 출처</strong>
+            3축 프린터: Bambu Lab KR 공식 스토어/ core-Rtheta: Joshua Bird, core-Rtheta 제작자 공식 youtube
+            <br>RotBot: CNC Kitchen open5x: AI 기반 학술 논문 검색·인용 정보 플랫폼
+          </p>
+          <span>GitHub·웹 자료 최종 확인: 2026.07.27.</span>
+        </footer>
+      </section>
+    </div>
+  </main>
+
+  <nav class="presentation-nav" aria-label="발표 슬라이드 이동">
+    <button id="prev-slide" type="button" aria-label="이전 슬라이드">←</button>
+    <div class="slide-counter" aria-live="polite">
+      <span id="current-slide">1</span><i></i><span id="total-slides">17</span>
+    </div>
+    <button id="next-slide" type="button" aria-label="다음 슬라이드">→</button>
+    <button id="fullscreen-toggle" class="fullscreen-button" type="button" aria-label="전체 화면 전환">⛶</button>
+  </nav>
+  <div class="global-progress" aria-hidden="true"><i id="global-progress-bar"></i></div>
+
+  <script src="assets/vendor/reveal/reveal.js"></script>
+  <script src="assets/vendor/three/three.min.js"></script>
+  <script src="assets/vendor/three/OrbitControls.js"></script>
+  <script src="assets/vendor/three/STLLoader.js"></script>
+  <script src="assets/vendor/katex/katex.min.js"></script>
+  <script src="assets/vendor/katex/contrib/auto-render.min.js"></script>
+  <script>
+    if (typeof window.renderMathInElement === "function") {
+      window.renderMathInElement(document.body, {
+        delimiters: [
+          { left: "\\[", right: "\\]", display: true },
+          { left: "\\(", right: "\\)", display: false }
+        ],
+        throwOnError: false,
+        minRuleThickness: 0.06
+      });
+    } else {
+      console.warn("KaTeX auto-render를 불러오지 못했습니다.");
+    }
+  </script>
+  <script>
+    const video = document.getElementById("slide-9-gcode-video");
+
+    const startTime = 0;   // 시작 시점(초)
+    const endTime = 9;    // 종료 시점(초)
+    const speed = 2;       // 2배속
+
+    video.addEventListener("loadedmetadata", () => {
+      video.playbackRate = speed;
+      video.currentTime = startTime;
+      video.play();
+    });
+
+    video.addEventListener("timeupdate", () => {
+      if (video.currentTime >= endTime) {
+        video.currentTime = startTime;
+        video.play();
+      }
+    });
+
+      video.addEventListener("click", () => {
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      });
+  </script>
+  <script src="presentation.js"></script>
+  <script src="stl-viewer.js"></script>
+  <script src="slicing-comparison-3d.js"></script>
+</body>
+</html>

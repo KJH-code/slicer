@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Adaptive Conical Slicing Result",
+  "description": "실제 분석기 또는 3slicing_simulator 결과를 교선·경로 시각화 도구에 연결하기 위한 권장 형식 예시입니다. 이 파일의 값은 실험 결과가 아닙니다.",
+  "type": "object",
+  "required": [
+    "coordinateSystem",
+    "segments"
+  ],
+  "properties": {
+    "sourceModel": {
+      "type": "string",
+      "description": "assets/models/ 아래 STL 파일 경로"
+    },
+    "coordinateSystem": {
+      "const": "XYZ_mm"
+    },
+    "axisXY": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "items": false
+    },
+    "segments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "angleDeg",
+          "zRange",
+          "layers"
+        ],
+        "properties": {
+          "angleDeg": {
+            "type": "number"
+          },
+          "zRange": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false
+          },
+          "componentIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "points"
+              ],
+              "properties": {
+                "layerIndex": {
+                  "type": "integer"
+                },
+                "points": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "items": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "properties": {
+        "estimatedTimeSeconds": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "supportMetric": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "collisionCheck": {
+          "enum": [
+            "not_run",
+            "passed",
+            "failed"
+          ]
+        }
+      }
+    }
+  }
+}
