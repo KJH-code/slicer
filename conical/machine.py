@@ -33,6 +33,8 @@ machine.py — 기계 프로파일(시작/종료 G-code, 온도)을 G-code 에 �
 """
 
 import configparser
+import math
+import re
 from dataclasses import dataclass, field
 
 REQUIRED_HINT = ("[machine] 절에 start_gcode / end_gcode 를 적는다. "
@@ -103,3 +105,82 @@ class MachineProfile:
         out = [("raw", f"; --- machine end: {self.name} ---")]
         out += [("raw", ln) for ln in self._render(self.end_gcode, ctx)]
         return out
+
+
+# ─────────────────────────────────────────────────────────────
+# 시작 G-code 의 압출(프라임 선)이 부품 자리와 겹치는지
+# ─────────────────────────────────────────────────────────────
+_WORD = re.compile(r"([GXYEgxye])\s*(-?\d+(?:\.\d*)?|-?\.\d+)")
+
+
+def _seg_dist_to_origin(x0, y0, x1, y1):
+    """선분 (x0,y0)-(x1,y1) 과 원점 사이 최소 거리."""
+    dx, dy = x1 - x0, y1 - y0
+    L2 = dx * dx + dy * dy
+    t = 0.0 if L2 == 0 else max(0.0, min(1.0, -(x0 * dx + y0 * dy) / L2))
+    return math.hypot(x0 + t * dx, y0 + t * dy)
+
+
+def check_start_extrusion(start_items, part_radius, margin=3.0,
+                          printable_radius=None):
+    """시작 G-code 안의 **압출 이동**(프라임 선 등)이 부품 자리와 겹치는지 본다.
+
+    왜: 이 파이프라인은 부품을 **XY 원점(= 원뿔 축)** 에 놓는다(`center_on_axis`).
+    템플릿의 프라임 선이 오래 (5,5)→(100,5) 였는데, 이는 부품 한가운데를 지나간다 —
+    첫 층이 프라임 선 위에 올라간다. REP5X 에서는 끝점이 PRINTABLE_RADIUS 100 도
+    넘었다(반경 100.1). 2026-10-16 `rep5x_check` 로 새 모델을 돌리다 발견.
+
+    part_radius: 부품 경로의 원점 기준 최대 반경 (mm)
+    margin: 부품 둘레에 띄울 여유 (mm)
+    printable_radius: 주면 압출 이동이 그 반경 안인지도 본다 (REP5X 100)
+
+    반환: [(심각도, 메시지)]. 위치를 못 따라가는 경우(G91 상대 좌표)는 "정보" 로
+    알리고 그 뒤를 보지 않는다 — 모르면서 통과로 치지 않는다.
+    """
+    findings = []
+    x = y = None
+    e = 0.0
+    rel = False
+    for kind, line in start_items:
+        if kind != "raw" or not isinstance(line, str):
+            continue
+        code = line.split(";", 1)[0].strip().upper()
+        if not code:
+            continue
+        words = dict(_WORD.findall(code))
+        g = words.get("G")
+        if g in ("90",):
+            rel = False
+            continue
+        if g in ("91",):
+            rel = True
+            continue
+        if g == "92":
+            if "E" in words:
+                e = float(words["E"])
+            continue
+        if g not in ("0", "1") or rel:
+            if g in ("0", "1") and rel and ("X" in words or "Y" in words):
+                findings.append(("정보", f"시작 G-code 가 상대 좌표(G91)로 XY 를 움직여 "
+                                        f"위치를 못 따라간다: `{line.strip()}` — "
+                                        f"사람이 확인할 것"))
+                return findings
+            continue
+        nx = float(words["X"]) if "X" in words else x
+        ny = float(words["Y"]) if "Y" in words else y
+        ne = float(words["E"]) if "E" in words else e
+        if ne > e + 1e-9 and None not in (x, y, nx, ny):
+            d = _seg_dist_to_origin(x, y, nx, ny)
+            if d < part_radius + margin:
+                findings.append(("치명", f"시작 G-code 의 압출 `{line.strip()}` 이 "
+                                        f"부품 자리(원점에서 반경 {part_radius:.1f}mm"
+                                        f" + 여유 {margin:g}mm)를 지난다 "
+                                        f"(원점 거리 {d:.1f}mm). 첫 층이 그 위에 올라간다"))
+            if printable_radius is not None:
+                far = max(math.hypot(x, y), math.hypot(nx, ny))
+                if far > printable_radius + 1e-9:
+                    findings.append(("치명", f"시작 G-code 의 압출 `{line.strip()}` 이 "
+                                            f"출력 가능 반경 {printable_radius:g}mm 를 "
+                                            f"넘는다 (반경 {far:.1f}mm)"))
+        x, y, e = nx, ny, ne
+    return findings

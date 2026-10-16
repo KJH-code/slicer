@@ -23,6 +23,7 @@ RotBot 의 검증된 3단계 구조에 우리 '자동 각도 결정'을 앞단�
 """
 
 import argparse
+import math
 import subprocess
 import tempfile
 from pathlib import Path
@@ -40,7 +41,7 @@ from conical.config import (
     MAX_SPACING_FACTOR,
     THRESHOLD_DEG,
 )
-from conical.machine import MachineProfile
+from conical.machine import MachineProfile, check_start_extrusion
 from conical.meshio import RadiusProfile, center_on_axis
 from conical.planar_slicer import slice_mesh
 from conical.profile import AngleProfile
@@ -333,6 +334,14 @@ def main():
                "source_stl": Path(args.stl).name, **angle_ctx}
         head, tail = mp.start_items(ctx), mp.end_items(ctx)
         print(f"  기계        : {mp.name}  ({args.machine_profile})")
+        # 시작 G-code 의 프라임 선이 부품 자리(원점 둘레)를 지나가면 첫 층이 그 위에
+        # 올라간다. 템플릿이 실제로 그랬다(2026-10-16) — 매번 검사한다.
+        part_r = max((math.hypot(mv.x, mv.y) for k, mv in real_items
+                      if k == "move" and mv.x is not None and mv.y is not None),
+                     default=0.0)
+        pr = REP5X.printable_radius if args.mode == "rep5x" else None
+        for sev, msg in check_start_extrusion(head, part_r, printable_radius=pr):
+            print(f"  {'✖' if sev == '치명' else '⚠'} [{sev}] {msg}")
     gc.write(meta + head + real_items + tail, out_path)
     print(f"  출력        : {out_path}")
     if not args.machine_profile:
