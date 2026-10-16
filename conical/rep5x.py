@@ -69,6 +69,7 @@ G-code 는 C 가 방위각을 따라 **계속 누적**되므로(funnel 20° 에�
   회전축이 못 따라가면 Marlin 플래너가 알아서 전체를 늦춘다 — RRF 와 같다.
 """
 
+import json
 import math
 from dataclasses import dataclass
 
@@ -120,32 +121,106 @@ def cone_tool_direction(x, y, cone_angle_deg, cone_type):
     return (-math.sin(th) * x / r, -math.sin(th) * y / r, -math.cos(th))
 
 
-def to_rep5x(items, cone_angle_deg, cone_type, profile=REP5X):
+def _layer_thetas(items, angle_profile):
+    """이동마다 그 점이 놓인 **레이어의 각도** θ(Z′) (부호 있는 도, 모달 좌표 반영).
+
+    가변각에서도 레이어 하나는 각도 하나짜리 원뿔이다(`z = Z′ − r·tanθ(Z′)`, Z′ 고정).
+    그래서 점의 (z, r) 로 Z′ 를 정확히 되풀면(`AngleProfile.solve_forward`) 그 점의
+    레이어 법선 = sinθ·r̂ + cosθ·ẑ 이고, 공구 틸트는 B = c·θ(Z′) 가 된다.
+    좌표가 아직 안 정해진 이동은 None.
+    """
+    x = y = z = None
+    idx, zs, rs = [], [], []
+    for i, (kind, mv) in enumerate(items):
+        if kind != "move":
+            continue
+        x = mv.x if mv.x is not None else x
+        y = mv.y if mv.y is not None else y
+        z = mv.z if mv.z is not None else z
+        if None in (x, y, z):
+            continue
+        idx.append(i)
+        zs.append(z)
+        rs.append(math.hypot(x, y))
+    th = {}
+    if idx:
+        zarr, rarr = np.asarray(zs), np.asarray(rs)
+        try:
+            zp = angle_profile.solve_forward(zarr, rarr, "outward")
+        except RuntimeError:
+            # 해가 없는 점(가역 범위 밖의 트래블 등)은 하나씩 풀고, 못 풀면 직전 값.
+            zp = np.full(len(idx), np.nan)
+            for k in range(len(idx)):
+                try:
+                    zp[k] = angle_profile.solve_forward(zarr[k:k + 1], rarr[k:k + 1],
+                                                        "outward")[0]
+                except RuntimeError:
+                    zp[k] = zp[k - 1] if k else zarr[k]
+        for i, t in zip(idx, angle_profile.theta_at(zp), strict=True):
+            th[i] = float(t)
+    return th
+
+
+def to_rep5x(items, cone_angle_deg, cone_type, profile=REP5X, pole_flip=True):
     """원뿔 G-code(부품좌표) → REP5X G-code. **좌표는 그대로 두고 B/C 만 붙인다.**
+
+    cone_angle_deg: 상수 각도(도) 또는 `AngleProfile`(가변각). 가변각이면 점마다
+      자기 레이어의 θ(Z′) 로 B 를 정한다 — cone_type 은 무시(프로필 각도에 부호가 있다).
+
+    pole_flip (2026-10-16): 공구 방향은 (B, C) 와 (−B, C+180°) 가 **같다.** 경로가 축을
+      지나가면 방위각이 180° 뒤집히는데, 예전에는 그때마다 C 를 180° 돌렸다(헤드
+      급회전, `check_rep5x` 경고). 이동마다 두 해 중 직전 자세에서 덜 움직이는 쪽을
+      고르면 축 통과는 **B 를 2θ 넘기는 것**으로 바뀐다 (5축 가공의 '극 통과' 처리).
+      그리고 θ=0 레이어는 공구가 수직이라 C 가 의미가 없으므로 **C 를 그대로 둔다.**
+
+      ⚠ 남는 것: 축 근처(r≲3mm)에서는 짧은 이동에도 방위각이 크게 돌아 C 가 한
+      걸음에 30~100° 움직인다(램프 24° 에서 441회, 전부 r<3mm). 정확 추종의 본성이다.
+      꼭짓점 근처 틸트를 줄이고 C 를 오차 허용 안에서 늦게 따라가게 하는 완화를
+      시험했으나(r_p 1~3mm, 허용 1~2°) 30° 초과 걸음이 줄지 않고(430~460회) 축 근처
+      공구 방향 오차만 최대 24° 생겨 **넣지 않았다** (docs/verification.md 2026-10-16).
 
     반환: (아이템 리스트, 통계 dict)
     """
-    if abs(cone_angle_deg) > max(abs(profile.b_min), abs(profile.b_max)):
-        raise ValueError(f"cone angle {cone_angle_deg} > B 축 한계 "
+    variable = hasattr(cone_angle_deg, "solve_forward")
+    if variable:
+        th_of = _layer_thetas(items, cone_angle_deg)
+        c_dir = 1.0
+        th_all = [float(t) for t in cone_angle_deg.thetas_deg]
+        a_max = max(th_all, key=abs)
+    else:
+        c_dir = 1.0 if cone_type == "outward" else -1.0
+        a_max = float(cone_angle_deg)
+    if abs(a_max) > max(abs(profile.b_min), abs(profile.b_max)):
+        raise ValueError(f"cone angle {a_max} > B 축 한계 "
                          f"[{profile.b_min}, {profile.b_max}]")
-    c_dir = 1.0 if cone_type == "outward" else -1.0
-    b = profile.tilt_sign * c_dir * cone_angle_deg
+    b_const = None if variable else profile.tilt_sign * c_dir * float(cone_angle_deg)
+    b0 = b_const if b_const is not None else profile.tilt_sign * th_all[0]
 
     out = [("raw", "; REP5X 5-axis conical mode [EXPERIMENTAL]"),
            ("raw", "; head-head kinematics: firmware does the IK "
                    "(PENTA_AXIS_HH), X/Y/Z = nozzle tip"),
-           ("raw", f"; {profile.tilt_axis}={b:.3f}deg fixed tilt, "
-                   f"{profile.rot_axis} tracks azimuth (continuous, unwrapped)"),
+           ("raw", f"; {profile.tilt_axis}="
+                   + (f"{b_const:.3f}deg" if b_const is not None
+                      else "per-layer theta(Z') (variable angle)")
+                   + f", {profile.rot_axis} tracks azimuth (continuous, unwrapped)"
+                   + ("; pole crossing by B sign flip" if pole_flip else "")),
            ("raw", f"; LB={profile.lb} LC={profile.lc} "
                    f"(verify on machine; axis signs too)"),
            ("raw", f"{profile.rtcp_on}  ; enable tool centerpoint control (RTCP)"),
-           ("raw", f"G1 {profile.tilt_axis}{b:.3f} F600  ; tilt head")]
+           ("raw", f"G1 {profile.tilt_axis}{b0:.3f} F600  ; tilt head")]
+
+    def unwrap(c_raw, ref):
+        return c_raw + 360.0 * round((ref - c_raw) / 360.0)
 
     x = y = z = None
-    c_prev = 0.0
+    c_prev, b_prev = 0.0, b0
+    branch = 1.0                    # +1: (B, φ) / −1: (−B, φ+180°)
     c_range = [0.0, 0.0]
-    n_on_axis = 0
-    for kind, payload in items:
+    b_range = [b0, b0]
+    babs = [abs(b0), abs(b0)]
+    n_on_axis = n_flip = n_hold = 0
+    first = True
+    for i, (kind, payload) in enumerate(items):
         if kind != "move":
             out.append((kind, payload))
             continue
@@ -156,26 +231,49 @@ def to_rep5x(items, cone_angle_deg, cone_type, profile=REP5X):
         if x is None or y is None or z is None:
             out.append((kind, payload))
             continue
+        b_nom = b_const if b_const is not None else \
+            profile.tilt_sign * th_of.get(i, th_all[0])
         r = math.hypot(x, y)
-        if r < 1e-6:
-            c = c_prev                      # 축 위: 방위각 정의 불가 → 유지
+        if abs(b_nom) < 1e-9:
+            b, c = 0.0, c_prev              # 수직 공구: C 무관 → 돌리지 않는다
+            n_hold += 1
+        elif r < 1e-6:
+            b, c = branch * b_nom, c_prev   # 축 위: 방위각 정의 불가 → 유지
             n_on_axis += 1
         else:
-            c_raw = profile.rot_sign * math.degrees(math.atan2(y, x))
-            # 연속 누적(unwrap): 직전 값과 ±180° 이내가 되도록 360° 단위 이동
-            c = c_raw + 360.0 * round((c_prev - c_raw) / 360.0)
+            phi = profile.rot_sign * math.degrees(math.atan2(y, x))
+            ca = unwrap(phi, c_prev)
+            cand = [(abs(ca - c_prev) + abs(b_nom - b_prev), 1.0, b_nom, ca)]
+            if pole_flip and not first:     # 첫 자세는 기준이 없으니 자연해(B, φ)
+                cb = unwrap(phi + 180.0, c_prev)
+                cand.append((abs(cb - c_prev) + abs(-b_nom - b_prev), -1.0, -b_nom, cb))
+            _cost, br, b, c = min(cand, key=lambda t: (t[0], -t[1]))
+            if br != branch:
+                n_flip += 1
+                branch = br
         # 좌표·피드는 **그대로**. 이것이 Open5x 와의 차이다.
         out.append(("move", Move(g=mv.g, x=mv.x, y=mv.y, z=mv.z, e=mv.e,
                                  f=mv.f,
                                  extra=f"{profile.tilt_axis}{b:.3f} "
                                        f"{profile.rot_axis}{c:.3f}")))
-        c_prev = c
+        c_prev, b_prev = c, b
+        if r >= 1e-6 and abs(b_nom) >= 1e-9:
+            first = False
         c_range[0] = min(c_range[0], c)
         c_range[1] = max(c_range[1], c)
+        b_range[0] = min(b_range[0], b)
+        b_range[1] = max(b_range[1], b)
+        babs[0] = min(babs[0], abs(b))
+        babs[1] = max(babs[1], abs(b))
 
-    return out, {"b": b, "c_min": c_range[0], "c_max": c_range[1],
+    return out, {"b": b_const if b_const is not None else b0,
+                 "b_min": b_range[0], "b_max": b_range[1],
+                 "b_abs_min": babs[0], "b_abs_max": babs[1],
+                 "variable": variable,
+                 "c_min": c_range[0], "c_max": c_range[1],
                  "c_turns": (c_range[1] - c_range[0]) / 360.0,
-                 "on_axis_moves": n_on_axis}
+                 "on_axis_moves": n_on_axis, "pole_flips": n_flip,
+                 "c_held_vertical": n_hold}
 
 
 def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
@@ -201,14 +299,35 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
     findings, b_seen, cs, feeds, radii = [], [], [], [], []
     in_rewind, n_rewind, rewind_max = False, 0, 0.0
     dc_max, dc_at = 0.0, None
-    c_prev = None
+    db_max = 0.0
+    c_prev = b_prev = None
     has_rtcp = False
     x = y = None
+    ox = oy = 0.0           # G92 X/Y 로 옮긴 좌표 원점 (기계좌표 = G-code + 오프셋)
+    meta_thetas = None      # ;CONICAL_META 의 프로필 각도들 (가변각 판정용)
 
     for kind, payload in items:
         if kind != "move":
             if isinstance(payload, str):
                 up = payload.upper()
+                code = up.split(";", 1)[0].strip()
+                if payload.startswith(";CONICAL_META"):
+                    try:
+                        meta = json.loads(payload.split(";CONICAL_META", 1)[1])
+                        meta_thetas = [float(t) for _z, t in meta.get("profile", [])]
+                    except (ValueError, TypeError):
+                        pass
+                if code.startswith("G92"):
+                    # 부품 원점을 베드 위 다른 점으로 옮기는 줄 (기계 프로파일의
+                    # part_origin). 출력 가능 반경은 **기계좌표** 기준이라 오프셋을 잇는다.
+                    for tok in code.split()[1:]:
+                        try:
+                            if tok.startswith("X") and x is not None:
+                                ox, x = ox + x - float(tok[1:]), float(tok[1:])
+                            elif tok.startswith("Y") and y is not None:
+                                oy, y = oy + y - float(tok[1:]), float(tok[1:])
+                        except ValueError:
+                            pass
                 if "V_REWIND BEGIN" in up:
                     in_rewind, n_rewind = True, n_rewind + 1
                 elif "V_REWIND END" in up:
@@ -220,9 +339,14 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
         for tok in (mv.extra or "").upper().split():
             if tok.startswith(profile.tilt_axis):
                 try:
-                    b_seen.append(float(tok[len(profile.tilt_axis):]))
+                    bv = float(tok[len(profile.tilt_axis):])
                 except ValueError:
                     findings.append(("치명", f"틸트 축 값을 못 읽었다: {tok}"))
+                    continue
+                b_seen.append(bv)
+                if b_prev is not None:
+                    db_max = max(db_max, abs(bv - b_prev))
+                b_prev = bv
             elif tok.startswith(profile.rot_axis):
                 try:
                     c = float(tok[len(profile.rot_axis):])
@@ -242,7 +366,7 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
         if mv.y is not None:
             y = mv.y
         if x is not None and y is not None:
-            radii.append(math.hypot(x, y))
+            radii.append(math.hypot(x + ox, y + oy))
         if mv.f is not None:
             feeds.append(mv.f)
 
@@ -252,9 +376,20 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
     if not b_seen:
         findings.append(("치명", "틸트 축 값이 하나도 없다"))
     else:
-        if max(b_seen) - min(b_seen) > 1e-6:
-            findings.append(("경고", f"틸트가 여러 값이다 "
-                                     f"({min(b_seen):.2f}~{max(b_seen):.2f}) — "
+        # (B, C) 와 (−B, C+180°) 는 같은 공구 방향이다(축 통과 시 B 부호 반전,
+        # `to_rep5x` pole_flip). 그래서 틸트의 **크기** |B| 로 본다.
+        mags = [abs(v) for v in b_seen]
+        variable = meta_thetas is not None and \
+            max(meta_thetas) - min(meta_thetas) > 1e-9
+        if variable:
+            lo = min(abs(t) for t in meta_thetas)
+            hi = max(abs(t) for t in meta_thetas)
+            if min(mags) < lo - 0.01 or max(mags) > hi + 0.01:
+                findings.append(("경고", f"틸트 크기 {min(mags):.2f}~{max(mags):.2f}° 가 "
+                                         f"프로필 각도 범위 {lo:.2f}~{hi:.2f}° 밖이다"))
+        elif max(mags) - min(mags) > 1e-6:
+            findings.append(("경고", f"틸트 크기가 여러 값이다 "
+                                     f"({min(mags):.2f}~{max(mags):.2f}) — "
                                      f"고정 틸트 원뿔 모드가 아니다"))
         if min(b_seen) < profile.b_min - 1e-9 or max(b_seen) > profile.b_max + 1e-9:
             findings.append(("치명", f"틸트 {min(b_seen):.1f}~{max(b_seen):.1f}° 가 "
@@ -283,7 +418,9 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
              "c_min": c_lo, "c_max": c_hi,
              "c_wind_turns": (max(abs(c - cs[0]) for c in cs) / 360.0) if cs else 0.0,
              "c_span_turns": (c_hi - c_lo) / 360.0,
-             "c_max_step_deg": dc_max,
+             "c_max_step_deg": dc_max, "b_max_step_deg": db_max,
+             "b_min": min(b_seen) if b_seen else None,
+             "b_max": max(b_seen) if b_seen else None,
              "radius_max": max(radii) if radii else 0.0,
              "moves": len(cs), "rewinds": n_rewind,
              "rewind_max_deg": rewind_max, "rtcp": has_rtcp}
@@ -514,6 +651,51 @@ def move_tool_frames(items, profile=REP5X):
     return np.asarray(ups, dtype=float)
 
 
+def sample_tool_frames(items, pts, mid, profile=REP5X):
+    """샘플점마다의 공구 '위' 방향 — 이동 **안에서 (B, C) 를 선형 보간**한다.
+
+    펌웨어는 한 이동 동안 회전축을 시작값→끝값으로 선형 보간한다. 예전 검사는
+    이동의 **끝** 자세를 그 이동 전체에 붙였는데(`move_tool_frames[mid]`), 축을
+    가로지르는 이동에서는 축 앞쪽 절반이 2θ 반대로 기운 자세로 평가돼 간섭을
+    **지어냈다**(램프 밴드2 0.3mm, r=0.52mm 에서 '치명' 0.01% — 2026-10-16).
+    """
+    bc, ends = [], []
+    b = c = 0.0
+    x = y = z = None
+    for kind, p in items:
+        if kind != "move":
+            continue
+        start = (x, y, z)
+        for tok in (p.extra or "").split():
+            t = tok.upper()
+            try:
+                if t.startswith(profile.tilt_axis.upper()):
+                    b = float(tok[len(profile.tilt_axis):])
+                elif t.startswith(profile.rot_axis.upper()):
+                    c = float(tok[len(profile.rot_axis):])
+            except ValueError:
+                pass
+        x = p.x if p.x is not None else x
+        y = p.y if p.y is not None else y
+        z = p.z if p.z is not None else z
+        bc.append((b, c))
+        ends.append((start, (x, y, z)))
+    pts = np.asarray(pts, dtype=float)
+    ups = np.empty((len(pts), 3))
+    for k, (pt, m) in enumerate(zip(pts, mid, strict=True)):
+        b1, c1 = bc[m]
+        b0, c0 = bc[m - 1] if m > 0 else bc[m]
+        (s0, s1) = ends[m]
+        t = 1.0
+        if None not in s0 and None not in s1:
+            L = math.dist(s0, s1)
+            if L > 1e-12:
+                t = min(1.0, max(0.0, math.dist(s0, pt) / L))
+        d = tool_direction(b0 + (b1 - b0) * t, c0 + (c1 - c0) * t)
+        ups[k] = (-d[0], -d[1], -d[2])
+    return ups
+
+
 def check_head_interference(items, profile=REP5X, hotend=None, width=0.45,
                             clearance=0.3, arm_radius=None,
                             batch_samples=2000, stride=1):
@@ -551,10 +733,10 @@ def check_head_interference(items, profile=REP5X, hotend=None, width=0.45,
         return np.zeros(0, dtype=bool), {"collision_pct": 0.0,
                                          "first_collision_z": None,
                                          "arm_modeled": False, "samples": 0}
-    ups = move_tool_frames(items, profile)
+    ups = sample_tool_frames(items, pts, mid, profile)
     col, st = check_nozzle(pts, mid, hotend or HotendProfile(),
                            batch_samples=batch_samples, clearance=clearance,
-                           tool_up=ups[mid],
+                           tool_up=ups,
                            arm_length=profile.lb if arm_radius else None,
                            arm_radius=arm_radius, stride=stride)
     return col, st

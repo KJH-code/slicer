@@ -181,8 +181,17 @@ python3 analyze_quality.py                       # 계단 자국 vs 서포트 �
 
 ```
 python3 conical_slice.py model.stl --angle 20 --mode rep5x
+python3 conical_slice.py model.stl --auto-bands 2 --mode rep5x   # 가변각도 된다 (2026-10-16)
 python3 rep5x_check.py model_rep5x.gcode
 ```
+
+- **가변각 5축** — 레이어 하나는 각도 하나짜리 원뿔이라, 점의 레이어 Z′ 를 되풀어
+  `B = θ(Z′)` 로 둔다. Open5x(베드 틸트)는 아직 안 된다
+- **축 통과는 B 부호 반전으로** — 공구 방향은 (B, C) 와 (−B, C+180°) 가 같다. 경로가
+  축을 지날 때 C 를 180° 돌리는 대신 B 를 2θ 넘긴다. θ=0 층은 C 를 돌리지 않는다
+- **부품 위치** — 경로는 늘 원점(0,0) 둘레로 나온다. 기계 원점이 베드 모서리면
+  `machine.example.ini` 의 `part_origin_x/y` 에 베드 중앙을 적는다 (시작 G-code 가
+  그 점으로 가서 `G92 X0 Y0`)
 
 펌웨어 설정(`Rep5x-Marlin`, `Marlin2ForPipetBot` 브랜치)에서 규약을 확정했다:
 `PENTA_AXIS_HH`, `DEFAULT_TOOL_CENTERPOINT_CONTROL true`(RTCP 기본 ON →

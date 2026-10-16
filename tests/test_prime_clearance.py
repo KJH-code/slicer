@@ -59,3 +59,24 @@ def test_example_template_is_clear():
     assert check_start_extrusion(head, part_radius=12.0, printable_radius=100.0) == []
     # 부품이 크면(반경 80) 겹친다고 알려야 한다 — 검사가 살아 있는지
     assert check_start_extrusion(head, part_radius=80.0)
+
+
+def test_part_origin_g92_moves_part_center():
+    """모서리 원점 기계: 부품 원점(110,110)으로 옮긴 뒤 G92 X0 Y0.
+
+    프라임 선은 부품 기준 좌표로 판정하고, 출력 가능 반경은 **기계좌표**로 본다.
+    """
+    head = _raw("G28", "G1 Z5", "G1 X110 Y110 F3000", "G92 X0 Y0",
+                "G1 Z0.3", "G1 X-40 Y-80", "G1 X40 Y-80 E12", "G92 E0")
+    assert check_start_extrusion(head, part_radius=12.0) == []
+    # 기계좌표 (70~150, 30) 은 원점에서 154mm — 반경 100 기계면 넘는다
+    f = check_start_extrusion(head, part_radius=12.0, printable_radius=100.0)
+    assert any("기계좌표 반경" in m for _, m in f)
+    # G92 이전에 부품 자리를 지나는 압출도 부품 중심(110,110) 기준으로 잡는다
+    head2 = _raw("G1 X100 Y110", "G1 X120 Y110 E5", "G1 X110 Y110", "G92 X0 Y0")
+    assert any(s == "치명" for s, _ in check_start_extrusion(head2, part_radius=12.0))
+
+
+def test_g92_xy_without_known_position_is_reported():
+    f = check_start_extrusion(_raw("G28", "G92 X0 Y0"), part_radius=12.0)
+    assert f and f[0][0] == "정보"
