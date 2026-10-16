@@ -141,6 +141,8 @@ def check_start_extrusion(start_items, part_radius, margin=3.0,
     x = y = None
     e = 0.0
     rel = False
+    ox = oy = 0.0           # G92 X/Y 로 옮긴 원점 (기계좌표 = G-code 좌표 + 오프셋)
+    segs = []               # (기계좌표 시작, 끝, 원문)
     for kind, line in start_items:
         if kind != "raw" or not isinstance(line, str):
             continue
@@ -149,15 +151,28 @@ def check_start_extrusion(start_items, part_radius, margin=3.0,
             continue
         words = dict(_WORD.findall(code))
         g = words.get("G")
-        if g in ("90",):
+        if g == "90":
             rel = False
             continue
-        if g in ("91",):
+        if g == "91":
             rel = True
             continue
         if g == "92":
             if "E" in words:
                 e = float(words["E"])
+            # 부품 원점 이동 (`part_origin` → `G92 X0 Y0`): 지금 자리를 새 값으로 부른다
+            if "X" in words:
+                if x is None:
+                    findings.append(("정보", f"`{line.strip()}` 앞에서 X 위치를 모른다 — "
+                                            f"원점 이동을 따라갈 수 없다"))
+                    return findings
+                ox, x = ox + x - float(words["X"]), float(words["X"])
+            if "Y" in words:
+                if y is None:
+                    findings.append(("정보", f"`{line.strip()}` 앞에서 Y 위치를 모른다 — "
+                                            f"원점 이동을 따라갈 수 없다"))
+                    return findings
+                oy, y = oy + y - float(words["Y"]), float(words["Y"])
             continue
         if g not in ("0", "1") or rel:
             if g in ("0", "1") and rel and ("X" in words or "Y" in words):
@@ -170,17 +185,21 @@ def check_start_extrusion(start_items, part_radius, margin=3.0,
         ny = float(words["Y"]) if "Y" in words else y
         ne = float(words["E"]) if "E" in words else e
         if ne > e + 1e-9 and None not in (x, y, nx, ny):
-            d = _seg_dist_to_origin(x, y, nx, ny)
-            if d < part_radius + margin:
-                findings.append(("치명", f"시작 G-code 의 압출 `{line.strip()}` 이 "
-                                        f"부품 자리(원점에서 반경 {part_radius:.1f}mm"
-                                        f" + 여유 {margin:g}mm)를 지난다 "
-                                        f"(원점 거리 {d:.1f}mm). 첫 층이 그 위에 올라간다"))
-            if printable_radius is not None:
-                far = max(math.hypot(x, y), math.hypot(nx, ny))
-                if far > printable_radius + 1e-9:
-                    findings.append(("치명", f"시작 G-code 의 압출 `{line.strip()}` 이 "
-                                            f"출력 가능 반경 {printable_radius:g}mm 를 "
-                                            f"넘는다 (반경 {far:.1f}mm)"))
+            segs.append(((x + ox, y + oy), (nx + ox, ny + oy), line.strip()))
         x, y, e = nx, ny, ne
+
+    # 부품은 **마지막 원점**(경로가 나오는 좌표계의 0,0) 둘레에 놓인다.
+    for (ax, ay), (bx, by), src in segs:
+        d = _seg_dist_to_origin(ax - ox, ay - oy, bx - ox, by - oy)
+        if d < part_radius + margin:
+            findings.append(("치명", f"시작 G-code 의 압출 `{src}` 이 "
+                                    f"부품 자리(원점에서 반경 {part_radius:.1f}mm"
+                                    f" + 여유 {margin:g}mm)를 지난다 "
+                                    f"(원점 거리 {d:.1f}mm). 첫 층이 그 위에 올라간다"))
+        if printable_radius is not None:
+            far = max(math.hypot(ax, ay), math.hypot(bx, by))
+            if far > printable_radius + 1e-9:
+                findings.append(("치명", f"시작 G-code 의 압출 `{src}` 이 "
+                                        f"출력 가능 반경 {printable_radius:g}mm 를 "
+                                        f"넘는다 (기계좌표 반경 {far:.1f}mm)"))
     return findings

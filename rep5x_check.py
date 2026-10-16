@@ -70,7 +70,12 @@ def main():
 
     print("=" * 66)
     print(f"[rep5x_check] {args.gcode}")
-    tilt = "없음" if st["tilt"] is None else f"{st['tilt']:.1f}°"
+    if st["tilt"] is None:
+        tilt = "없음"
+    elif abs(st["b_max"] - st["b_min"]) < 1e-6:
+        tilt = f"{st['tilt']:.1f}°"
+    else:
+        tilt = f"{st['b_min']:.1f} ~ {st['b_max']:.1f}° (한 걸음 최대 {st['b_max_step_deg']:.1f}°)"
     print(f"  이동          : {st['moves']:,}   틸트 {prof.tilt_axis}={tilt}")
     print(f"  RTCP({prof.rtcp_on})  : {'켜짐' if st['rtcp'] else '**없음**'}  "
           f"(꺼져 있으면 X/Y/Z 가 노즐 팁이 아니다)")

@@ -190,6 +190,29 @@ python3 conical_slice.py examples/lamp.stl --auto-bands 2 --layer-height 0.4 \
 `conical_slice.py` 가 이제 매번 시작 G-code 압출이 부품 자리·출력 반경과 겹치는지
 검사한다(`check_start_extrusion`, `tests/test_prime_clearance.py`).
 
+### REP5X 용 파일 (2026-10-16 — 가변각 5축이 되면서 처음 뽑았다)
+
+위 네 파일은 **3축(xyz)** 이다. REP5X 로 뽑으려면 `--mode rep5x` 짝을 쓴다.
+전에는 밴드2(가변각)를 5축으로 **아예 못 뽑았다**("향후 과제") — 실험 A 의 판정
+모델이 바로 가변각인데. 레이어 하나는 각도 하나짜리 원뿔이라 B = θ(Z′) 로 풀었다.
+
+```
+examples/lamp_expA_uniform24_lh03_rep5x.gcode   B=24° (축 통과 63회 B 반전)
+examples/lamp_expA_band2_lh03_rep5x.gcode       B=θ(Z′) 30°→0° (축 통과 19회, θ=0 구간 C 고정)
+examples/lamp_expA_uniform24_lh04_rep5x.gcode   B=24° (축 통과 34회)
+examples/lamp_expA_band2_lh04_rep5x.gcode       B=θ(Z′) 30°→0° (축 통과 18회)
+```
+
+`rep5x_check` (간섭 stride 4, B_arm 제외): 넷 다 **치명 0** — C 창 안, 반경 89.4mm
+(프라임 선 끝), 노즐 간섭 0.00%, 되감기 쓸림 0. 남은 경고 1건씩: **축 근처(r<1mm)
+C 한 걸음 104~120°.** 축 통과 자체(180°)는 B 반전으로 없앴지만, 축을 스치듯 지나는
+이동은 방위각이 크게 돈다 — 정확 추종의 본성이다(완화 시도는 `verification.md`
+2026-10-16). RTCP 라 팁은 제자리이므로 **헤드 회전 속도 때문에 그 구간이 느려지는
+것**이 예상되는 영향이다. 첫 출력에서 축 근처를 눈으로 볼 것.
+
+부품 위치: 경로는 원점(0,0) 둘레로 나온다. 시작 G-code 가 `part_origin_x/y` 로 가서
+`G92 X0 Y0` 한다 — 기계 원점이 베드 모서리면 거기에 베드 중앙을 적는다.
+
 ⚠ **3축으로 뽑으면 밴드2 가 위험하다**: 노즐 간섭 실측 **6.47% vs 균일 3.51%**
 (아랫밴드가 24° 가 아니라 30° 라서). 5축(REP5X)에서는 outward 원뿔이 구조적으로
 간섭 불가라 무관하다. HotendProfile 이 추정값이므로 수치는 경향으로만 볼 것.

@@ -139,9 +139,11 @@ def main():
     if args.profile is not None or args.auto_bands is not None:
         if args.angle is not None:
             raise SystemExit("--angle 과 --profile/--auto-bands 는 동시 사용 불가")
-        if args.mode in ("open5x", "rep5x"):
-            raise SystemExit("가변각 + 5축 모드는 향후 과제 (틸트가 상수라는 "
-                             "가정이 깨짐) — xyz 모드만 지원")
+        if args.mode == "open5x":
+            # REP5X 는 펌웨어가 IK 를 하므로 B 만 레이어별로 바꾸면 된다(2026-10-16).
+            # Open5x 는 베드가 기울어 기계좌표 자체가 각도에 묶여 있어 따로 풀어야 한다.
+            raise SystemExit("가변각 + Open5x 는 향후 과제 (베드 틸트가 상수라는 "
+                             "가정이 깨짐) — xyz·rep5x 모드만 지원")
         r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
         rprof = RadiusProfile(mesh)
         spacing_limit = args.spacing_limit if args.spacing_limit > 1.0 else None
@@ -265,9 +267,15 @@ def main():
             print("  ⚠ 되감기 꺼짐 — 배선 감김을 직접 확인할 것")
     elif args.mode == "rep5x":
         from conical.rep5x import REP5X, add_c_rewinds, to_rep5x
-        real_items, r5 = to_rep5x(real_items, angle, direction, REP5X)
-        print(f"  REP5X       : 헤드 틸트 B={r5['b']:.0f}° 고정, C 가 방위각 추종 "
+        real_items, r5 = to_rep5x(real_items,
+                                  profile if profile is not None else angle,
+                                  direction, REP5X)
+        tilt_txt = (f"B={r5['b']:.0f}° 고정" if not r5["variable"] else
+                    f"B 레이어별 θ(Z′) {r5['b_abs_min']:.0f}~{r5['b_abs_max']:.0f}°")
+        print(f"  REP5X       : 헤드 틸트 {tilt_txt}, C 가 방위각 추종 "
               f"(펌웨어가 IK — X/Y/Z 는 노즐 팁) [실험적 — 축 부호 실기보정 필요]")
+        print(f"                축 통과 {r5['pole_flips']}회는 C 180° 대신 B 부호 반전, "
+              f"수직(θ=0) 구간 {r5['c_held_vertical']:,}이동은 C 고정")
         print(f"                C 누적 {r5['c_turns']:.1f}회전 "
               f"(펌웨어 소프트 엔드스톱 창 "
               f"{REP5X.c_min:.0f}~{REP5X.c_max:.0f}°)")
