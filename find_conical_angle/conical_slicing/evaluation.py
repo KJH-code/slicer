@@ -202,6 +202,35 @@ def weighted_mean(values: list[float], weights: list[float]) -> float:
     ) / total_weight
 
 
+def weighted_quantile(values: list[float], weights: list[float], p: float) -> float:
+    """[수정 2026-10-30] 면적 가중 분위수 — 누적 가중치가 p·전체 에 처음 닿는 값.
+
+    p=1 이면 최댓값(모든 면의 최소각을 만족 = 전부 통과), p=0.5 면 가중 중앙값.
+    원본의 면적 가중 평균(`weighted_mean`)은 평균보다 큰 최소각의 면을 전부
+    위반으로 남긴다(우리 모델에서 위반 면적 44~46 %, NOTES.md P1). 그 자리를
+    바꿔 끼우는 규칙이고, quantile=None 이면 원본 그대로 평균을 쓴다.
+    """
+    if not (0.0 <= p <= 1.0):
+        raise ValueError("quantile p 는 0~1 이어야 합니다.")
+    if len(values) != len(weights) or not values:
+        raise ValueError("weighted quantile 에는 같은 길이의 비어 있지 않은 입력이 필요합니다.")
+    order = sorted(range(len(values)), key=lambda i: values[i])
+    total = math.fsum(weights)
+    if total <= 0.0:
+        raise ValueError("weighted quantile 의 전체 가중치는 0보다 커야 합니다.")
+    target = p * total
+    cumulative = 0.0
+    for i in order:
+        cumulative += weights[i]
+        if cumulative >= target - 1e-12 * total:
+            return float(values[i])
+    return float(values[order[-1]])
+
+
+def _select_angle(values: list[float], weights: list[float], quantile: float | None) -> float:
+    return weighted_mean(values, weights) if quantile is None else weighted_quantile(values, weights, quantile)
+
+
 def weighted_median(angles: list[float], weights: list[float]) -> float:
     """Legacy helper retained for callers; model selection now uses weighted mean."""
 
@@ -256,6 +285,7 @@ def evaluate_component_direction(
     angle_min: float,
     angle_max: float,
     direction: str,
+    quantile: float | None = None,
 ) -> dict[str, Any]:
     """Solve each face minimum analytically and area-average the results."""
 
@@ -290,7 +320,7 @@ def evaluate_component_direction(
     ]
     areas = [float(face.area) for face in component.faces]
     minimum_angles = [float(item["angle"]) for item in solutions]
-    selected_angle = weighted_mean(minimum_angles, areas)
+    selected_angle = _select_angle(minimum_angles, areas, quantile)
     selected_loss = component_loss_at_angle(component, selected_angle, direction)
 
     radians = math.radians(selected_angle)
@@ -340,6 +370,7 @@ def evaluate_model(
     components: list[ComponentGeometry],
     angle_min: float,
     angle_max: float,
+    quantile: float | None = None,
 ) -> tuple[dict[int, dict[str, Any]], dict[str, dict[str, Any]], dict[str, Any]]:
     """Area-average analytical face minima, then choose the lower-loss direction."""
 
@@ -354,7 +385,7 @@ def evaluate_model(
     for direction in DIRECTION_SIGNS:
         for component in components:
             evaluations[component.component_id][direction] = evaluate_component_direction(
-                component, angle_min, angle_max, direction
+                component, angle_min, angle_max, direction, quantile
             )
 
         if not valid_components:
@@ -376,7 +407,7 @@ def evaluate_model(
             for item in valid_components
         ]
         weights = [float(item.area) for item in valid_components]
-        final_angle = weighted_mean(representative_angles, weights)
+        final_angle = _select_angle(representative_angles, weights, quantile)
         component_losses = [
             component_loss_at_angle(item, final_angle, direction)
             for item in valid_components

@@ -47,13 +47,14 @@ def _tilt(mesh, profile):
     return float((th * mesh.area_faces).sum() / mesh.area_faces.sum())
 
 
-def measure_model(spec, mesh, rules=("adaptive", "fixed"), toolpath=True):
+def measure_model(spec, mesh, rules=("adaptive", "fixed"), toolpath=True, quantile=None,
+                  bed_tolerance=None):
     bed = bed_contact_mask(mesh)
     row = {"faces": int(len(mesh.faces)),
            "planar": support_fraction_dirs(mesh, cone_dirs(mesh, 0.0), exclude=bed)}
     for rule in rules:
         t0 = time.time()
-        r = bridge.analyze(mesh, kappa_rule=rule)
+        r = bridge.analyze(mesh, kappa_rule=rule, quantile=quantile, bed_tolerance=bed_tolerance)
         u = r["uniform"]
         prof = r["profile"]
         if prof is None:                       # 블렌드 겹침 → 균일로 대체하고 사유를 남긴다

@@ -60,11 +60,21 @@ def _config(angle_min, angle_max, overrides):
 
 def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             threshold_deg=THRESHOLD_DEG, overrides=None, spacing_limit=MAX_SPACING_FACTOR,
-            max_shift=None):
-    """팀메 탐색을 메시에 돌리고 우리 프로필로 바꾼다. 모듈 docstring 참조."""
+            max_shift=None, quantile=None, bed_tolerance=None):
+    """팀메 탐색을 메시에 돌리고 우리 프로필로 바꾼다. 모듈 docstring 참조.
+
+    quantile: None 이면 원본(면적 가중 평균). 0~1 이면 면적 가중 분위수 —
+              1.0 = 모든 면의 최소각을 만족하는 각(전부 통과). [수정 ① 2026-10-30]
+    bed_tolerance: 팀메 바닥 판정 높이(세 꼭짓점이 전부 bed_z±tol). 원본 1e-6 은
+              구의 극점·거친 바닥면을 오버행으로 센다(램프 p=1 이 43.6° 로 가는 이유,
+              AnkleBase 20° inward). 우리 바닥 마스크(0.3mm)와 맞추려면 0.3.
+    """
     if kappa_rule not in KAPPA_RULES:
         raise ValueError(f"kappa_rule 은 {KAPPA_RULES} 중 하나")
-    cfg = _config(angle_min, angle_max, overrides)
+    ov = dict(overrides or {})
+    if bed_tolerance is not None:
+        ov["bed_tolerance"] = float(bed_tolerance)
+    cfg = _config(angle_min, angle_max, ov)
     prepared = prepare_mesh(mesh, cfg)
     comps = find_overhang_components(prepared, cfg)
     if kappa_rule == "fixed":
@@ -73,9 +83,9 @@ def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             if c.valid:
                 c.kappa = k
     evaluations, direction_results, selected = evaluate_model(
-        comps, cfg["angle_min"], cfg["angle_max"])
+        comps, cfg["angle_min"], cfg["angle_max"], quantile)
     plan = plan_slice_bands(prepared, comps, cfg["angle_min"], cfg["angle_max"],
-                            cfg["height_overlap_tolerance"])
+                            cfg["height_overlap_tolerance"], quantile)
 
     sign = 1.0 if selected["direction"] == "outward" else -1.0
     uniform = {"direction": selected["direction"], "angle": float(selected["angle"]),
@@ -109,7 +119,8 @@ def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             "bands": plan["bands"], "transitions": plan["transitions"],
             "band_intervals": band_list, "profile": profile, "profile_raw": profile_raw,
             "profile_error": profile_err,
-            "components": comp_rows, "kappa_rule": kappa_rule, "config": cfg,
+            "components": comp_rows, "kappa_rule": kappa_rule, "quantile": quantile,
+            "config": cfg,
             "prepared": prepared, "raw": {"components": comps, "plan": plan,
                                            "evaluations": evaluations}}
 

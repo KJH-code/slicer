@@ -53,3 +53,4 @@
 | 날짜 | 무엇 | 왜 | 어디 |
 |---|---|---|---|
 | 2026-10-30 | 사본 생성, 다리·예측·평가 추가 | 탐색 알고리즘을 팀메 것으로 바꾸고 우리 검증 도구로 잰다 | `bridge.py`, `NOTES.md`, `evaluate.py` |
+| 2026-10-30 | **원본 수정 ①** 선택 규칙에 `quantile` 옵션 (None=원본 평균, p=면적 가중 분위수) | 평균이 위반 면적 44~46 % 를 남긴다 (NOTES P1). 기본값 None 이라 원본 동작은 그대로 | `conical_slicing/evaluation.py` (`weighted_quantile`, `_select_angle`), `bands.py` 통과 인자 |
