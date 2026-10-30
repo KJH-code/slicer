@@ -231,6 +231,27 @@ def _select_angle(values: list[float], weights: list[float], quantile: float | N
     return weighted_mean(values, weights) if quantile is None else weighted_quantile(values, weights, quantile)
 
 
+def sweep_grid(angle_min: float, angle_max: float, step: float) -> list[float]:
+    """[수정 ② 2026-10-30] 각도 격자 (양 끝 포함). 손실 최소 전수용."""
+    if step <= 0.0:
+        raise ValueError("angle_step 은 0보다 커야 합니다.")
+    n = int(math.floor((angle_max - angle_min) / step + 1e-9))
+    grid = [angle_min + i * step for i in range(n + 1)]
+    if grid[-1] < angle_max - 1e-9:
+        grid.append(float(angle_max))
+    return grid
+
+
+def _argmin_loss(loss_at: Any, grid: list[float]) -> tuple[float, float]:
+    """격자에서 손실 최소각 (동률이면 작은 각)."""
+    best_angle, best_loss = grid[0], math.inf
+    for angle in grid:
+        value = float(loss_at(angle))
+        if value < best_loss - 1e-12:
+            best_angle, best_loss = angle, value
+    return best_angle, best_loss
+
+
 def weighted_median(angles: list[float], weights: list[float]) -> float:
     """Legacy helper retained for callers; model selection now uses weighted mean."""
 
@@ -286,8 +307,16 @@ def evaluate_component_direction(
     angle_max: float,
     direction: str,
     quantile: float | None = None,
+    method: str = "mean",
+    angle_step: float = 2.0,
 ) -> dict[str, Any]:
-    """Solve each face minimum analytically and area-average the results."""
+    """Solve each face minimum analytically and area-average the results.
+
+    [수정 ② 2026-10-30] method="sweep" 면 면 최소각의 통계량 대신 **면적 가중 손실
+    Σ A·max(0, κ−g) 를 격자(angle_step)에서 최소화하는 각**을 고른다. 평균(원본)·
+    분위수(수정 ①)는 '못 고치는 면' 하나의 대체각(=angle_max)에 끌려가지만 손실 최소는
+    그렇지 않다 (NOTES.md 수정 ① 결과 ②).
+    """
 
     if direction not in DIRECTION_SIGNS:
         raise ValueError(f"알 수 없는 원뿔 방향: {direction}")
@@ -320,8 +349,13 @@ def evaluate_component_direction(
     ]
     areas = [float(face.area) for face in component.faces]
     minimum_angles = [float(item["angle"]) for item in solutions]
-    selected_angle = _select_angle(minimum_angles, areas, quantile)
-    selected_loss = component_loss_at_angle(component, selected_angle, direction)
+    if method == "sweep":
+        selected_angle, selected_loss = _argmin_loss(
+            lambda a: component_loss_at_angle(component, a, direction),
+            sweep_grid(angle_min, angle_max, angle_step))
+    else:
+        selected_angle = _select_angle(minimum_angles, areas, quantile)
+        selected_loss = component_loss_at_angle(component, selected_angle, direction)
 
     radians = math.radians(selected_angle)
     cosine = math.cos(radians)
@@ -371,8 +405,17 @@ def evaluate_model(
     angle_min: float,
     angle_max: float,
     quantile: float | None = None,
+    method: str = "mean",
+    angle_step: float = 2.0,
+    outward_only: bool = False,
 ) -> tuple[dict[int, dict[str, Any]], dict[str, dict[str, Any]], dict[str, Any]]:
-    """Area-average analytical face minima, then choose the lower-loss direction."""
+    """Area-average analytical face minima, then choose the lower-loss direction.
+
+    [수정 ② 2026-10-30] outward_only=True 면 inward 를 평가하지 않는다 — inward 원뿔은
+    5축 두 방식 다 간섭 불안전(바깥 README 17)이고, 작은 성분이 inward 44° 를 골라
+    그 높이 전체를 망친 사례(teapot, NOTES.md)가 있다. method="sweep" 이면 모델 각도는
+    성분 각도의 평균이 아니라 **풀어 모은 손실** 의 격자 최소각이다.
+    """
 
     if angle_max < angle_min:
         raise ValueError("angle_max는 angle_min 이상이어야 합니다.")
@@ -382,10 +425,11 @@ def evaluate_model(
     valid_components = [component for component in components if component.valid]
 
     direction_results: dict[str, dict[str, Any]] = {}
-    for direction in DIRECTION_SIGNS:
+    directions = ("outward",) if outward_only else tuple(DIRECTION_SIGNS)
+    for direction in directions:
         for component in components:
             evaluations[component.component_id][direction] = evaluate_component_direction(
-                component, angle_min, angle_max, direction, quantile
+                component, angle_min, angle_max, direction, quantile, method, angle_step
             )
 
         if not valid_components:
@@ -407,7 +451,15 @@ def evaluate_model(
             for item in valid_components
         ]
         weights = [float(item.area) for item in valid_components]
-        final_angle = _select_angle(representative_angles, weights, quantile)
+        if method == "sweep":
+            total_w = math.fsum(weights)
+            final_angle, _ = _argmin_loss(
+                lambda a, _d=direction: math.fsum(
+                    item.area * component_loss_at_angle(item, a, _d)
+                    for item in valid_components) / total_w,
+                sweep_grid(angle_min, angle_max, angle_step))
+        else:
+            final_angle = _select_angle(representative_angles, weights, quantile)
         component_losses = [
             component_loss_at_angle(item, final_angle, direction)
             for item in valid_components
@@ -424,6 +476,15 @@ def evaluate_model(
             "model_loss": float(model_loss),
         }
 
+    if outward_only:
+        selected = direction_results["outward"]
+        return evaluations, direction_results, {
+            "status": selected["status"], "direction": "outward",
+            "angle": float(selected["final_angle"]),
+            "model_loss": float(selected["model_loss"]),
+            "selection_reason": "outward_only",
+            "selection_method": selected["selection_method"],
+        }
     inward = direction_results["inward"]
     outward = direction_results["outward"]
     losses_tied = math.isclose(

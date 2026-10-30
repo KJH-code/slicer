@@ -60,11 +60,14 @@ def _config(angle_min, angle_max, overrides):
 
 def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             threshold_deg=THRESHOLD_DEG, overrides=None, spacing_limit=MAX_SPACING_FACTOR,
-            max_shift=None, quantile=None, bed_tolerance=None):
+            max_shift=None, quantile=None, bed_tolerance=None, method="mean",
+            angle_step=2.0, outward_only=False):
     """팀메 탐색을 메시에 돌리고 우리 프로필로 바꾼다. 모듈 docstring 참조.
 
     quantile: None 이면 원본(면적 가중 평균). 0~1 이면 면적 가중 분위수 —
               1.0 = 모든 면의 최소각을 만족하는 각(전부 통과). [수정 ① 2026-10-30]
+    method: "mean"(원본) / "sweep"(손실 최소 전수, 수정 ②). quantile 은 mean 에만 적용.
+    outward_only: inward 평가를 건너뛴다 (수정 ②).
     bed_tolerance: 팀메 바닥 판정 높이(세 꼭짓점이 전부 bed_z±tol). 원본 1e-6 은
               구의 극점·거친 바닥면을 오버행으로 센다(램프 p=1 이 43.6° 로 가는 이유,
               AnkleBase 20° inward). 우리 바닥 마스크(0.3mm)와 맞추려면 0.3.
@@ -83,9 +86,10 @@ def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             if c.valid:
                 c.kappa = k
     evaluations, direction_results, selected = evaluate_model(
-        comps, cfg["angle_min"], cfg["angle_max"], quantile)
+        comps, cfg["angle_min"], cfg["angle_max"], quantile, method, angle_step, outward_only)
     plan = plan_slice_bands(prepared, comps, cfg["angle_min"], cfg["angle_max"],
-                            cfg["height_overlap_tolerance"], quantile)
+                            cfg["height_overlap_tolerance"], quantile, method, angle_step,
+                            outward_only)
 
     sign = 1.0 if selected["direction"] == "outward" else -1.0
     uniform = {"direction": selected["direction"], "angle": float(selected["angle"]),
@@ -120,7 +124,7 @@ def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             "band_intervals": band_list, "profile": profile, "profile_raw": profile_raw,
             "profile_error": profile_err,
             "components": comp_rows, "kappa_rule": kappa_rule, "quantile": quantile,
-            "config": cfg,
+            "method": method, "outward_only": outward_only, "config": cfg,
             "prepared": prepared, "raw": {"components": comps, "plan": plan,
                                            "evaluations": evaluations}}
 

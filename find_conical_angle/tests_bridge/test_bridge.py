@@ -81,3 +81,30 @@ def test_mean_of_minima_leaves_violations(sphere):
     c = r["components"][0]
     assert c["outward"]["allows_all"] is False
     assert c["outward"]["violating_area"] > 0.2 * c["area"]
+
+
+# ── 수정 ② ─────────────────────────────────────────────────
+def test_sweep_fixed_kappa_matches_our_uniform_min(sphere):
+    """R2: 손실 최소 전수(κ 45°)는 우리 자의 전수 최소와 같은 각을 골라야 한다.
+
+    팀메 손실은 Σ A·max(0, κ−g) 이고 우리 자는 Σ A·[g<κ] 라 **같은 양이 아니다** —
+    하지만 구처럼 매끈한 모델에서는 최소점이 같다(둘 다 0 이 되는 각 중 최소)."""
+    r = bridge.analyze(sphere, kappa_rule="fixed", method="sweep", outward_only=True)
+    ours = min((support_fraction_dirs(sphere, cone_dirs(sphere, a), exclude=None), a)
+               for a in range(0, 45, 2))
+    assert r["uniform"]["direction"] == "outward"
+    assert support_fraction_dirs(sphere, cone_dirs(sphere, r["uniform"]["angle"])) <= ours[0] + 1e-9
+
+
+def test_outward_only_never_returns_inward(sphere):
+    r = bridge.analyze(sphere, kappa_rule="adaptive", outward_only=True)
+    assert r["uniform"]["direction"] == "outward"
+    assert all("inward" not in c or c["inward"]["angle"] is None for c in r["components"])
+    assert all(b["direction"] == "outward" for b in r["bands"])
+
+
+def test_sweep_grid_includes_both_ends():
+    from conical_slicing.evaluation import sweep_grid
+    assert sweep_grid(0.0, 44.0, 2.0)[0] == 0.0
+    assert sweep_grid(0.0, 44.0, 2.0)[-1] == 44.0
+    assert sweep_grid(0.0, 45.0, 2.0)[-1] == 45.0

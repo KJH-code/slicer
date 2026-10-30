@@ -137,9 +137,13 @@ def _evaluate_group(
     angle_min: float,
     angle_max: float,
     quantile: float | None = None,
+    method: str = "mean",
+    angle_step: float = 2.0,
+    outward_only: bool = False,
 ) -> dict[str, Any]:
     components = [component_by_id[item] for item in component_ids]
-    _, _, selected = evaluate_model(components, angle_min, angle_max, quantile)
+    _, _, selected = evaluate_model(components, angle_min, angle_max, quantile,
+                                    method, angle_step, outward_only)
     direction = str(selected["direction"])
     angle = float(selected["angle"])
     h_min, h_max = transformed_height_interval(
@@ -168,6 +172,9 @@ def plan_slice_bands(
     angle_max: float,
     height_overlap_tolerance: float,
     quantile: float | None = None,
+    method: str = "mean",
+    angle_step: float = 2.0,
+    outward_only: bool = False,
 ) -> dict[str, Any]:
     """Build non-separable transformed-height bands by repeated BFS merging.
 
@@ -203,6 +210,9 @@ def plan_slice_bands(
             angle_min,
             angle_max,
             quantile,
+            method,
+            angle_step,
+            outward_only,
         )
         for group in groups
     ]
@@ -219,6 +229,9 @@ def plan_slice_bands(
                 angle_min,
                 angle_max,
                 quantile,
+                method,
+                angle_step,
+                outward_only,
             )
             for group in groups
         ]
