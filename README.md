@@ -362,6 +362,21 @@ python3 compare_dof_ladder.py --reanalyze dof_ladder_results.json --s4 s4_result
 26. **축대칭 모델에서는 일반 휴리스틱(S4)이 θ 하나보다 못하다** — 구 3.59% vs 0.00%.
     ⚠ 44° 는 5축 전용이고, 자의 cosθ 희석(독립 검증 A F2)은 실물로만 갈린다.
 
+### 팀메 원뿔각 탐색을 우리 검증 도구로 (2026-10-30) — `find_conical_angle/`
+
+팀메 저장소(26037-arch/find_conical_angle)의 탐색 알고리즘을 사본으로 담고(`ORIGIN.md`),
+다리(`bridge.py`)로 우리 `AngleProfile`·툴패스 검사기·해석식 자에 잇는다. 예측 → 측정 →
+수정을 네 번 돌린 기록이 `find_conical_angle/NOTES.md` 다. 요약: 팀메 뼈대(성분 → 변환높이
+구간 → 병합)는 좋고, 각도 규칙(면적가중 평균)은 절반을 남긴다 → 그 높이의 **모든 면**으로
+재선택(수정 ③) + 임계각 여유 10°(수정 ④) 로 우리 모델 5개 전부 툴패스 **0.00 %p**
+(우리 기존 최선 0.77), S³ 모델은 균일 최소와 동률.
+
+```
+python3 find_conical_angle/evaluate.py                      # 팀메 균일/밴드 vs 우리 칸
+python3 find_conical_angle/sweep_rules.py --set margin      # 수정 ③+④ 손잡이 비교
+PYTHONPATH=. python3 -m pytest find_conical_angle/tests_bridge -q
+```
+
 ### 층고가 판정을 바꾼다 (2026-09-26) — `analyze_layer_height.py`
 
 층고를 바꿀 때 **프로필은 다시 고르지 않는다.** 층간격 제약이 비율
