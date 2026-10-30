@@ -1,0 +1,26 @@
+{
+  "models_dir": "single_model",
+  "recursive": false,
+  "output_dir": "batch_results",
+  "run_name": null,
+  "repeats": 1,
+  "continue_on_error": true,
+  "save_detailed_json": true,
+  "base_config_file": "config.json",
+  "base_overrides": {},
+  "parameter_grid": {
+    "angle_min": [0.0],
+    "angle_max": [89.0],
+    "kappa_max": {
+      "start": 0.10,
+      "stop": 1.00,
+      "step": 0.1
+    },
+    "q0": {
+      "start": 0.1,
+      "stop": 3.00,
+      "step": 0.1
+    }
+  },
+  "parameter_sets": []
+}

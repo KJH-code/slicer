@@ -11,6 +11,16 @@
 
 target-version = "py311"
 
+# find_conical_angle/ 의 팀메 원본 파일은 검사하지 않는다 (ORIGIN.md — 원본과 같게 둔다).
+# 우리가 보탠 bridge.py·evaluate.py·tests_bridge/ 는 검사한다.
+exclude = [
+    "find_conical_angle/conical_slicing",
+    "find_conical_angle/tests",
+    "find_conical_angle/analyze_stl.py",
+    "find_conical_angle/batch_experiment.py",
+    "find_conical_angle/batch_experiment_with_excel.py",
+]
+
 [lint]
 select = [
     "E4",   # import 관련 (E402: 모듈 import 가 파일 맨 위에 없음)
@@ -27,3 +37,6 @@ select = [
 # (각 파일에 # noqa: E402 가 이미 달려 있지만, 규칙 자체를 꺼 두는 편이 읽기 쉽다.)
 "tests/*.py" = ["E402"]
 "tools/*.py" = ["E402"]
+# find_conical_angle/ 의 우리 파일은 팀메 패키지를 찾으려고 sys.path 를 먼저 만진다.
+"find_conical_angle/*.py" = ["E402"]
+"find_conical_angle/tests_bridge/*.py" = ["E402"]
