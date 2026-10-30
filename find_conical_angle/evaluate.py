@@ -56,6 +56,11 @@ def measure_model(spec, mesh, rules=("adaptive", "fixed"), toolpath=True):
         r = bridge.analyze(mesh, kappa_rule=rule)
         u = r["uniform"]
         prof = r["profile"]
+        if prof is None:                       # 블렌드 겹침 → 균일로 대체하고 사유를 남긴다
+            from conical.profile import AngleProfile
+            prof = AngleProfile.constant(u["signed"])
+            prof.notes = [f"프로필 실패 → 균일로 대체: {r['profile_error']}"]
+        raw = r["profile_raw"] if r["profile_raw"] is not None else prof
         entry = {
             "uniform": {"direction": u["direction"], "angle": u["angle"],
                         "support": support_fraction_dirs(
@@ -63,8 +68,9 @@ def measure_model(spec, mesh, rules=("adaptive", "fixed"), toolpath=True):
                         "mean_abs_theta": u["angle"]},
             "bands": {"intervals": r["band_intervals"],
                       "support": support_fraction_dirs(mesh, profile_dirs(mesh, prof), exclude=bed),
-                      "support_raw": support_fraction_dirs(mesh, profile_dirs(mesh, r["profile_raw"]),
+                      "support_raw": support_fraction_dirs(mesh, profile_dirs(mesh, raw),
                                                            exclude=bed),
+                      "profile_failed": r["profile"] is None,
                       "mean_abs_theta": _tilt(mesh, prof),
                       "blend_mm": float(sum(b - a for a, b in prof.blend_intervals())),
                       "notes": list(getattr(prof, "notes", []))},

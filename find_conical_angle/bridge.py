@@ -101,16 +101,27 @@ def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
     if max_shift is None:
         max_shift = BLEND_SHIFT_RATIO * (z1 - z0)
     band_list = bands_to_intervals(plan, z0, z1)
-    profile = AngleProfile.from_bands(band_list, r_max, radius_profile=rp,
-                                      spacing_limit=spacing_limit, max_shift=max_shift)
-    profile_raw = AngleProfile.from_bands(band_list, r_max)
+    profile, profile_err = _try_profile(band_list, r_max, radius_profile=rp,
+                                        spacing_limit=spacing_limit, max_shift=max_shift)
+    profile_raw, _ = _try_profile(band_list, r_max)
 
     return {"uniform": uniform, "direction_results": direction_results,
             "bands": plan["bands"], "transitions": plan["transitions"],
             "band_intervals": band_list, "profile": profile, "profile_raw": profile_raw,
+            "profile_error": profile_err,
             "components": comp_rows, "kappa_rule": kappa_rule, "config": cfg,
             "prepared": prepared, "raw": {"components": comps, "plan": plan,
                                            "evaluations": evaluations}}
+
+
+def _try_profile(band_list, r_max, **kw):
+    """from_bands 는 블렌드가 서로 겹치면 ValueError 를 낸다(밴드가 너무 좁다).
+    팀메 계획은 그 제약을 모르므로 실패가 정상이다 — None 과 사유를 돌려준다.
+    (armadillo 에서 처음 났다: 경계 5.01 에 폭 29.49mm 블렌드가 필요했다.)"""
+    try:
+        return AngleProfile.from_bands(band_list, r_max, **kw), None
+    except ValueError as exc:
+        return None, str(exc)
 
 
 def bands_to_intervals(plan, z_bottom, z_top):
@@ -155,8 +166,11 @@ def describe(res):
     for b in res["bands"]:
         lines.append(f"  밴드 {b['band_id']}: 성분 {b['component_ids']} "
                      f"{b['signed_angle']:+.1f}°  h=[{b['h_min']:.2f}, {b['h_max']:.2f}]")
-    lines.append("  프로필(층간격 제약):")
-    lines.append(res["profile"].describe())
-    for n in getattr(res["profile"], "notes", []):
-        lines.append(f"    ⚠ {n}")
+    if res["profile"] is None:
+        lines.append(f"  프로필 실패: {res['profile_error']}")
+    else:
+        lines.append("  프로필(층간격 제약):")
+        lines.append(res["profile"].describe())
+        for n in getattr(res["profile"], "notes", []):
+            lines.append(f"    ⚠ {n}")
     return "\n".join(lines)
