@@ -1,0 +1,58 @@
+{
+ "sphere": {
+  "support": 3.5922014458514893,
+  "support_rotation_target": 2.2279437835162357,
+  "planar_on_tet_surface": 13.809537268646665,
+  "valid": true,
+  "n_tets": 1944,
+  "n_surface_faces": 1280,
+  "mean_tilt_deg": 17.04283759039018,
+  "max_tilt_deg": 30.768900151864944,
+  "rotation_field_deg": {
+   "mean_abs": 17.226053030995214,
+   "max_abs": 26.84272820958967
+  },
+  "params": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 45,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "MAX_POS_ROTATION": 62.83185307179586,
+   "MAX_NEG_ROTATION": -62.83185307179586,
+   "ROT_ITERATIONS": 100,
+   "DEF_ITERATIONS": 1000,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "s4_rev": "bc4b8d90e57beccb8394078b0bda3d60101846a0",
+  "t_sec": 8.09829831123352
+ },
+ "lamp": {
+  "support": 0.4631610685584537,
+  "support_rotation_target": 0.0,
+  "planar_on_tet_surface": 7.9029882215892435,
+  "valid": true,
+  "n_tets": 28983,
+  "n_surface_faces": 12110,
+  "mean_tilt_deg": 13.80999129219108,
+  "max_tilt_deg": 34.6104884161773,
+  "rotation_field_deg": {
+   "mean_abs": 16.817182132794247,
+   "max_abs": 34.239279477580425
+  },
+  "params": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 45,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "MAX_POS_ROTATION": 62.83185307179586,
+   "MAX_NEG_ROTATION": -62.83185307179586,
+   "ROT_ITERATIONS": 100,
+   "DEF_ITERATIONS": 1000,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "s4_rev": "bc4b8d90e57beccb8394078b0bda3d60101846a0",
+  "t_sec": 767.4238357543945
+ }
+}
