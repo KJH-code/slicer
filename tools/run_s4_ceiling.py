@@ -78,11 +78,18 @@ def _load_s4_functions(nb):
     는 함수들이 전역으로 참조하므로 호출 쪽(`run_model`)이 같은 이름으로 채운다.
     """
     import ast
-    code_cells = [c for c in nb["cells"] if c["cell_type"] == "code"]
+    cells = nb["cells"]                       # 노트북 셀 번호 (마크다운 포함)
     g = {"__name__": "s4"}
     for idx in (2, 3, 4, 7):
-        src = "".join(code_cells[idx]["source"])
+        assert cells[idx]["cell_type"] == "code", idx
+        src = "".join(cells[idx]["source"])
         src = re.sub(r"^\s*[!%].*$", "", src, flags=re.M)          # !pip, %magic
+        # numpy ≥ 2.0 은 2차원 벡터의 cross 를 거부한다 (노트북은 numpy 1.x 시절).
+        # 접선축 = ẑ × (x, y, 0) 로 z 를 0 으로 채워 같은 값을 만든다.
+        src = src.replace(
+            'np.cross( np.array([0, 0, 1]), tet.cell_data["cell_center"][:, :2])',
+            'np.cross(np.array([0, 0, 1]), np.column_stack([tet.cell_data["cell_center"][:, :2], '
+            'np.zeros(tet.number_of_cells)]))')
         tree = ast.parse(src)
         keep = [n for n in tree.body
                 if isinstance(n, (ast.FunctionDef, ast.Import, ast.ImportFrom))
