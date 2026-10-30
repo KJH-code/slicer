@@ -53,5 +53,7 @@
 | 날짜 | 무엇 | 왜 | 어디 |
 |---|---|---|---|
 | 2026-10-30 | 사본 생성, 다리·예측·평가 추가 | 탐색 알고리즘을 팀메 것으로 바꾸고 우리 검증 도구로 잰다 | `bridge.py`, `NOTES.md`, `evaluate.py` |
+| 2026-10-30 | 다리 쪽 **수정 ③** `reselect="all"`, `tol_pct` — 팀메 경계는 두고 밴드 각도를 그 높이의 모든 면으로 우리 자에서 재선택 | 팀메 손실은 성분 면만 세어 부수피해를 모른다 (teapot 8.94 %, AnkleBase 22 %) | `bridge.py` `reselect_all_faces` (팀메 코드 무수정) |
+| 2026-10-30 | 다리 쪽 **수정 ④** 재선택 임계각 여유 (`threshold_deg` 45/40/35) | 해석식 경계각에 붙인 선택이 툴패스에서 깨진다 (funnel 26° → 16.9 %p) | `sweep_rules.py --set margin` |
 | 2026-10-30 | **원본 수정 ②** `method="sweep"`(격자 손실 최소) + `outward_only` | 분위수가 못 고치는 면의 대체각(44°)에 끌려가고, 작은 성분의 inward 44° 밴드가 teapot 몸통을 망쳤다 (NOTES 수정 ① 결과). 기본값은 원본 그대로 | `evaluation.py` (`sweep_grid`, `_argmin_loss`), `bands.py`·`bridge.py` 통과 |
 | 2026-10-30 | **원본 수정 ①** 선택 규칙에 `quantile` 옵션 (None=원본 평균, p=면적 가중 분위수) | 평균이 위반 면적 44~46 % 를 남긴다 (NOTES P1). 기본값 None 이라 원본 동작은 그대로 | `conical_slicing/evaluation.py` (`weighted_quantile`, `_select_angle`), `bands.py` 통과 인자 |

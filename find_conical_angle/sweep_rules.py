@@ -30,6 +30,11 @@ RULE_SETS = {
         "sweep": {"method": "sweep"},                           # 수정 ②
         "sweep_out": {"method": "sweep", "outward_only": True},  # 수정 ②
     },
+    "margin": {                                                 # 수정 ④
+        "all_m0": {"outward_only": True, "reselect": "all", "threshold_deg": 45.0},
+        "all_m5": {"outward_only": True, "reselect": "all", "threshold_deg": 40.0},
+        "all_m10": {"outward_only": True, "reselect": "all", "threshold_deg": 35.0},
+    },
     "reselect": {                                               # 수정 ③
         "mean": {},
         "all_t0": {"outward_only": True, "reselect": "all", "tol_pct": 0.0},
