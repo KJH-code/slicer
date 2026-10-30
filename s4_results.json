@@ -82,5 +82,89 @@
   },
   "s4_rev": "bc4b8d90e57beccb8394078b0bda3d60101846a0",
   "t_sec": 878.1595396995544
+ },
+ "waist:7": {
+  "support": 0.6707300163955516,
+  "support_rotation_target": 0.0,
+  "planar_on_tet_surface": 6.441911762621066,
+  "valid": true,
+  "n_tets": 31844,
+  "n_surface_faces": 13090,
+  "mean_tilt_deg": 15.852798641266094,
+  "max_tilt_deg": 34.7515189671905,
+  "rotation_field_deg": {
+   "mean_abs": 18.530535219165685,
+   "max_abs": 33.74073478772923
+  },
+  "params": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 45,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "MAX_POS_ROTATION": 62.83185307179586,
+   "MAX_NEG_ROTATION": -62.83185307179586,
+   "ROT_ITERATIONS": 100,
+   "DEF_ITERATIONS": 1000,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "s4_rev": "bc4b8d90e57beccb8394078b0bda3d60101846a0",
+  "t_sec": 336.63864278793335
+ },
+ "funnel": {
+  "support": 17.62225432710626,
+  "support_rotation_target": 0.0,
+  "planar_on_tet_surface": 51.51087852645214,
+  "valid": true,
+  "n_tets": 53,
+  "n_surface_faces": 72,
+  "mean_tilt_deg": 33.93454374934767,
+  "max_tilt_deg": 106.7085479034901,
+  "rotation_field_deg": {
+   "mean_abs": 29.361005992426595,
+   "max_abs": 30.451122545236863
+  },
+  "params": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 45,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "MAX_POS_ROTATION": 62.83185307179586,
+   "MAX_NEG_ROTATION": -62.83185307179586,
+   "ROT_ITERATIONS": 100,
+   "DEF_ITERATIONS": 1000,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "s4_rev": "bc4b8d90e57beccb8394078b0bda3d60101846a0",
+  "t_sec": 1.2137374877929688
+ },
+ "ring": {
+  "support": 6.273516331055584,
+  "support_rotation_target": 4.192394145248679,
+  "planar_on_tet_surface": 10.555062145613286,
+  "valid": true,
+  "n_tets": 40303,
+  "n_surface_faces": 6932,
+  "mean_tilt_deg": 9.649551473879935,
+  "max_tilt_deg": 24.27045210737841,
+  "rotation_field_deg": {
+   "mean_abs": 12.098859713833534,
+   "max_abs": 33.673293733712555
+  },
+  "params": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 45,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "MAX_POS_ROTATION": 62.83185307179586,
+   "MAX_NEG_ROTATION": -62.83185307179586,
+   "ROT_ITERATIONS": 100,
+   "DEF_ITERATIONS": 1000,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "s4_rev": "bc4b8d90e57beccb8394078b0bda3d60101846a0",
+  "t_sec": 1037.444001197815
  }
 }

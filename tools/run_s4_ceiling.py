@@ -203,7 +203,7 @@ def run_model(g, spec, mesh, params):
                                "max_abs": float(np.degrees(np.abs(rot)).max())},
         "params": {k: (float(v) if isinstance(v, (float, np.floating)) else v)
                    for k, v in params.items()},
-        "s4_rev": S4_REV, "t_sec": time.time() - t0,
+        "s4_rev": S4_REV, "t_sec": time.time() - t0, "input_faces": int(len(mesh.faces)),
     }
 
 
@@ -213,6 +213,9 @@ def main():
     ap.add_argument("-o", "--out", default="s4_results.json")
     ap.add_argument("--cache", default=os.path.join(os.path.dirname(__file__), "..", ".s4cache"))
     ap.add_argument("--max-overhang", type=float, default=S4_PARAMS["MAX_OVERHANG"])
+    ap.add_argument("--min-faces", type=int, default=2000,
+                    help="면이 이보다 적으면 4분할 세분화를 반복한다. funnel(64면)은 사면체 53개가 "
+                         "되어 변형이 무의미했다(최대 기울기 107°) — 해상도 하한")
     a = ap.parse_args()
 
     from compare_dof_ladder import build_model
@@ -221,6 +224,10 @@ def main():
     out = json.load(open(a.out)) if os.path.exists(a.out) else {}
     for spec in a.models:
         mesh = build_model(spec, None)
+        n_sub = 0
+        while len(mesh.faces) < a.min_faces:
+            mesh = mesh.subdivide()
+            n_sub += 1
         buf = io.StringIO()
         old = sys.stdout
         sys.stdout = buf                         # least_squares verbose=2 를 삼킨다
@@ -228,6 +235,7 @@ def main():
             row = run_model(g, spec, mesh, params)
         finally:
             sys.stdout = old
+        row["subdivisions"] = n_sub
         out[spec] = row
         json.dump(out, open(a.out, "w"), indent=1)
         print(f"[{spec}] S4 support {row['support']:.2f}% (회전 목표만 {row['support_rotation_target']:.2f}%, "
