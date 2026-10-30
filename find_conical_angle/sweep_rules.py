@@ -22,22 +22,32 @@ for p in (_ROOT, _HERE):
 from compare_dof_ladder import OUR_MODELS, S3_MODELS, build_model
 from find_conical_angle.evaluate import measure_model
 
-RULES = {
-    "mean": {},                                             # 원본
-    "mean_out": {"outward_only": True},
-    "p0.9": {"quantile": 0.9},                              # 수정 ①
-    "sweep": {"method": "sweep"},                           # 수정 ②
-    "sweep_out": {"method": "sweep", "outward_only": True},  # 수정 ② (제안 기본값)
+RULE_SETS = {
+    "rules": {
+        "mean": {},                                             # 원본
+        "mean_out": {"outward_only": True},
+        "p0.9": {"quantile": 0.9},                              # 수정 ①
+        "sweep": {"method": "sweep"},                           # 수정 ②
+        "sweep_out": {"method": "sweep", "outward_only": True},  # 수정 ②
+    },
+    "reselect": {                                               # 수정 ③
+        "mean": {},
+        "all_t0": {"outward_only": True, "reselect": "all", "tol_pct": 0.0},
+        "all_t0.5": {"outward_only": True, "reselect": "all", "tol_pct": 0.5},
+        "all_t1": {"outward_only": True, "reselect": "all", "tol_pct": 1.0},
+    },
 }
+RULES = RULE_SETS["rules"]
 
 
-def measure(models, s3_dir, toolpath, bed_tolerance=None):
-    out = {"meta": {"rules": list(RULES), "bed_tolerance": bed_tolerance}, "models": {}}
+def measure(models, s3_dir, toolpath, bed_tolerance=None, rules=None):
+    rules = rules or RULES
+    out = {"meta": {"rules": list(rules), "bed_tolerance": bed_tolerance}, "models": {}}
     for spec in models:
         mesh = build_model(spec, s3_dir)
         row = {}
         t0 = time.time()
-        for name, kw in RULES.items():
+        for name, kw in rules.items():
             row[name] = measure_model(spec, mesh, toolpath=toolpath,
                                       bed_tolerance=bed_tolerance, **kw)
         row["t_sec"] = time.time() - t0
@@ -47,7 +57,7 @@ def measure(models, s3_dir, toolpath, bed_tolerance=None):
             f"{row[name]['adaptive']['uniform']['angle']:.0f}°→{row[name]['adaptive']['bands']['support']:.2f}"
             + (f"/tp {row[name]['adaptive']['bands']['toolpath_overhang']:.2f}"
                if "toolpath_overhang" in row[name]["adaptive"]["bands"] else "")
-            for name in RULES), flush=True)
+            for name in rules), flush=True)
     return out
 
 
@@ -87,6 +97,8 @@ def main():
     ap.add_argument("--s3-dir", default=None)
     ap.add_argument("--no-toolpath", action="store_true")
     ap.add_argument("--bed-tol", type=float, default=None)
+    ap.add_argument("--set", default="rules", choices=list(RULE_SETS),
+                    help="규칙 묶음: rules(수정 ①②) / reselect(수정 ③)")
     ap.add_argument("--out", default=os.path.join(_HERE, "rules_results.json"))
     ap.add_argument("--reanalyze", default=None)
     a = ap.parse_args()
@@ -94,7 +106,8 @@ def main():
         report(json.load(open(a.reanalyze)))
         return
     models = a.models or (OUR_MODELS + (S3_MODELS if a.s3_dir else []))
-    res = measure(models, a.s3_dir, toolpath=not a.no_toolpath, bed_tolerance=a.bed_tol)
+    res = measure(models, a.s3_dir, toolpath=not a.no_toolpath, bed_tolerance=a.bed_tol,
+                  rules=RULE_SETS[a.set])
     json.dump(res, open(a.out, "w"), indent=1, default=float)
     print(f"→ {a.out}")
     report(res)

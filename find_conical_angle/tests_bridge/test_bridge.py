@@ -108,3 +108,25 @@ def test_sweep_grid_includes_both_ends():
     assert sweep_grid(0.0, 44.0, 2.0)[0] == 0.0
     assert sweep_grid(0.0, 44.0, 2.0)[-1] == 44.0
     assert sweep_grid(0.0, 45.0, 2.0)[-1] == 45.0
+
+
+# ── 수정 ③ ─────────────────────────────────────────────────
+def test_reselect_all_single_band_equals_our_uniform_min(sphere):
+    """경계가 하나뿐이면 재선택은 우리 자의 전수 최소(바닥 제외)와 정확히 같아야 한다."""
+    from conical.s3io import bed_contact_mask
+    r = bridge.analyze(sphere, kappa_rule="adaptive", outward_only=True, reselect="all")
+    assert len(r["band_intervals"]) == 1
+    bed = bed_contact_mask(sphere)
+    sup = {a: support_fraction_dirs(sphere, cone_dirs(sphere, a), exclude=bed)
+           for a in range(0, 45, 2)}
+    best = min(sup.values())
+    expect = min(a for a in sup if sup[a] <= best + 1e-12)
+    assert abs(r["band_intervals"][0][2] - expect) < 1e-9
+    assert abs(r["reselect_info"][0]["support_at"] - best) < 1e-9
+
+
+def test_reselect_tolerance_picks_smaller_angle(sphere):
+    r0 = bridge.analyze(sphere, outward_only=True, reselect="all", tol_pct=0.0)
+    r5 = bridge.analyze(sphere, outward_only=True, reselect="all", tol_pct=5.0)
+    assert r5["band_intervals"][0][2] <= r0["band_intervals"][0][2]
+    assert r5["reselect_info"][0]["support_at"] <= r5["reselect_info"][0]["support_min"] + 5.0 + 1e-9

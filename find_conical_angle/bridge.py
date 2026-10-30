@@ -61,13 +61,18 @@ def _config(angle_min, angle_max, overrides):
 def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             threshold_deg=THRESHOLD_DEG, overrides=None, spacing_limit=MAX_SPACING_FACTOR,
             max_shift=None, quantile=None, bed_tolerance=None, method="mean",
-            angle_step=2.0, outward_only=False):
+            angle_step=2.0, outward_only=False, reselect=None, tol_pct=0.0):
     """팀메 탐색을 메시에 돌리고 우리 프로필로 바꾼다. 모듈 docstring 참조.
 
     quantile: None 이면 원본(면적 가중 평균). 0~1 이면 면적 가중 분위수 —
               1.0 = 모든 면의 최소각을 만족하는 각(전부 통과). [수정 ① 2026-10-30]
     method: "mean"(원본) / "sweep"(손실 최소 전수, 수정 ②). quantile 은 mean 에만 적용.
     outward_only: inward 평가를 건너뛴다 (수정 ②).
+    reselect: None(팀메 각도 그대로) / "all"(수정 ③: 팀메 **경계**는 두고 밴드 각도를
+              그 높이의 **모든 면**(바닥 제외)으로 우리 자에서 격자 전수해 다시 고른다.
+              팀메 손실은 성분 면만 세어 부수피해를 모른다 — NOTES.md 수정 ② 결과).
+    tol_pct:  reselect="all" 에서 밴드 서포트 최소값 + tol 안에 드는 가장 작은 각을 고른다
+              (기울기 허용폭, ε-제약의 밴드판). 0 이면 순수 최소.
     bed_tolerance: 팀메 바닥 판정 높이(세 꼭짓점이 전부 bed_z±tol). 원본 1e-6 은
               구의 극점·거친 바닥면을 오버행으로 센다(램프 p=1 이 43.6° 로 가는 이유,
               AnkleBase 20° inward). 우리 바닥 마스크(0.3mm)와 맞추려면 0.3.
@@ -115,6 +120,10 @@ def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
     if max_shift is None:
         max_shift = BLEND_SHIFT_RATIO * (z1 - z0)
     band_list = bands_to_intervals(plan, z0, z1)
+    reselect_info = None
+    if reselect == "all":
+        band_list, reselect_info = reselect_all_faces(mesh, band_list, angle_max, angle_step,
+                                                      threshold_deg, tol_pct)
     profile, profile_err = _try_profile(band_list, r_max, radius_profile=rp,
                                         spacing_limit=spacing_limit, max_shift=max_shift)
     profile_raw, _ = _try_profile(band_list, r_max)
@@ -124,9 +133,48 @@ def analyze(mesh, kappa_rule="adaptive", angle_min=0.0, angle_max=MAX_ANGLE_DEG,
             "band_intervals": band_list, "profile": profile, "profile_raw": profile_raw,
             "profile_error": profile_err,
             "components": comp_rows, "kappa_rule": kappa_rule, "quantile": quantile,
-            "method": method, "outward_only": outward_only, "config": cfg,
+            "method": method, "outward_only": outward_only, "reselect": reselect,
+            "tol_pct": tol_pct, "reselect_info": reselect_info, "config": cfg,
             "prepared": prepared, "raw": {"components": comps, "plan": plan,
                                            "evaluations": evaluations}}
+
+
+def reselect_all_faces(mesh, band_list, angle_max, angle_step, threshold_deg, tol_pct=0.0):
+    """[수정 ③] 밴드 경계는 그대로, 각도는 그 z 구간의 **모든 면**으로 다시 고른다.
+
+    각 밴드 [z_lo, z_hi) 에 중심이 있는 면(바닥 접촉 면 제외)에 대해 outward 0~angle_max
+    를 angle_step 격자로 훑어 남은 서포트 면적을 세고, 최소값 + tol_pct(그 밴드 면적
+    기준 %p) 안에 드는 가장 작은 각을 고른다. 각도가 같은 이웃 밴드는 합친다.
+    자는 `conical.s3io.support_fraction_dirs` 와 같다 (g = n̂·b̂ < −sin(threshold)).
+    """
+    from conical.s3io import bed_contact_mask, cone_dirs
+    cz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
+    bed = bed_contact_mask(mesh)
+    areas = mesh.area_faces
+    kappa = -math.sin(math.radians(threshold_deg))
+    grid = [i * angle_step for i in range(int(math.floor(angle_max / angle_step + 1e-9)) + 1)]
+    if grid[-1] < angle_max - 1e-9:
+        grid.append(float(angle_max))
+    gs = {a: np.einsum("ij,ij->i", mesh.face_normals, cone_dirs(mesh, a)) for a in grid}
+    out, info = [], []
+    for i, (lo, hi, old) in enumerate(band_list):
+        inb = (cz >= lo) & ((cz < hi) if i < len(band_list) - 1 else (cz <= hi)) & ~bed
+        tot = float(areas[inb].sum())
+        if tot <= 0:
+            th = out[-1][2] if out else 0.0
+            info.append({"band": i, "faces": 0, "theta": th, "note": "면 없음 → 이웃 각"})
+        else:
+            sup = {a: float(areas[inb & (gs[a] < kappa)].sum() / tot * 100.0) for a in grid}
+            best = min(sup.values())
+            th = min(a for a in grid if sup[a] <= best + tol_pct + 1e-12)
+            info.append({"band": i, "faces": int(inb.sum()), "theta_teammate": float(old),
+                         "theta": float(th), "support_min": best, "support_at": sup[th],
+                         "support_teammate": sup.get(min(grid, key=lambda a: abs(a - abs(old))))})
+        if out and abs(out[-1][2] - th) < 1e-12:
+            out[-1] = (out[-1][0], hi, th)
+        else:
+            out.append((lo, hi, float(th)))
+    return out, info
 
 
 def _try_profile(band_list, r_max, **kw):
