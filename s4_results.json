@@ -112,17 +112,17 @@
   "t_sec": 336.63864278793335
  },
  "funnel": {
-  "support": 17.62225432710626,
+  "support": 0.35721703704147983,
   "support_rotation_target": 0.0,
-  "planar_on_tet_surface": 51.51087852645214,
+  "planar_on_tet_surface": 51.513846991418134,
   "valid": true,
-  "n_tets": 53,
-  "n_surface_faces": 72,
-  "mean_tilt_deg": 33.93454374934767,
-  "max_tilt_deg": 106.7085479034901,
+  "n_tets": 21216,
+  "n_surface_faces": 10352,
+  "mean_tilt_deg": 32.50148741783971,
+  "max_tilt_deg": 50.53958128765451,
   "rotation_field_deg": {
-   "mean_abs": 29.361005992426595,
-   "max_abs": 30.451122545236863
+   "mean_abs": 36.47930039376714,
+   "max_abs": 36.85444843300453
   },
   "params": {
    "NEIGHBOUR_LOSS_WEIGHT": 20,
@@ -137,7 +137,9 @@
    "STEEP_OVERHANG_COMPENSATION": true
   },
   "s4_rev": "bc4b8d90e57beccb8394078b0bda3d60101846a0",
-  "t_sec": 1.2137374877929688
+  "t_sec": 162.6917097568512,
+  "input_faces": 4096,
+  "subdivisions": 3
  },
  "ring": {
   "support": 6.273516331055584,
