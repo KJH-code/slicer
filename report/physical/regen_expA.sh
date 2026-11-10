@@ -8,6 +8,9 @@
 set -euo pipefail
 PROFILE=${1:?기계 프로파일 INI 경로를 주세요}
 MODE=${2:-rep5x}
+# 되감기 피드(F, 회전만 하는 이동). 기본 1200 = 20 deg/s 로 해석되면 1 회전 18 초.
+# 기계에서 빠르게 돌려 보고 안전한 값을 확인한 뒤에만 올린다. **두 전략에 같은 값.**
+REWIND_FEED=${REWIND_FEED:-1200}
 cd "$(dirname "$0")/../.."
 export PYTHONPATH=. MPLBACKEND=Agg
 if grep -q "TEMPLATE" "$PROFILE"; then
@@ -20,10 +23,10 @@ for LH in 0.3 0.4; do
   T=${LH/./}
   SUF=""; [ "$MODE" = rep5x ] && SUF="_rep5x"
   python3 conical_slice.py examples/lamp.stl --angle 24 --direction outward \
-    --layer-height "$LH" --mode "$MODE" --machine-profile "$PROFILE" \
+    --layer-height "$LH" --mode "$MODE" --machine-profile "$PROFILE" --v-rewind-feed "$REWIND_FEED" \
     -o "$OUT/lamp_expA_uniform24_lh${T}${SUF}.gcode"
   python3 conical_slice.py examples/lamp.stl --auto-bands 2 \
-    --layer-height "$LH" --mode "$MODE" --machine-profile "$PROFILE" \
+    --layer-height "$LH" --mode "$MODE" --machine-profile "$PROFILE" --v-rewind-feed "$REWIND_FEED" \
     -o "$OUT/lamp_expA_band2_lh${T}${SUF}.gcode"
 done
 if [ "$MODE" = rep5x ]; then
