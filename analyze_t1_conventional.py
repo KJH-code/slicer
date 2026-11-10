@@ -84,6 +84,25 @@ def slim(m):
     return {k: m[k] for k in ("mm", "mm_pes", "pct", "angle", "near_mm", "perimeter_mm")}
 
 
+CACHE_DIR = "t1_cache"
+
+
+def run_model_cached(task):
+    """작업 하나의 결과를 `t1_cache/` 에 남긴다 — 긴 실행이 끊겨도 이어서 돈다."""
+    import os
+    idx, lh = task
+    path = os.path.join(CACHE_DIR, f"{idx}_{lh:g}.json")
+    if os.path.exists(path):
+        with open(path) as fh:
+            return json.load(fh)
+    row = run_model(task)
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    with open(path + ".tmp", "w") as fh:
+        json.dump(row, fh, ensure_ascii=False)
+    os.replace(path + ".tmp", path)
+    return row
+
+
 def run_model(task):
     idx, lh = task
     t0 = time.perf_counter()
@@ -281,7 +300,7 @@ def main():
     t0 = time.perf_counter()
     rows = []
     with Pool(args.jobs) as pool:
-        for r in pool.imap_unordered(run_model, tasks):
+        for r in pool.imap_unordered(run_model_cached, tasks):
             rows.append(r)
             print(f"  끝: {r['model']} 층고 {r['layer_height']:g} "
                   f"({r['seconds']:.0f}s, 후보 {len(r['uniform'])})", flush=True)
