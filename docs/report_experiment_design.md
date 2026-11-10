@@ -122,8 +122,9 @@ python3 report_figures.py          # 표·그림 → report/
 
 **절차**
 ```
-python3 analyze_layer_height.py
+python3 analyze_layer_height.py --json report/exp2_layer_height.json
 python3 analyze_checker_assumptions.py      # 지지 창 1.2~1.8 스윕 포함
+python3 report_figures.py                   # → report/fig3_layer_height.png
 ```
 
 **결과 그림 (보고서 그림 2):** 가로 층고, 세로 Δ, 선 두 개(낙관/비관), 모델별 한 칸.
@@ -218,7 +219,7 @@ python3 analyze_checker_assumptions.py      # 지지 창 1.2~1.8 스윕 포함
 
 | 위협 | 어떻게 다뤘나 |
 |---|---|
-| 약한 기준선(평면)과 비교 | 같은 왜곡량(⟨|θ|⟩)을 쓴 균일 원뿔을 기준으로 한다. 오버행만 보면 큰 각이 항상 이기므로 "최선 균일각"은 기준선이 될 수 없다 |
+| 약한 기준선(평면)과 비교 | 같은 왜곡량(⟨\|θ\|⟩)을 쓴 균일 원뿔을 기준으로 한다. 오버행만 보면 큰 각이 항상 이기므로 "최선 균일각"은 기준선이 될 수 없다 |
 | 검사기와 계획기가 가정을 공유 | 실험 2 에서 지지 모델·지지 창을 끊어 봤다. 끊으면 결론이 바뀐다는 사실을 그대로 보고 |
 | 튜닝 표본으로 평가 | 실험 3 보류 모델 |
 | 사후 판정 기준 | 모든 판정 기준·tie 값·시드를 **결과 전에** 이 문서에 고정 (커밋 시각이 증거) |

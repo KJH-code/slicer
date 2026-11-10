@@ -1,0 +1,9 @@
+print_order,block,code,layer_height_mm,strategy,gcode_rep5x,gcode_3axis
+1,1,R,0.4,uniform24,examples/lamp_expA_uniform24_lh04_rep5x.gcode,examples/lamp_expA_uniform24_lh04.gcode
+2,1,T,0.4,band2,examples/lamp_expA_band2_lh04_rep5x.gcode,examples/lamp_expA_band2_lh04.gcode
+3,1,Z,0.3,uniform24,examples/lamp_expA_uniform24_lh03_rep5x.gcode,examples/lamp_expA_uniform24_lh03.gcode
+4,1,H,0.3,band2,examples/lamp_expA_band2_lh03_rep5x.gcode,examples/lamp_expA_band2_lh03.gcode
+5,2,P,0.3,band2,examples/lamp_expA_band2_lh03_rep5x.gcode,examples/lamp_expA_band2_lh03.gcode
+6,2,W,0.3,uniform24,examples/lamp_expA_uniform24_lh03_rep5x.gcode,examples/lamp_expA_uniform24_lh03.gcode
+7,2,K,0.4,uniform24,examples/lamp_expA_uniform24_lh04_rep5x.gcode,examples/lamp_expA_uniform24_lh04.gcode
+8,2,M,0.4,band2,examples/lamp_expA_band2_lh04_rep5x.gcode,examples/lamp_expA_band2_lh04.gcode
