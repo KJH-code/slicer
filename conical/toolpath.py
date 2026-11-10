@@ -427,13 +427,112 @@ def support_breakdown(pts, move_id, kinds, layer, supported, weight,
 @dataclass
 class HotendProfile:
     """노즐/히트블록 기하. ⚠ 기본값은 Ender 3 V2 계열 '추정치' —
-    실측 전 추정값이며 반드시 캘리퍼스로 잴 것."""
+    실측 전 추정값이며 반드시 캘리퍼스로 잴 것.
+
+    2026-11-10 에 붙인 필드(`body_*`, `rims`, `name`)는 **기본값이면 예전 모델과
+    정확히 같다** — 예전 수치를 재현해야 하면 `HotendProfile()` 을 그대로 쓴다.
+    REP5X 실기용 모델은 아래 `REP5X_V3SE_HOTEND` 다.
+    """
     tip_radius: float = 0.6        # 노즐 팁 평면 반경 (mm)
     cone_half_deg: float = 30.0    # 노즐 원뿔 반각 (도)
     cone_height: float = 3.0       # 원뿔 구간 높이 (mm)
     block_radius: float = 12.0     # 히트블록 유효 반경 (mm)
     block_z0: float = 5.0          # 히트블록 시작 높이 (팁 기준, mm)
     block_height: float = 12.0     # 히트블록 높이 (mm)
+    # 노즐 몸통 원통 (원뿔과 히트블록 사이). 반경 0 = 없음 → 예전 모델
+    body_radius: float = 0.0
+    body_z0: float = 0.0           # 몸통 시작 높이 (팁 기준, mm)
+    body_z1: float = 0.0           # 몸통 끝 높이
+    # 베드 간섭 검사(`rep5x.bed_gap`)용 '테두리' 목록:
+    #   (팁에서 공구축 방향 높이 a, B>0 일 때 내려가는 쪽 뻗음, 반대쪽 뻗음)  [mm]
+    # 비면 위 축대칭 치수에서 만든다 (`bed_rims`).
+    rims: tuple = ()
+    name: str = "Ender 3 V2 계열 추정 (실측 전)"
+
+    def top(self):
+        """모델이 덮는 가장 높은 곳 (팁 기준, mm)."""
+        return max(self.block_z0 + self.block_height, self.body_z1,
+                   self.cone_height)
+
+    def bed_rims(self):
+        """베드에 가장 먼저 닿을 수 있는 테두리들 `(a, ρ₊, ρ₋)`.
+
+        공구를 B 만큼 기울이면 높이 a·반경 ρ 인 테두리의 최저점은 팁 기준
+        `a·cosB − ρ·sinB` 다 (|B| ≤ 90°). 원통·박스는 **아래 테두리**만, 위로
+        벌어지는 원뿔은 양 끝 테두리를 보면 충분하다.
+        """
+        if self.rims:
+            return tuple(self.rims)
+        tan_half = math.tan(math.radians(self.cone_half_deg))
+        out = [(0.0, self.tip_radius, self.tip_radius)]
+        r_top = self.tip_radius + self.cone_height * tan_half
+        out.append((self.cone_height, r_top, r_top))
+        if self.body_radius > 0.0:
+            out.append((self.body_z0, self.body_radius, self.body_radius))
+        out.append((self.block_z0, self.block_radius, self.block_radius))
+        return tuple(out)
+
+
+# REP5X 공식 G-code Viewer 의 충돌 모델 (Ender-3 V3 SE 헤드).
+# 출처: `dennisklappe/Rep5x` `tools/gcode-viewer/js/printheads/ender3-v3-se.js:14-29`
+#       + 같은 뷰어의 `collision-detector.js` (`checkBuildPlateCollision`).
+#   · 노즐   : 반경 4.5 원통, 공구축 높이 2~8
+#   · 히트블록: 24×20×24 박스 = 옆 ±12(+2 편심 → −10~+14) × 높이 8~28 × 옆 ±12
+#   · 히터 케이블: 반경 3 원통이 옆 −20~−10, 높이 18±3 (바깥 끝만 본다)
+#   · 팁 원뿔: 뷰어에 **시각용**으로만 있다(반경 1, 높이 2). 팁 평면 반경은 0 이다
+# 편심(+2)과 케이블이 틸트 방향(뷰어 x)으로 나 있어서 `rims` 가 비대칭이다:
+# B>0 이면 블록 +14 쪽이, B<0 이면 블록 −10 쪽과 케이블 끝(−20)이 내려간다.
+# `block_radius` 는 박스를 공구축 둘레로 감싼 원(√(14²+12²))이다 — 출력물 간섭
+# (`check_nozzle`)은 축대칭 모델이라 보수적으로 잡았다.
+#
+# ⚠⚠ **실측 전 추정이다.** 순정 Sprite 를 Bowden 호환 핫엔드로 바꿨다면 이 모델은
+#    맞지 않는다 (docs/rep5x_machine_facts.md §8). 캘리퍼스로 재서 갈아 끼울 것.
+# ⚠ 뷰어 모델에는 **노즐 팁 평면**이 없다. 실제 노즐은 팁 평면(지름 약 1mm)의
+#    가장자리가 `r·sinB` 만큼 팁 중심보다 내려간다 (r=0.5, B=24° 면 0.2mm) —
+#    재서 `rims` 에 `(0.0, r, r)` 을 넣으면 검사·B_safe 가 그대로 반영한다.
+REP5X_V3SE_HOTEND = HotendProfile(
+    tip_radius=0.0, cone_half_deg=math.degrees(math.atan(1.0 / 2.0)),
+    cone_height=2.0,
+    body_radius=4.5, body_z0=2.0, body_z1=8.0,
+    block_radius=math.hypot(14.0, 12.0), block_z0=8.0, block_height=20.0,
+    rims=((2.0, 4.5, 4.5), (8.0, 14.0, 10.0), (15.0, 0.0, 20.0)),
+    name="REP5X viewer model, 실측 전 추정")
+
+
+def hotend_reach(h, arm_length=None, arm_radius=None):
+    """(B_arm 을 모델에 넣는가, 팁에서 핫엔드 모델 가장 먼 점까지의 거리)."""
+    tan_half = math.tan(math.radians(h.cone_half_deg))
+    dz_max = h.block_z0 + h.block_height
+    use_arm = arm_length is not None and arm_radius is not None \
+        and arm_length > dz_max
+    r_h_max = max(h.block_radius, h.tip_radius + h.cone_height * tan_half,
+                  h.body_radius)
+    if use_arm:
+        r_h_max = max(r_h_max, arm_radius)
+    dz_far = arm_length if use_arm else dz_max
+    return use_arm, math.sqrt(r_h_max ** 2 + dz_far ** 2)
+
+
+def hotend_hit(h, dz, horiz, clearance, arm_length=None, arm_radius=None):
+    """공구 프레임의 점 (축 성분 dz, 축에 수직인 거리 horiz) 이 핫엔드 모델 안인가.
+
+    모델은 축대칭이다: 팁 원뿔 → (있으면) 노즐 몸통 원통 → 히트블록 원통 →
+    (주면) B_arm 원통. `check_nozzle` 과 `rep5x.check_rewind_sweep` 이 같이 쓴다 —
+    두 검사의 기하가 갈라지지 않게 한 곳에 둔다.
+    """
+    tan_half = math.tan(math.radians(h.cone_half_deg))
+    dz_max = h.block_z0 + h.block_height
+    out = (dz > clearance) & (dz <= h.cone_height) & \
+          (horiz < h.tip_radius + dz * tan_half)
+    out = out | ((dz > max(h.block_z0, clearance)) & (dz <= dz_max) &
+                 (horiz < h.block_radius))
+    if h.body_radius > 0.0:
+        out = out | ((dz > max(h.body_z0, clearance)) & (dz <= h.body_z1) &
+                     (horiz < h.body_radius))
+    if arm_length is not None and arm_radius:
+        out = out | ((dz > dz_max) & (dz <= arm_length) &
+                     (horiz < arm_radius))
+    return out
 
 
 def check_nozzle(pts, move_id, hotend=None, batch_samples=2000,
@@ -484,28 +583,11 @@ def check_nozzle(pts, move_id, hotend=None, batch_samples=2000,
     collision = np.zeros(n, dtype=bool)
     if n == 0:
         return collision, {"collision_pct": 0.0, "first_collision_z": None}
-    tan_half = math.tan(math.radians(h.cone_half_deg))
-    dz_max = h.block_z0 + h.block_height
-    use_arm = arm_length is not None and arm_radius is not None \
-        and arm_length > dz_max
-    r_h_max = max(h.block_radius, h.tip_radius + h.cone_height * tan_half)
-    if use_arm:
-        r_h_max = max(r_h_max, arm_radius)
-        dz_far = arm_length
-    else:
-        dz_far = dz_max
-    radius = math.sqrt(r_h_max ** 2 + dz_far ** 2)
+    use_arm, radius = hotend_reach(h, arm_length, arm_radius)
 
     def hit(dz, horiz):
-        cone = (dz > clearance) & (dz <= h.cone_height) & \
-               (horiz < h.tip_radius + dz * tan_half)
-        block = (dz > max(h.block_z0, clearance)) & (dz <= dz_max) & \
-                (horiz < h.block_radius)
-        out = cone | block
-        if use_arm:
-            out = out | ((dz > dz_max) & (dz <= arm_length) &
-                         (horiz < arm_radius))
-        return out
+        return hotend_hit(h, dz, horiz, clearance,
+                          arm_length if use_arm else None, arm_radius)
 
     if tool_up is None:
         up = None
