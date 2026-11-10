@@ -48,3 +48,9 @@
 {"model": "rand:10", "kind": "sweep", "angle": 16, "layer_height": 0.3, "thetas": [16.0], "blends": [], "mean_abs": 16.0, "opt": 0.7627746180529148, "pes": 8.234964981606643, "seconds": 1.8}
 {"model": "rand:1", "kind": "sweep", "angle": 44, "layer_height": 0.3, "thetas": [44.0], "blends": [], "mean_abs": 44.0, "opt": 2.1550890786825634, "pes": 3.739849106832912, "seconds": 14.1}
 {"model": "rand:10", "kind": "sweep", "angle": 20, "layer_height": 0.3, "thetas": [20.0], "blends": [], "mean_abs": 20.0, "opt": 0.4513859315552716, "pes": 7.934254470172034, "seconds": 1.7}
+{"model": "rand:10", "kind": "sweep", "angle": 32, "layer_height": 0.3, "thetas": [32.0], "blends": [], "mean_abs": 32.0, "opt": 0.060480002975385416, "pes": 6.257612260501398, "seconds": 1.9}
+{"model": "rand:10", "kind": "sweep", "angle": 28, "layer_height": 0.3, "thetas": [28.0], "blends": [], "mean_abs": 28.0, "opt": 0.0624699777059652, "pes": 6.4077112517644075, "seconds": 1.8}
+{"model": "rand:10", "kind": "sweep", "angle": 24, "layer_height": 0.3, "thetas": [24.0], "blends": [], "mean_abs": 24.0, "opt": 0.15903586922389631, "pes": 1.8505709062218607, "seconds": 3.5}
+{"model": "rand:10", "kind": "sweep", "angle": 36, "layer_height": 0.3, "thetas": [36.0], "blends": [], "mean_abs": 36.0, "opt": 0.03417626587450705, "pes": 5.441851593046007, "seconds": 2.0}
+{"model": "rand:10", "kind": "sweep", "angle": 40, "layer_height": 0.3, "thetas": [40.0], "blends": [], "mean_abs": 40.0, "opt": 0.02829922308672861, "pes": 3.665807398621018, "seconds": 2.3}
+{"model": "rand:10", "kind": "sweep", "angle": 44, "layer_height": 0.3, "thetas": [44.0], "blends": [], "mean_abs": 44.0, "opt": 0.03736350873924113, "pes": 2.750474613370469, "seconds": 2.6}
