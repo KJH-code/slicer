@@ -82,5 +82,68 @@
    "S0_pct": 8.9091,
    "k": 0.2
   }
+ },
+ {
+  "slug": "t2_spacing",
+  "png": "docs/report/figures/t2_spacing.png",
+  "script": "tools/report_figs/t2_spacing.py",
+  "data_sources": [
+   "results/t2_layer_spacing_pairs.npz",
+   "results/t2_layer_spacing.json",
+   "tools/check_layer_spacing.py"
+  ],
+  "description": "증명 B 검산: 실제 G-code 에서 잰 이웃 층 간격 대 예측 h − c·r·Δtanθ (a) 산점, (b) 측정/예측 비 분포",
+  "key_numbers": {
+   "블렌드 쌍 수": 56841,
+   "대조군 쌍 수": 16533,
+   "블렌드 비 중앙값": 1.0,
+   "블렌드 비 95% 구간": [
+    0.9971,
+    1.0029
+   ],
+   "±5% 밖 쌍": 16,
+   "사전 기준": "중앙값 1±0.02, 95% 구간 1±0.05 — 통과"
+  }
+ },
+ {
+  "slug": "t6_effective_overhang",
+  "png": "docs/report/figures/t6_effective_overhang.png",
+  "script": "tools/report_figs/t6_effective_overhang.py",
+  "data_sources": [
+   "results/t6_proofs_ae_points.npz",
+   "results/t6_proofs_ae.json",
+   "tools/check_proofs_ae.py"
+  ],
+  "description": "증명 A 검산: 실제 원뿔 층 법선으로 잰 유효 오버행 대 '원래 오버행 − θ' (a) 산점, (b) 차이 (g(θ) 일반식 포함)",
+  "key_numbers": {
+   "경선 표본점": 40000,
+   "메시 면": 19680,
+   "최대 차(°)": 1.22e-07,
+   "사전 기준": "< 0.01° — 통과"
+  }
+ },
+ {
+  "slug": "t6_cone_approx",
+  "png": "docs/report/figures/t6_cone_approx.png",
+  "script": "tools/report_figs/t6_cone_approx.py",
+  "data_sources": [
+   "results/t6_proofs_ae_points.npz",
+   "results/t6_proofs_ae.json",
+   "tools/check_proofs_ae.py"
+  ],
+  "description": "증명 E(iii): 곡면 층 z = Z′ − a·r − b·r² 와 접하는 원뿔 (a) r–z 단면, (b) 높이 오차 대 r 로그-로그(기울기 2)",
+  "key_numbers": {
+   "로그-로그 기울기": {
+    "0.002": 2.0,
+    "0.01": 2.0,
+    "0.05": 2.0
+   },
+   "오차가 층고 0.3mm 에 닿는 거리(mm)": {
+    "0.002": 12.25,
+    "0.01": 5.48,
+    "0.05": 2.45
+   },
+   "a": "tan20°"
+  }
  }
 ]

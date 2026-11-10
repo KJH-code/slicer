@@ -261,6 +261,8 @@ def main():
     out = {"criteria": "docs/test_t2_t6.md §1.4", "pair_window_mm": PAIR_WINDOW,
            "pairs_per_layer": PAIRS_PER_LAYER, "seed": SEED, "cases": [], "pooled": {}}
     pooled = {"band_all": [], "band_blend": [], "ctrl_all": []}
+    pairs = {"meas": [], "pred": [], "h": [], "r": [], "dtan": [], "ctrl": [], "case": []}
+    case_names = []
     print("\n표본 | 층고 | 프로필 | 쌍 | 블렌드 쌍 | ρ 중앙값 [2.5, 97.5] (M1) | 블렌드만 | M2 | "
           "기울기 오차 | 맞춤 잔차")
     for (name, lh), path in sorted(files.items()):
@@ -271,6 +273,12 @@ def main():
         blend_mask = np.abs(a[:, 4]) > 1e-9
         s_all, s_bl, s_m2 = summarize(rho), summarize(rho[blend_mask]), summarize(rho2)
         ctrl = name.startswith("ctrl_")
+        case_names.append(f"{name}_h{lh}")
+        for key, col in (("meas", a[:, 5]), ("pred", a[:, 6]), ("r", a[:, 2]), ("dtan", a[:, 4])):
+            pairs[key].append(col.astype(np.float32))
+        pairs["h"].append(np.full(len(a), lh, np.float32))
+        pairs["ctrl"].append(np.full(len(a), ctrl))
+        pairs["case"].append(np.full(len(a), len(case_names) - 1, np.int16))
         if ctrl:
             pooled["ctrl_all"].append(rho)
         else:
@@ -330,7 +338,11 @@ def main():
         return o
     Path(args.json).write_text(json.dumps(_clean(out), ensure_ascii=False, indent=1),
                                encoding="utf-8")
-    print(f"\n→ {args.json}")
+    # 쌍별 원자료 (보고서 그림 tools/report_figs/t2_spacing.py 가 읽는다)
+    npz = Path(args.json).with_name("t2_layer_spacing_pairs.npz")
+    np.savez_compressed(npz, case_names=np.array(case_names),
+                        **{k: np.concatenate(v) for k, v in pairs.items()})
+    print(f"\n→ {args.json}\n→ {npz}")
 
 
 if __name__ == "__main__":

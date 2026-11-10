@@ -104,6 +104,8 @@ def proof_a():
     rng = np.random.default_rng(SEED)
     zhat = np.array([0.0, 0.0, 1.0])
     rows = []
+    pts_out = {"a1_w0": [], "a1_theta": [], "a1_weff": [], "a1_shape": [],
+               "a2_wg": [], "a2_weff": [], "a2_shape": []}
     worst_a1 = worst_a2 = 0.0
     excluded = 0
     for i in range(N_SHAPES):
@@ -145,6 +147,12 @@ def proof_a():
         g2 = fn[:, 2] * np.cos(np.radians(th2)) + C * n_r * np.sin(np.radians(th2))
         d2 = np.abs(overhang(fn, b2) - overhang_from_g(g2))
 
+        w2 = overhang(fn, b2)
+        for key, v in (("a1_w0", w0[ok]), ("a1_theta", th[ok]), ("a1_weff", w_eff[ok]),
+                       ("a1_shape", np.full(int(ok.sum()), i)),
+                       ("a2_wg", overhang_from_g(g2)), ("a2_weff", w2),
+                       ("a2_shape", np.full(len(w2), i))):
+            pts_out[key].append(v)
         worst_a1 = max(worst_a1, float(d1.max()), float(d1g.max()))
         worst_a2 = max(worst_a2, float(d2.max()))
         rows.append({
@@ -161,7 +169,8 @@ def proof_a():
         })
     return {"shapes": rows, "A1_max_diff_deg": worst_a1, "A2_max_diff_deg": worst_a2,
             "A1_excluded_total": excluded,
-            "pass_A1": worst_a1 < A_TOL_DEG, "pass_A2": worst_a2 < A_TOL_DEG}
+            "pass_A1": worst_a1 < A_TOL_DEG, "pass_A2": worst_a2 < A_TOL_DEG,
+            "_points": {k: np.concatenate(v) for k, v in pts_out.items()}}
 
 
 # ─────────────────────────────────────────────────────────────
@@ -244,9 +253,32 @@ def proof_e():
             ok &= abs(s - 2) <= 0.05 and abs(q0 - 1) <= 0.01
         row["pass"] = bool(ok)
         out["general"].append(row)
+    out["_curves"] = e_curves()
     out["pass_quadratic"] = all(r["pass"] for r in out["quadratic"])
     out["pass_general"] = all(r["pass"] for r in out["general"])
     return out
+
+
+def e_curves():
+    """보고서 그림용 원자료: E1(축 접점) 오차 곡선과 단면 곡선 (a = tan20°)."""
+    a = math.tan(math.radians(20.0))
+    rr = np.geomspace(0.1, 20.0, 60)
+    cur = {"e1_r": rr}
+    for b in (0.002, 0.01, 0.05):
+        def f(x, b=b):
+            return a * x + b * np.asarray(x) ** 2
+        zc, _ = tangent_cone(f, 0.0)
+        cur[f"e1_err_b{b}"] = np.abs((ZP - f(rr)) - zc(rr))
+    b = 0.01
+    rs = np.linspace(0.0, 15.0, 301)
+
+    def f(x):
+        return a * x + b * np.asarray(x) ** 2
+    zc0, _ = tangent_cone(f, 0.0)
+    zc8, _ = tangent_cone(f, 8.0)
+    cur.update({"sec_r": rs, "sec_layer": ZP - f(rs), "sec_cone_axis": zc0(rs),
+                "sec_cone_r8": zc8(rs), "sec_b": np.array(b), "sec_a": np.array(a)})
+    return cur
 
 
 def figure(path):
@@ -329,6 +361,9 @@ def main():
     figure(fig)
     out = ROOT / "results" / "t6_proofs_ae.json"
     out.parent.mkdir(parents=True, exist_ok=True)
+    pts, cur = a.pop("_points"), e.pop("_curves")
+    np.savez_compressed(out.with_name("t6_proofs_ae_points.npz"),
+                        **pts, **{f"E_{k}": v for k, v in cur.items()})
     out.write_text(json.dumps({"criteria": "docs/test_t2_t6.md §2", "seed": SEED,
                                "A": a, "E": e}, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"→ {out}\n→ {fig}")
