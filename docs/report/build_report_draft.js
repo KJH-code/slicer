@@ -1,0 +1,276 @@
+const fs = require("fs");
+const {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType,
+  AlignmentType, BorderStyle, ShadingType, PageBreak, VerticalAlign, HeadingLevel,
+} = require("docx");
+
+const FONT = "함초롬바탕";
+const BODY = 20; // 10pt
+const W = 9638; // A4 text width with 20mm margins (DXA)
+
+// ---------- inline markup: **bold**, 【보류...】 highlighted ----------
+function runs(text, opts = {}) {
+  const out = [];
+  const re = /(\*\*[^*]+\*\*|【[^】]*】)/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(new TextRun({ text: text.slice(last, m.index), font: FONT, size: opts.size || BODY, bold: opts.bold, italics: opts.italics }));
+    const t = m[0];
+    if (t.startsWith("**")) out.push(new TextRun({ text: t.slice(2, -2), font: FONT, size: opts.size || BODY, bold: true }));
+    else out.push(new TextRun({ text: t, font: FONT, size: opts.size || BODY, bold: true, highlight: "yellow" }));
+    last = m.index + t.length;
+  }
+  if (last < text.length) out.push(new TextRun({ text: text.slice(last), font: FONT, size: opts.size || BODY, bold: opts.bold, italics: opts.italics }));
+  return out;
+}
+
+const P = (text, o = {}) => new Paragraph({
+  children: runs(text, o),
+  alignment: o.align || AlignmentType.JUSTIFIED,
+  indent: o.noIndent ? undefined : { firstLine: o.firstLine ?? 200 },
+  spacing: { before: o.before ?? 0, after: o.after ?? 80, line: 300 },
+  keepNext: o.keepNext,
+});
+const EQ = (text) => new Paragraph({
+  children: [new TextRun({ text, font: "Cambria Math", size: BODY })],
+  alignment: AlignmentType.CENTER, spacing: { before: 60, after: 100 },
+});
+const H1 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text, font: FONT, size: 26, bold: true })], spacing: { before: 280, after: 120 }, keepNext: true });
+const H2 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, font: FONT, size: 22, bold: true })], spacing: { before: 180, after: 80 }, keepNext: true });
+const BANNER = (text) => new Paragraph({ children: [new TextRun({ text, font: FONT, size: 28, bold: true })], spacing: { before: 0, after: 160 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: "000000", space: 4 } } });
+const CAPTION = (text) => new Paragraph({ children: runs(text, { bold: true, size: 18 }), alignment: AlignmentType.CENTER, spacing: { before: 120, after: 60 }, keepNext: true });
+const FIGCAP = (text) => new Paragraph({ children: runs(text, { bold: true, size: 18 }), alignment: AlignmentType.CENTER, spacing: { before: 40, after: 160 } });
+const NOTE = (text) => new Paragraph({ children: runs(text, { size: 16 }), spacing: { before: 20, after: 120 } });
+const BR = () => new Paragraph({ children: [new PageBreak()] });
+
+const border = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+const borders = { top: border, bottom: border, left: border, right: border };
+
+function cell(text, width, o = {}) {
+  const paras = String(text).split("\n").map((t) => new Paragraph({
+    children: runs(t, { size: o.size || 18, bold: o.bold }),
+    alignment: o.align || AlignmentType.LEFT, spacing: { before: 20, after: 20, line: 260 },
+  }));
+  return new TableCell({
+    children: paras, width: { size: width, type: WidthType.DXA }, borders,
+    shading: o.fill ? { fill: o.fill, type: ShadingType.CLEAR, color: "auto" } : undefined,
+    verticalAlign: VerticalAlign.CENTER, columnSpan: o.span,
+    margins: { top: 50, bottom: 50, left: 90, right: 90 },
+  });
+}
+function table(widths, rows, o = {}) {
+  const total = widths.reduce((a, b) => a + b, 0);
+  return new Table({
+    width: { size: total, type: WidthType.DXA }, columnWidths: widths,
+    alignment: AlignmentType.CENTER,
+    rows: rows.map((r, i) => new TableRow({
+      tableHeader: i === 0 && o.header !== false,
+      children: r.map((c, j) => cell(c, widths[j], {
+        bold: (i === 0 && o.header !== false) || (o.firstColBold && j === 0),
+        fill: (i === 0 && o.header !== false) || (o.firstColFill && j === 0) ? "E7E6E6" : undefined,
+        align: o.center && !(o.firstColBold && j === 0) ? AlignmentType.CENTER : AlignmentType.LEFT,
+        size: o.size,
+      })),
+    })),
+  });
+}
+const FIGBOX = (text) => table([W - 2000], [[text]], { header: false, center: true });
+
+// =====================================================================
+const children = [];
+
+// ---------------- 1. 연구결과 요약문 ----------------
+children.push(BANNER("1. 연구결과 요약문"));
+children.push(table([1900, W - 1900], [
+  ["과 제 명", "형상 적응형 원뿔 슬라이싱: 원뿔각 자동 결정 알고리즘과 그 신뢰성 검증"],
+  ["연구 필요성\n및 목적",
+    "원뿔 슬라이싱은 층을 원뿔면으로 쌓아 서포트 없이 오버행을 출력하는 다축 3D 프린팅 기법이다. 위치마다 출력 방향을 최적화하는 곡면 슬라이싱보다 설계변수가 훨씬 적어 계산이 가볍고, 방사 대칭 형상의 오버행에 효과적이다. 그러나 원뿔각은 지금까지 사용자가 정해 왔고, 형상으로부터 원뿔각을 자동으로 결정하는 알고리즘은 조사 범위 내에서 확인되지 않았다. 본 연구는 STL 모델에서 원뿔각과 높이 구간별 각도를 자동으로 결정하는 알고리즘을 만들고, 그 결정의 신뢰성과 구간(밴드) 개수에 따른 거동을 검증하는 것을 목적으로 한다."],
+  ["연구내용\n및\n결과",
+    "① 원본 면 법선만으로 서포트 필요 여부를 판정하는 해석식과 면별 임계각을 유도하였다(유효 오버행 = 원래 오버행 − θ). ② 높이에 따라 원뿔각을 바꿀 때 층이 교차하거나 벌어지지 않는 조건(층간격 = h − r·Δtanθ)을 유도해 알고리즘에 넣었다. ③ 축대칭 17개 모델에서 자동 결정 결과를 두 가지 균일 원뿔 기준선과 비교하였다. 【보류: 대표 결과 한 문장 — 기준선 결정 후】 ④ 구간 수를 늘린 최선해는 단조 감소하며, 구간 분할의 고유 효과는 서포트가 아니라 같은 서포트에서 평균 기울기를 약 8° 줄이는 것임을 보였다. ⑤ 판정식은 독립 구현과 최대 1.42×10⁻¹⁴° 차이로 일치하였고, G-code 퇴적 복원 IoU는 반복 실행에서 재현되었다."],
+  ["향후\n연구계획\n(요약)",
+    "제작한 5축 프린터(REP5X)로 사전 등록한 시험 출력(L0~L5)을 수행해 판정 기준과 압출 모형을 실물로 확인하고, 곡면 슬라이싱과의 정량 비교와 비축대칭 형상으로 적용 범위를 넓힌다."],
+  ["Keyword\n(5개 이내)", "원뿔 슬라이싱, 원뿔각 자동 결정, 가변 원뿔각, 서포트 저감, 다축 3D 프린팅"],
+], { header: false, firstColBold: true, firstColFill: true, size: 18 }));
+children.push(BR());
+
+// ---------------- 2. 과제 수행 과정 ----------------
+children.push(BANNER("2. 과제 수행 과정"));
+children.push(NOTE("※ 외부 전문가 피드백, 생성형 AI 활용 표, 팀원 역할·기여도 칸은 팀이 직접 작성한다(이 초안에서 제외)."));
+children.push(table([1900, W - 1900], [
+  ["문제해결\n과정",
+    "① 판정 기준의 선택 — 변환된 메시를 일반 슬라이서의 45° 기준으로 판정하는 방법과, 원본 면 법선에서 층 방향을 직접 계산하는 해석식 중 무엇을 기준으로 삼을지 정해야 했다. 원뿔 변환은 XY 를 1/cosθ 배로 늘리는 비등각 사상이라 변환 공간의 각도가 실제 각도와 다르다는 것을 손계산으로 확인하고(funnel: 실제 26° 에서 해결되는 벽이 변환 공간에서는 53° 가 필요), 해석식 하나를 저장소 전체의 판정 기준으로 정하였다. 이 식은 세 번 다시 유도하고 팀원이 따로 구현한 코드와 22,000면에서 대조하였다.\n② 가변각의 안전 조건 — 높이에 따라 각도를 바꾸면 이웃 층 간격이 반경에 따라 달라진다. 이웃한 두 원뿔 층의 높이 차를 직접 계산해 층 교차를 막는 조건과 블렌드 최소 폭을 닫힌 식으로 얻고, 이를 실제 G-code 의 층 간격으로 확인하는 검사기를 만들었다.\n③ 결과 해석의 공정성 — 각도 결정의 효과를 평면이 아닌 균일 원뿔과 비교하고, 기준선을 두 가지로 나누어 이득이 어디서 오는지 분리하였다. 실험마다 판정 기준을 결과를 보기 전에 문서로 고정하였다.\n④ 기계에서의 안전 — 출력용 G-code 는 자체 사전 검사기와 팀원이 만든 가상 프린터(독립 역기구학)를 모두 통과해야 프린터에 넣도록 하였다."],
+  ["과제 수행\n과정에서의 학습",
+    "좌표 변환과 역변환, 벡터 내적과 삼각함수 합성, 다중적분의 변수변환(야코비안), 5축 기구학(공구 중심점 제어, 역기구학)을 연구에 직접 적용하며 배웠다. G-code 구조와 Marlin 펌웨어 설정, 외부 슬라이서(PrusaSlicer) 명령행 사용법, 단위·회귀 테스트로 코드를 검증하는 방법을 익혔다. 특히 예측을 먼저 적고 계산·실물로 확인하는 절차가 결론의 신뢰도를 어떻게 바꾸는지 경험하였다. 【팀 자체 평가 추가】"],
+], { header: false, firstColBold: true, firstColFill: true, size: 18 }));
+children.push(BR());
+
+// ---------------- 3. 연구보고서 ----------------
+children.push(BANNER("3. 연구보고서"));
+children.push(table([W], [
+  ["형상 적응형 원뿔 슬라이싱: 원뿔각 자동 결정 알고리즘과 그 신뢰성 검증\n저자명․저자명․저자명\n○○과학고등학교\nShape-Adaptive Conical Slicing: An Automatic Cone-Angle Selection Algorithm and Its Verification\nauthor․author․author\n○○ Science High School"],
+], { header: false, center: true, size: 20 }));
+
+children.push(new Paragraph({ children: runs("국문 초록", { bold: true }), alignment: AlignmentType.CENTER, spacing: { before: 200, after: 80 } }));
+children.push(P("원뿔 슬라이싱은 층을 원뿔면으로 쌓아 서포트 없이 오버행을 출력하는 방법으로, 곡면 슬라이싱보다 설계변수가 적어 계산이 가볍고 방사 대칭 형상에 효과적이다. 그러나 원뿔각은 지금까지 사용자가 정해 왔다. 본 연구는 STL 의 면 법선에서 서포트 필요 여부를 닫힌 식으로 판정하고, 이를 바탕으로 원뿔각과 높이 구간별 각도를 자동으로 결정하는 알고리즘을 제안한다. 각도를 높이에 따라 바꿀 때 층이 교차하거나 벌어지지 않는 조건을 유도해 알고리즘에 넣었다. 축대칭 17개 모델에서 【보류: 대표 결과】. 구간 수를 늘린 최선해는 단조 감소하였고, 구간 분할의 고유 효과는 같은 서포트에서 평균 기울기를 줄이는 것이었다. 판정식은 독립 구현과 10⁻¹⁴° 수준에서 일치했고, 퇴적 복원 IoU 는 반복 실행에서 재현되었다.", { noIndent: true }));
+children.push(P("주제어: 원뿔 슬라이싱, 원뿔각 자동 결정, 가변 원뿔각, 서포트 저감, 다축 3D 프린팅", { noIndent: true, bold: false, before: 60, after: 160 }));
+
+// Ⅰ. 서론
+children.push(H1("Ⅰ. 서론"));
+children.push(H2("1. 연구의 필요성"));
+children.push(P("FDM(Fused Deposition Modeling) 3D 프린팅은 모델을 수평면으로 잘라 아래층부터 쌓는다. 이때 아래를 향해 일정 각도(관례상 45°) 이상 기운 면은 받쳐 줄 아래층이 없어 서포트가 필요하다. 서포트는 재료와 출력 시간을 늘리고, 떼어 낸 자리의 표면을 손상시킨다. 빌드 방향이 모델 전체에 대해 수직 하나로 고정되어 있다는 것이 이 문제의 원인이다."));
+children.push(P("다축 3D 프린팅은 출력 방향을 바꾸어 이 문제를 푼다. 곡면 슬라이싱[3,4]은 모델 내부의 위치마다 출력 방향을 정하는 방향장을 최적화해 높은 효율을 얻지만, 설계변수가 위치마다 존재해 자유도가 매우 크고 대규모 최적화나 신경망 학습이 필요하다. 원뿔 슬라이싱[1,2]은 층 전체를 원뿔 반각 θ 하나로 기술한다. 모델을 원뿔 좌표로 변환한 뒤 평면 슬라이서로 자르고 G-code 를 되돌리면 층이 원뿔면이 되며, 기존 평면 슬라이서를 그대로 쓸 수 있다. 자유도가 작은 대신 방사 대칭인 형상에서 바깥으로 벌어진 오버행을 효과적으로 줄인다(Table 1)."));
+children.push(P("그러나 원뿔각은 지금까지 사람이 정했다. RotBot[1]은 45° 틸트 노즐에 맞춘 고정각을 쓰고, 3축 프린터용 원뿔 슬라이서[5,6]는 사용자가 15~25° 등의 상수각을 입력한다. CNC Kitchen[7]은 구역마다 이상적인 슬라이싱 각도를 자동으로 고르는 알고리즘을 다음 과제로 꼽았다. 조사 범위 내에서, 원뿔 슬라이싱 계열에서 형상으로부터 원뿔각을 자동 결정하고 그 효과를 정량 비교한 연구는 확인되지 않았다."));
+children.push(CAPTION("Table 1. Comparison of multi-axis slicing approaches"));
+children.push(table([1700, 1900, 2300, 1900, 1838], [
+  ["방법", "층의 형태", "설계변수", "방향·각도 결정", "계산 비용"],
+  ["평면", "수평면", "없음", "—", "작음"],
+  ["곡면(S³-Slicer[3], Neural Slicer[4])", "임의 곡면", "위치마다 방향(3차원 장)", "자동(최적화·학습)", "큼"],
+  ["원뿔(RotBot[1], Slicer4RTN[5])", "원뿔면", "각도 1개", "사용자 지정", "작음"],
+  ["본 연구", "높이별 원뿔면", "구간별 각도 N개", "자동", "작음"],
+], { center: true }));
+children.push(H2("2. 연구 목적"));
+children.push(P("본 연구는 STL 모델에서 원뿔각과 높이 구간별 각도를 자동으로 결정하는 알고리즘을 만들고 다음 세 질문에 답한다. RQ1. STL 만으로 원뿔각을 자동 결정할 수 있는가. RQ2. 그 결정은 믿을 만한가. RQ3. 높이 구간(밴드)의 개수를 늘리면 어떻게 되며, 몇 개를 써야 하는가. 평면 대비 서포트 감소는 원뿔 슬라이싱 일반의 성과이므로, 비교 기준은 평면이 아니라 모델 전체에 각도 하나를 쓰는 균일 원뿔로 한다. 원뿔 변환식은 RotBot[1]의 것을 차용하였고, 각도의 자동 결정과 높이별 가변각 및 그 안전 조건이 본 연구가 더한 부분이다."));
+
+// Ⅱ. 이론적 배경
+children.push(H1("Ⅱ. 이론적 배경"));
+children.push(H2("1. 원뿔 변환"));
+children.push(P("축(z축)에 정렬한 모델의 점 (r, φ, z)를 다음과 같이 변환한다[1]. c = +1 은 꼭짓점이 위인 바깥(outward) 원뿔, c = −1 은 안쪽(inward) 원뿔이다."));
+children.push(EQ("R = r / cosθ,   φ′ = φ,   Z′ = z + c·r·tanθ"));
+children.push(P("변환한 모델을 평면 슬라이서가 Z′ = 상수로 자르고 역변환하면, 각 층은 실공간에서 z = Z′ − c·r·tanθ 인 원뿔면이 된다([Fig. 1])."));
+children.push(FIGBOX("그림 자리: 변환 → 평면 슬라이스 → 역변환 개념도 (1차 발표 자료)"));
+children.push(FIGCAP("[Fig. 1] Conical slicing by transformation, planar slicing and back-transformation"));
+
+children.push(H2("2. 서포트 판정식"));
+children.push(P("원뿔 층 위에 쌓이는 면이 아래층에 받쳐지는지는 '그 자리 층의 위쪽 방향'과 면 법선의 관계로 정해진다. 축을 지나는 단면(r–z 평면)에서 원뿔 층의 위쪽 단위 방향은 수직 방향을 바깥으로 θ 만큼 돌린 벡터 b = (c·sinθ, cosθ) 이다. 면 법선 n = (n_r, n_φ, n_z) 과의 내적은 b 에 φ 성분이 없으므로"));
+children.push(EQ("g(θ) = n · b = n_z·cosθ + c·n_r·sinθ"));
+children.push(P("이다. θ = 0 이면 g = n_z 이고, 평면 슬라이서의 45° 규칙은 'n_z ≥ −sin45° 이면 서포트 불필요'이다. 같은 기준을 기울어진 층에 적용하면 서포트 필요 ⇔ g(θ) < −sin45° 이다. 변환된 메시를 다시 잴 필요 없이 원본 법선만으로 판정할 수 있다."));
+children.push(P("법선이 단면 안에 있는 면(축대칭 형상의 면)에서 오버행 각을 α(수직면에서 아래로 기운 각)라 하면, 바깥을 향한 면의 법선은 n = (cosα, −sinα) 이다. 대입하면"));
+children.push(EQ("g(θ) = −sinα·cosθ + c·cosα·sinθ = −sin(α − c·θ)"));
+children.push(P("이므로 c = +1 에서 g ≥ −sin45° ⇔ α − θ ≤ 45° 이다. 즉 **유효 오버행 = 원래 오버행 − θ** 이며, 면이 서포트 없이 서는 최소 각(면별 임계각)은 θ* = α − 45° 이다. 안쪽을 향한 면(n_r < 0)은 같은 계산에서 c = −1 일 때 각이 줄어들므로, 각도와 함께 방향(outward/inward)도 같은 식에서 결정된다. 예를 들어 벽 오버행 70.3° 인 funnel 은 θ = 26° 에서 유효 오버행 44.3° 가 되어 서포트가 필요 없다. 법선이 단면 밖으로 기운 일반 면은 R = √(n_r² + n_z²) 로 g = R·sin(θ + atan2(n_z, c·n_r)) 이 되어 θ* = asin(κ/R) − atan2(n_z, c·n_r) (κ = −sin45°) 로 같은 방식으로 풀린다."));
+children.push(P("한편 원뿔 변환은 XY 를 1/cosθ 배로 늘리는 비등각 사상이라 변환 공간에서 잰 각은 실제 각과 다르다. funnel 의 벽은 변환 공간 45° 기준을 통과하려면 θ = 53° 가 필요하지만 실제로는 26° 로 충분하다. 본 연구가 판정을 해석식 하나로 통일한 이유이다."));
+children.push(P("【보류: 정확 선택 세션 결과에 따라 — 서포트 면적은 각 면의 임계각에서만 값이 바뀌는 계단함수이므로, 각도 비용이 |θ| 에 비례하는 목적함수의 최적해는 유한 개의 임계각 후보 안에 있다】"));
+
+children.push(H2("3. 가변 원뿔각과 층간격"));
+children.push(P("각도를 높이(Z′)의 함수로 두면 층 k 는 각도 θ_k 하나짜리 원뿔 z_k(r) = Z′_k − c·r·tanθ_k 이다. 층고를 h 라 하면, 같은 반경 r 에서 이웃한 두 층의 간격은 두 식의 차로 바로 얻어진다."));
+children.push(EQ("Δz(r) = z_{k+1}(r) − z_k(r) = h − c·r·(tanθ_{k+1} − tanθ_k)"));
+children.push(P("이 한 식에서 네 가지가 나온다. (1) 모든 r ≤ r_max 에서 Δz > 0 이어야 층이 서로 교차하지 않는다. (2) Δz / h = m 이 실공간의 층간격 배율이다. (3) 각도가 바뀌는 블렌드 구간의 폭을 w, tanθ 의 총 변화를 ΔT 라 하고 tanθ 를 Z′ 에 대해 직선으로 바꾸면 층마다 tanθ 변화는 h·ΔT / w 로 일정하므로 m = 1 − c·r·ΔT / w 가 블렌드 전체에서 일정하다. θ 가 아니라 tanθ 를 보간하는 이유가 이것이다. (4) 1/1.5 ≤ m ≤ 1.5 로 두면 블렌드 최소 폭은 층이 벌어지는 쪽에서 w ≥ 2·r_b·|ΔT|, 좁아지는 쪽에서 w ≥ 3·r_b·|ΔT| 이다(r_b: 블렌드가 지나는 높이 구간의 최대 반경). 상수각이면 ΔT = 0 이라 m ≡ 1 이므로, 이 제약은 균일 원뿔에는 없고 가변각에서만 생긴다([Fig. 2])."));
+children.push(FIGBOX("그림 자리: 램프 모델 2구간 프로필의 층 단면 — 블렌드 구간의 층간격 (2차 발표 5장 그림)"));
+children.push(FIGCAP("[Fig. 2] Layer spacing in the blend zone of a two-band cone-angle profile"));
+
+children.push(H2("4. 압출량 보정"));
+children.push(P("평면 슬라이서는 변환 공간에서 '층고 × 비드 폭 × 길이'의 부피를 압출한다. 역변환의 부피비(야코비안)는 방향과 무관하게 cos²θ·m 이므로 역변환 시 압출량에 이 값을 곱한다. 22° 균일 원뿔로 생성한 G-code 에서 벽 1mm 당 압출량 비는 0.9271 로 cos22° = 0.9272 와 일치한다. 이 모형이 실제 비드와 맞는지는 실물 시험(단벽 원기둥 L4)으로 판정한다."));
+
+// Ⅲ. 연구 방법
+children.push(H1("Ⅲ. 연구 방법 및 절차"));
+children.push(H2("1. 원뿔각 자동 결정 알고리즘"));
+children.push(P("알고리즘은 다음 순서로 STL 에서 G-code 를 만든다([Fig. 3]). ① STL 을 읽어 원뿔 축에 정렬한다. ② 모든 면에 대해 Ⅱ.2 의 판정식으로 각도별 서포트 면적을 계산한다. ③ 균일각 결정: 평면 대비 서포트 면적 감소량 ΔS(θ)(%p)에서 각도 비용을 뺀 J(θ) = ΔS(θ) − k·|θ| 를 최대로 하는 θ 와 방향을 고른다. k(기본 0.2 %p/°)는 각도 1° 를 서포트 몇 %p 와 바꿀지를 정하는 교환비이다. ④ 구간(밴드) 결정: 높이를 N 개 구간으로 나누어 구간마다 각도를 고르고, 구간 사이 블렌드는 Ⅱ.3 의 최소 폭으로 잡으며 블렌드 면적을 J 에서 비용으로 뺀다. ⑤ 모델을 변환해 평면 슬라이서로 자르고, 역변환하면서 압출량을 보정하고 곡선 경로를 오차 0.05mm 이내로 잘게 나눈다. ⑥ 5축 출력에서는 헤드 틸트 B = θ(Z′), 회전 C = 방위각으로 두고 회전 속도 상한과 베드 안전각(약 22.8°)을 적용한다. ⑦ 내보낸 G-code 는 사전 검사기를 통과해야 출력한다."));
+children.push(FIGBOX("그림 자리: STL → 판정 → 각도 결정 → 변환·슬라이스 → 역변환 → 5축 변환 → 검사 파이프라인 (2차 발표 5장)"));
+children.push(FIGCAP("[Fig. 3] Pipeline of the automatic cone-angle selection and G-code generation"));
+
+children.push(H2("2. 검증 계층"));
+children.push(P("결정이 맞는지를 서로 다른 계층에서 확인하였다(Table 2). 각 계층은 보장하는 범위가 다르므로 결과마다 어느 계층의 값인지 함께 적는다."));
+children.push(CAPTION("Table 2. Verification layers"));
+children.push(table([2200, 4000, 3438], [
+  ["계층", "무엇을 보나", "보장 범위"],
+  ["해석식 예측", "메시 면 법선으로 각도별 서포트 면적", "기하 판정(45° 문턱 가정)"],
+  ["툴패스 검사기", "G-code 의 압출 비드 아래에 앞 층이 있는지, 아래층 단면 밖의 진짜 오버행만 집계(미지지 길이 mm)", "실제로 내보낸 경로 기준, 중력·냉각 미반영"],
+  ["퇴적 복원", "G-code 로 출력 형상을 복원해 원본과 IoU", "형상 일치도, 실물 스캔 아님"],
+  ["기계 사전 검사", "축 범위·베드 간섭·회전 속도, 팀원의 가상 프린터와 독립 역기구학 대조", "기계 치수 일부 추정값"],
+  ["실물 출력", "사전 등록한 시험 출력 L0~L5", "【보류】"],
+], { size: 17 }));
+
+children.push(H2("3. 실험 설계"));
+children.push(P("표본은 축대칭 17개 모델(구 1개, 목 반경 r = 1~7mm 의 허리형 6개, 허리형의 XY 배율 λ = 1.1~2 변형 5개, 로브 변형 5개)과 형상 대비용 데모 모델(funnel, torus, mushroom)이다. 층고 0.3mm 와 0.4mm 에서 각각 G-code 를 생성해 툴패스 검사기로 미지지 길이(mm)를 재고, 0.5mm 이내 차이는 무승부로 하였다. 균일 원뿔 기준선은 두 가지를 항상 함께 적었다. (a) J 가 고른 균일각: 각도 결정 알고리즘 전체의 가치를 묻는다. (b) 밴드의 가장 아래 구간 각도와 같은 균일각: 구간을 나누는 것 자체의 효과를 묻는다. 5축 기계의 베드 안전각을 두 팔에 모두 적용한 판도 따로 계산하였다. 모든 실험은 판정 기준을 결과를 보기 전에 문서로 고정하였다. 【보류: 추가 테스트 T1~T7 의 설계를 한 문단으로】"));
+
+// Ⅳ. 연구 결과
+children.push(H1("Ⅳ. 연구 결과"));
+children.push(H2("1. 원뿔각 자동 결정 (RQ1)"));
+children.push(P("데모 모델에서 알고리즘은 해석적으로 예상되는 각도를 찾았다. funnel(벽 오버행 70.3°)에서 고른 각도는 outward 26° 로, Ⅱ.2 의 θ* = 70.3° − 45° = 25.3° 를 2° 격자에서 처음 넘는 값이며 이때 서포트 면적이 51.5% 에서 0% 가 되었다. 구는 14.7% 에서 0% 가 되었다(Table 4)."));
+children.push(P("축대칭 17개 모델에서 2구간(밴드2)과 두 균일 기준선의 비교는 Table 3 과 같다. (a) J 가 고른 균일각 대비 밴드2 는 5개 모델에서 우세하였고, 이 5개는 모두 밴드2 의 아래 구간 각도가 균일각보다 큰 모델이었다. (b) 아래 구간 각도가 같은 균일각과 비교하면 밴드2 의 우세는 0개였다. 같은 미지지 길이를 내는 경우 밴드2 의 평균 기울기는 균일보다 중앙값 8.4°(1.0~11.1°) 작았다. 램프 모델(층고 0.3mm)에서는 J 가 고른 균일 24° 의 미지지 17.8mm 에 대해 밴드2 [30°, 0°] 와 균일 30° 가 모두 0.0mm 였다. 【보류: 관례 각도(15·20·25·45°) 대비 자동 결정의 후회 — T1】 【보류: 결과 문장의 기준선 선택】"));
+children.push(CAPTION("Table 3. Band2 versus uniform baselines over 17 axisymmetric models (wins of band2 · uniform · ties, unsupported length)"));
+children.push(table([3238, 2000, 2000, 2400], [
+  ["비교 기준선", "층고 0.4mm", "층고 0.3mm", "베드 안전각 적용 (0.4 / 0.3)"],
+  ["(a) J 가 고른 균일", "5 · 3 · 9", "5 · 0 · 12", "3 · 1 · 13 / 3 · 0 · 14"],
+  ["(b) 아래 구간 각도와 같은 균일", "0 · 2 · 15", "0 · 0 · 17", "0 · 1 · 16 / 0 · 0 · 17"],
+], { center: true }));
+children.push(NOTE("미지지 길이: 툴패스 검사기의 진짜 오버행 미지지 길이(mm), 0.5mm 이내 무승부, 낙관 지지 모형."));
+
+children.push(H2("2. 구간(밴드) 개수 (RQ3)"));
+children.push(P("N 개 구간으로 만들 수 있는 각도 프로필은 N+1 개 구간으로도 만들 수 있다. 한 구간을 같은 각도로 둘로 나누면 되기 때문이다. 따라서 가능한 프로필의 집합이 N 에 대해 포함 관계를 이루고, 그 안의 **최선해**의 서포트는 N 이 늘수록 줄거나 같다. 아래로 유계인 단조 감소 수열이므로 N → ∞ 에서 수렴하며, 그 극한은 높이에 따라 연속적으로 변하는 원뿔각 θ(Z′) 의 최선이다."));
+children.push(P("측정 결과, 각도 비용을 0 으로 두면 밴드의 해석식 서포트 이득은 같은 아래 구간 각도의 균일 대비 17개 모델 모두에서 0 이었다. 구간을 나누는 것의 가치는 서포트 감소가 아니라 기울기 감소에서 나온다. 또 구간 수 N 을 J 의 크기로 고르면 7개 모델 모두에서 오버행이 달성 가능한 최소보다 나빴다. 따라서 구간 수는 J 로 고르지 않고 지정하거나 최선해 곡선으로 정해야 한다. 【보류: 최선해 곡선과 포화 구간 수 N* 분포 — T3】"));
+children.push(P("밴드를 무한히 나눈 극한과 곡면 슬라이싱의 관계는 다음 가정으로 둔다. 축대칭 곡면 층 z = Z′ − f(r) 을 한 점에서 r 에 대해 1차까지 근사하면 원뿔이 되고, 남는 오차는 층의 경선 곡률 × r² 정도이다. 따라서 층의 휨이 작은 형상에서는 원뿔족의 극한이 곡면 슬라이싱에 가깝다. Table 4 는 평면부터 원뿔족의 상한(면 묶음마다 최적 각도를 따로 준 이상적 천장)까지의 서포트 면적이다. 방사 대칭 형상(구, funnel, torus)에서 밴드는 천장에 도달하였다. 반면 수평으로 아래를 보는 면이 있는 mushroom 은 어떤 원뿔각으로도 서포트가 줄지 않았다(28.3%). 이는 위 가정이 성립하지 않는 형상으로, 곡면 슬라이싱의 영역이다. 【보류: 곡면(S4) 열과 층 곡률 — S4 세션】"));
+children.push(CAPTION("Table 4. Support area (%) along the degree-of-freedom ladder (analytic)"));
+children.push(table([1800, 1400, 1400, 1400, 1800, 1838], [
+  ["모델", "평면", "균일", "밴드", "원뿔족 천장", "곡면(S4)"],
+  ["sphere", "14.7", "0.0", "0.0", "0.0", "【보류】"],
+  ["funnel", "51.5", "0.0", "0.0", "0.0", "【보류】"],
+  ["torus", "25.0", "18.6", "10.6", "10.6", "【보류】"],
+  ["mushroom", "28.3", "28.3", "28.3", "28.3", "【보류】"],
+], { center: true }));
+children.push(FIGBOX("그림 자리: 곡면 층과 그 점에서 접하는 원뿔(1차 근사) — 오차 ∝ 곡률 × r² 【T6 결과 그림】"));
+children.push(FIGCAP("[Fig. 4] A cone layer as the first-order approximation of an axisymmetric curved layer"));
+
+children.push(H2("3. 선택한 각도의 형상 재현 (RQ2)"));
+children.push(P("선택한 각도로 만든 G-code 가 원래 형상을 얼마나 재현하는지 구형 퇴적 모형으로 출력 형상을 복원해 원본 STL 과 비교하였다. 복셀마다 4개 측정 위치에서 교집합과 합집합 부피를 구한 뒤 평균 교집합 / 평균 합집합으로 IoU 를 집계하였다. mushroom_03 모델의 46개 각도 후보에서 0° 0.9262, 측정 최대인 10° 0.9317, 12° 0.9267 이었고, 이웃 각도 사이 IoU 차이의 절댓값 평균은 약 0.57%p 였다. 0°·10°·12° 를 각각 3회 다시 생성·복원했을 때 G-code 해시, 복원 결과, IoU 가 모두 일치해 계산이 재현됨을 확인하였다. 다만 모델이 하나이고 복셀 0.3mm 해상도에서는 0~12° 사이의 순위를 가릴 수 없으며, 실물 스캔이 아니다([Fig. 5]). 【보류: 메시 예측 대 G-code 측정 순위상관 — T5, 층간격 실측 — T2】"));
+children.push(FIGBOX("그림 자리: 46개 각도 후보의 퇴적 복원 IoU (2차 발표 8장)"));
+children.push(FIGCAP("[Fig. 5] Deposition-reconstruction IoU over cone-angle candidates"));
+
+children.push(H2("4. 실물 출력"));
+children.push(P("【보류: 사전 등록한 시험 출력 L0~L5 의 예측 대 실측 표 — 축 부호·원기둥 치수(L0·L1), 단벽 두께비 0.927 대 1.000(L4), 오버행 문턱(L5), 평면 대 균일 15°(L2), 바닥각을 맞춘 균일 22° 대 밴드 22°→0°(L3)】"));
+
+children.push(H2("5. 계산 비용"));
+children.push(P("각도 결정은 해석식으로 면별 계산만 하므로 데모 모델 하나당 균일각 2~32ms, 밴드 계획 3~45ms 가 걸렸다. 【보류: 메시 크기별 시간 — T7, 곡면 슬라이서(S4)와의 비교】"));
+
+// Ⅴ. 고찰
+children.push(H1("Ⅴ. 고찰"));
+children.push(P("첫째, 자동 결정의 이득은 대부분 형상에 맞는 아래 구간 각도를 고르는 데서 나온다. 같은 아래 구간 각도의 균일과 비교하면 구간 분할의 서포트 이득은 사라지고, 남는 고유 효과는 같은 서포트를 더 작은 평균 기울기로 내는 것이다. 기울기가 작으면 노즐 기울임과 회전축 동작이 줄어들지만, 그 실물 가치(표면, 치수, 출력 시간)는 실물 출력으로 확인해야 한다. 【보류: 베드 안전각 아래에서 위로 올라가는 가변각의 결과를 넣을지】"));
+children.push(P("둘째, 원뿔족의 적용 범위는 방사 대칭 형상이다. 구, funnel, torus 에서 구간 분할은 원뿔족의 천장에 도달했지만, 수평 아래면을 가진 mushroom 은 원뿔족으로 풀 수 없었다. 이는 원뿔을 곡면 층의 1차 근사로 보는 가정이 층의 휨이 클 때 깨진다는 것과 일치한다. 자유도를 줄인 대가가 어디에서 나타나는지를 형상으로 구분할 수 있다는 뜻이다."));
+children.push(P("셋째, 한계가 있다. 표본이 축대칭 형상이고, 판정은 45° 문턱의 기하 판정으로 중력·처짐·냉각을 반영하지 않는다. 5축 기계의 핫엔드 치수와 베드 안전각은 공개 자료에서 얻은 추정값이며, 실물 출력 결과는 아직 반영되지 않았다."));
+
+// Ⅵ. 결론
+children.push(H1("Ⅵ. 결론"));
+children.push(P("본 연구는 원뿔 슬라이싱의 원뿔각을 STL 에서 자동으로 결정하는 알고리즘을 만들었다. RQ1: 원본 면 법선만으로 서포트를 판정하는 해석식을 유도하고, 이를 이용해 원뿔각과 방향, 구간별 각도를 자동으로 결정하였다. 【보류: 기준선 결정 후 대표 결과 한 문장】 RQ2: 판정식은 독립 구현과 일치했고, 선택한 각도의 G-code 는 퇴적 복원에서 재현되었다. RQ3: 구간 수를 늘린 최선해는 단조 감소하며, 구간 분할의 고유 효과는 기울기 감소이다. 구간 수는 J 로 고르지 말고 최선해 곡선으로 정해야 한다. 향후 제작한 5축 프린터로 사전 등록한 시험 출력을 수행하고, 곡면 슬라이싱과의 정량 비교와 비축대칭 형상으로 연구를 넓힐 것이다."));
+
+children.push(H2("연구 신뢰성 정리"));
+children.push(CAPTION("Table 5. Summary of reliability evidence"));
+children.push(table([2600, 4300, 2738], [
+  ["무엇을 믿게 하나", "근거", "범위·단서"],
+  ["판정식이 옳게 구현됨", "재유도 3회(최대 차 7.6×10⁻¹⁴°), 팀원 독립 구현 약 22,000면(최대 차 1.42×10⁻¹⁴°), 0~90° 전수 탐색 423면 불일치 0", "구현은 독립이나 45° 문턱 가정은 같음"],
+  ["정답을 아는 입력에서 맞음", "수직 원기둥·직육면체 0%p, 60° 원뿔 판정 일치", ""],
+  ["유도한 식이 맞음", "증명 9개 식을 저장소 코드 없이 독립 수치 검산(야코비안 상대오차 1.1×10⁻⁷, 베드 안전각 전수 탐색 일치 등)", "식의 일치이며 물리 검증은 아님"],
+  ["상수각이 기존 방식과 같음", "상수 프로필 = RotBot 고정각(회귀 테스트로 강제, 왕복 오차 10⁻¹⁴ 수준)", ""],
+  ["코드 전체", "단위·회귀 테스트 230개 통과, 정적 검사 0건", ""],
+  ["G-code 가 기계에서 안전", "자체 사전 검사기 + 팀원 가상 프린터(독립 역기구학) 대조, 시험 출력 전 파일 치명 결함 0", "핫엔드 치수·축 부호는 실측 전"],
+  ["계산 재현성", "같은 입력 → 바이트 단위로 같은 G-code, 퇴적 복원 3회 해시 일치", ""],
+  ["결과 해석의 공정성", "판정 기준을 결과 전에 문서로 고정", ""],
+  ["독립성의 한계", "검증 계층 일부가 같은 AI 도구로 작성됨", "완전히 독립은 아님"],
+], { size: 16 }));
+
+// 참고문헌
+children.push(H1("■ 참고문헌"));
+const refs = [
+  "[1] Wüthrich, M., Gubser, M., Elspass, W. J., & Jaeger, C. (2021). A novel slicing strategy to print overhangs without support material. Applied Sciences, 11(18), 8760.",
+  "[2] Coupek, D., Friedrich, J., Battran, D., & Riedel, O. (2018). Reduction of support structures and building time by optimized path planning algorithms in multi-axis additive manufacturing. Procedia CIRP, 67, 221–226. 【서지 원문 확인 필요】",
+  "[3] Zhang, T., Fang, G., Huang, Y., Dutta, N., Lefebvre, S., Kilic, Z. M., & Wang, C. C. L. (2022). S³-Slicer: A general slicing framework for multi-axis 3D printing. ACM Transactions on Graphics, 41(6), 277.",
+  "[4] Liu, T., Zhang, T., Chen, Y., Huang, Y., & Wang, C. C. L. (2024). Neural slicer for multi-axis 3D printing. ACM Transactions on Graphics, 43(4), 85.",
+  "[5] Slicer4RTN. https://xyzdims.com/3d-printing/slicer4rtn/ (접속일 기입)",
+  "[6] CNC Kitchen. ConicalSlicer. https://github.com/CNCKitchen/ConicalSlicer (접속일 기입)",
+  "[7] CNC Kitchen. Conical Slicing: A different angle of 3D printing. https://www.cnckitchen.com/blog/conical-slicing-a-different-angle-of-3d-printing (접속일 기입)",
+  "[8] Klappe, D. Rep5x. https://github.com/dennisklappe/Rep5x (접속일 기입)",
+];
+refs.forEach((r) => children.push(new Paragraph({ children: runs(r, { size: 18 }), indent: { left: 400, hanging: 400 }, spacing: { after: 60 } })));
+
+const doc = new Document({
+  styles: {
+    default: { document: { run: { font: FONT, size: BODY } } },
+    paragraphStyles: [
+      { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { font: FONT, size: 26, bold: true }, paragraph: { spacing: { before: 280, after: 120 }, keepNext: true, outlineLevel: 0 } },
+      { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { font: FONT, size: 22, bold: true }, paragraph: { spacing: { before: 180, after: 80 }, keepNext: true, outlineLevel: 1 } },
+    ],
+  },
+  sections: [{
+    properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } },
+    children,
+  }],
+});
+Packer.toBuffer(doc).then((b) => { fs.writeFileSync(process.argv[2], b); console.log("written", process.argv[2]); });
