@@ -1,5 +1,51 @@
 [
  {
+  "slug": "t1_angle_spread",
+  "png": "docs/report/figures/t1_angle_spread.png",
+  "script": "tools/report_figs/t1_angle_spread.py",
+  "data_sources": [
+   "t1_conventional_results.json",
+   "docs/test_t1_t4.md"
+  ],
+  "description": "T1: 모델별 사후 최적 균일각(미지지 mm 최소, 베드 상한 없음) 분포와 관례 고정각(15·20·25·45°)",
+  "key_numbers": {
+   "0.3:oracle_median_deg": 32.0,
+   "0.3:oracle_range_deg": [
+    -6.0,
+    45.0
+   ],
+   "0.3:n_models": 21,
+   "0.4:oracle_median_deg": 40.0,
+   "0.4:oracle_range_deg": [
+    6.0,
+    44.0
+   ],
+   "0.4:n_models": 21
+  }
+ },
+ {
+  "slug": "t1_regret",
+  "png": "docs/report/figures/t1_regret.png",
+  "script": "tools/report_figs/t1_regret.py",
+  "data_sources": [
+   "t1_conventional_results.json",
+   "docs/test_t1_t4.md"
+  ],
+  "description": "T1: 관례 고정각·자동 결정의 후회(미지지 mm − 사후 최적 균일) 분포, 층고 0.4mm, (a) 베드 상한 없음 (b) 22.79° 상한",
+  "key_numbers": {
+   "none:fixed15:median_regret_mm": 84.9,
+   "none:fixed20:median_regret_mm": 66.4,
+   "none:fixed25:median_regret_mm": 57.7,
+   "none:fixed45:median_regret_mm": 0.0,
+   "none:auto_uniform:median_regret_mm": 43.3,
+   "none:auto_band2:median_regret_mm": 56.1,
+   "cap:fixed15:median_regret_mm": 22.1,
+   "cap:fixed20:median_regret_mm": 3.8,
+   "cap:auto_uniform:median_regret_mm": 2.7,
+   "cap:auto_band2:median_regret_mm": 0.0
+  }
+ },
+ {
   "slug": "t4_robustness",
   "png": "docs/report/figures/t4_robustness.png",
   "script": "tools/report_figs/t4_robustness.py",

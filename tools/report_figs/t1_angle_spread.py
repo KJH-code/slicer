@@ -42,8 +42,8 @@ def main():
                     va="bottom", fontsize=6.5, color="0.3")
             del i
         ax.axvline(22.79, color=TAB10[3], linewidth=0.8)
-        ax.text(22.79, 0.6, "B_safe ", rotation=90, transform=ax.get_xaxis_transform(), fontsize=7,
-                color=TAB10[3], ha="right", va="center")
+        ax.text(22.6, 0.97, "B_safe", rotation=90, transform=ax.get_xaxis_transform(), fontsize=7,
+                color=TAB10[3], ha="right", va="top")
         ax.set_xlabel("균일 원뿔각 θ (°)")
         ax.yaxis.get_major_locator().set_params(integer=True)
         panel_label(ax, f"{lab} 층고 {lh} mm")
