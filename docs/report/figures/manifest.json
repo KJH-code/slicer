@@ -145,5 +145,486 @@
    },
    "a": "tan20°"
   }
+ },
+ {
+  "slug": "conical_layers_lamp",
+  "png": "docs/report/figures/conical_layers_lamp.png",
+  "script": "tools/report_figs/conical_layers_lamp.py",
+  "data_sources": [
+   {
+    "path": "examples/rep5x_ladder/L3a_lamp_u22.gcode",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "examples/rep5x_ladder/L3b_lamp_band22to0.gcode",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "examples/rep5x_ladder/lamp_small.stl",
+    "commit": "70cc3c8"
+   }
+  ],
+  "description": "램프(lamp_small) 실제 G-code 층의 r–z 단면(압출 선분을 21점씩 샘플, 축대칭이라 ±r 로 펼침): (a) 균일 22°, (b) 밴드 22°→0°. 블렌드 띠는 축 위 Z′ 범위",
+  "key_numbers": "층 수 (a) 65 / (b) 60; (b) 블렌드 Z′ 10.27~11.34 mm, 블렌드 층 3개",
+  "generated_at_commit": "977e76a"
+ },
+ {
+  "slug": "g_theta_funnel",
+  "png": "docs/report/figures/g_theta_funnel.png",
+  "script": "tools/report_figs/g_theta_funnel.py",
+  "data_sources": [
+   {
+    "path": "examples/funnel.stl",
+    "commit": "1f97b11"
+   }
+  ],
+  "description": "(a) 오버행 α 면의 g(θ)=−sin(α−θ) 와 문턱 −sin45°, (b) funnel 벽의 변환공간 오버행 대 실제 유효 오버행",
+  "key_numbers": "funnel α=70.35°, θ*=25.35°; 45° 통과 각 실제 25.3° 대 변환공간 50.7°; funnel.stl 해석식 서포트 0° 51.5% → 0% 첫 각 25.5° (0.5° 격자)",
+  "generated_at_commit": "977e76a"
+ },
+ {
+  "slug": "critical_angle_hist",
+  "png": "docs/report/figures/critical_angle_hist.png",
+  "script": "tools/report_figs/critical_angle_hist.py",
+  "data_sources": [
+   {
+    "path": "compare_ceiling.py",
+    "commit": "24472cf"
+   },
+   {
+    "path": "conical/analytic.py",
+    "commit": "a4285a3"
+   },
+   {
+    "path": "examples/lamp.stl",
+    "commit": "1c7c5ae"
+   }
+  ],
+  "description": "면별 임계각 θ* 면적 가중 히스토그램(부호: + outward, − inward, 0°에서 이미 지지된 면 제외)과 해결 가능/불가 면적 비율 (모델 전체 면적 %)",
+  "key_numbers": "구: 0°필요 14.7%, ≤44° 14.7%, 44~90° 0.0%, 불가 0.0%; 깔때기(funnel): 0°필요 51.5%, ≤44° 51.5%, 44~90° 0.0%, 불가 0.0%; 토러스: 0°필요 25.0%, ≤44° 25.0%, 44~90° 0.0%, 불가 0.0%; 버섯: 0°필요 28.3%, ≤44° 0.0%, 44~90° 28.3%, 불가 0.0%; 램프(lamp.stl): 0°필요 8.9%, ≤44° 8.9%, 44~90° 0.0%, 불가 0.0%",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "sphere": {
+    "need0": 14.7121393500213,
+    "in44": 14.7121393500213,
+    "beyond44": 0.0,
+    "never": 0.0
+   },
+   "funnel": {
+    "need0": 51.51384702600353,
+    "in44": 51.51384702600353,
+    "beyond44": 0.0,
+    "never": 0.0
+   },
+   "torus": {
+    "need0": 24.961340959685675,
+    "in44": 24.961340959685675,
+    "beyond44": 0.0,
+    "never": 0.0
+   },
+   "mushroom": {
+    "need0": 28.274050715670985,
+    "in44": 0.0,
+    "beyond44": 28.274050715670985,
+    "never": 0.0
+   },
+   "lamp": {
+    "need0": 8.909113822197835,
+    "in44": 8.909113822197835,
+    "beyond44": 0.0,
+    "never": 0.0
+   }
+  }
+ },
+ {
+  "slug": "support_vs_angle",
+  "png": "docs/report/figures/support_vs_angle.png",
+  "script": "tools/report_figs/support_vs_angle.py",
+  "data_sources": [
+   {
+    "path": "compare_ceiling.py",
+    "commit": "24472cf"
+   },
+   {
+    "path": "conical/analytic.py",
+    "commit": "a4285a3"
+   },
+   {
+    "path": "conical/selector.py",
+    "commit": "ea7e233"
+   },
+   {
+    "path": "examples/lamp.stl",
+    "commit": "1c7c5ae"
+   }
+  ],
+  "description": "(a) 해석식 서포트 면적 S(θ) (+ outward / − inward, 0.25° 간격), (b) J(θ)=ΔS−k|θ|, k=0.2; 빨간 점선 = select_cone 이 고른 각(2° 격자, ≤44°), 회색 = 탐색 범위 밖",
+  "key_numbers": "구: S(0)=14.7% → 선택 +32° S=1.3% J=7.1; 깔때기: S(0)=51.5% → 선택 +26° S=0.0% J=46.3; 토러스: S(0)=25.0% → 선택 +6° S=23.2% J=0.5; 버섯: S(0)=28.3% → 선택 +0° S=28.3% J=0.0; 램프: S(0)=8.9% → 선택 +24° S=1.8% J=2.3",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "sphere": {
+    "base": 14.7121393500213,
+    "chosen": 32.0,
+    "S_chosen": 1.254906654299793,
+    "J": 7.057232695721506,
+    "S_min": 0.0
+   },
+   "funnel": {
+    "base": 51.51384702600353,
+    "chosen": 26.0,
+    "S_chosen": 0.0,
+    "J": 46.31384702600353,
+    "S_min": 0.0
+   },
+   "torus": {
+    "base": 24.961340959685675,
+    "chosen": 6.0,
+    "S_chosen": 23.213416773382388,
+    "J": 0.5479241863032867,
+    "S_min": 17.544713319549412
+   },
+   "mushroom": {
+    "base": 28.274050715670985,
+    "chosen": 0.0,
+    "S_chosen": 28.274050715670985,
+    "J": 0.0,
+    "S_min": 0.0
+   },
+   "lamp": {
+    "base": 8.909113822197835,
+    "chosen": 24.0,
+    "S_chosen": 1.7772741954909057,
+    "J": 2.3318396267069286,
+    "S_min": 0.0
+   }
+  }
+ },
+ {
+  "slug": "spacing_heatmap",
+  "png": "docs/report/figures/spacing_heatmap.png",
+  "script": "tools/report_figs/spacing_heatmap.py",
+  "data_sources": [
+   {
+    "path": "examples/rep5x_ladder/L3b_lamp_band22to0.gcode",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "examples/rep5x_ladder/lamp_small.stl",
+    "commit": "70cc3c8"
+   },
+   {
+    "path": "conical/profile.py",
+    "commit": "9b7ebb7"
+   }
+  ],
+  "description": "램프 L3b(22°→0°) 프로필의 층간격 배율 m(r,z) 색지도, 허용 한계 1/1.5·1.5 등고선(초록 점선; 1/1.5 는 압축이 없어 나타나지 않음), 검은 선 = 모델 외곽, 모델 밖은 흐리게. (b)는 블렌드 부근 확대",
+  "key_numbers": "블렌드 Z′ 10.27~11.34 mm, s = -0.3776/mm, m=1.5 반경 1.32 mm; G-code 압출점 위 m 최대 1.379, 최소 1.000",
+  "generated_at_commit": "977e76a"
+ },
+ {
+  "slug": "extrusion_ratio",
+  "png": "docs/report/figures/extrusion_ratio.png",
+  "script": "tools/report_figs/extrusion_ratio.py",
+  "data_sources": [
+   {
+    "path": "examples/rep5x_ladder/cylinder.stl",
+    "commit": "9c1bcf2"
+   },
+   {
+    "path": "examples/rep5x_ladder/L4a_wall_b0.gcode",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "examples/rep5x_ladder/L4b_wall_u22.gcode",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "conical_slice.py",
+    "commit": "bd6a855"
+   }
+  ],
+  "description": "단벽 원기둥(r10×8, 둘레 1줄)을 θ=0~30° 로 실제 생성해 잰 벽 1mm 당 E 비 대 예측 cosθ 와 길이 비 모형 1.0",
+  "key_numbers": "22°: 측정 0.9272 (cos22° = 0.9272), 사다리 L4b/L4a 0.9272; 전 각도 |측정 − cosθ| 최대 1.5e-05",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "ratio": {
+    "0": 1.0,
+    "5": 0.9961813017580727,
+    "10": 0.9848092234314898,
+    "15": 0.9659197645405619,
+    "20": 0.9396817090530317,
+    "22": 0.9271978228171224,
+    "25": 0.9063225280859881,
+    "30": 0.8660127781170087
+   },
+   "e_per_mm_0": 0.05612649946794508,
+   "ladder_L4b_over_L4a": 0.9271978228171224,
+   "generation": "conical_slice.py --mode xyz (스크립트가 임시 폴더에 생성)"
+  }
+ },
+ {
+  "slug": "baseline_bars",
+  "png": "docs/report/figures/baseline_bars.png",
+  "script": "tools/report_figs/baseline_bars.py",
+  "data_sources": [
+   {
+    "path": "gap_sample_results.json",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "docs/gap_audit.md",
+    "commit": "39bb0b7"
+   }
+  ],
+  "description": "축대칭 17 모델의 미지지 길이(툴패스 검사기 A, 낙관): 균일(J 최선)·밴드2·균일(밴드2 아랫각), 층고 0.3/0.4",
+  "key_numbers": "밴드2 대 균일(J) 승·패·무: 0.3 (5, 0, 12) / 0.4 (5, 3, 9); 밴드2 대 균일(아랫각): 0.3 (0, 0, 17) / 0.4 (0, 2, 15) (gap_audit §9.3 표 34행과 대조 일치)",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "0.3": {
+    "band2_vs_uniformJ": [
+     5,
+     0,
+     12
+    ],
+    "band2_vs_uniform_bottom": [
+     0,
+     0,
+     17
+    ]
+   },
+   "0.4": {
+    "band2_vs_uniformJ": [
+     5,
+     3,
+     9
+    ],
+    "band2_vs_uniform_bottom": [
+     0,
+     2,
+     15
+    ]
+   }
+  }
+ },
+ {
+  "slug": "tilt_reduction",
+  "png": "docs/report/figures/tilt_reduction.png",
+  "script": "tools/report_figs/tilt_reduction.py",
+  "data_sources": [
+   {
+    "path": "gap_sample_results.json",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "docs/gap_audit.md",
+    "commit": "39bb0b7"
+   }
+  ],
+  "description": "17 모델 평균|θ| 짝 점(층고 0.3): (a) 균일(J)→밴드2, (b) 균일(밴드2 아랫각)→밴드2. 진한 점 = 미지지 길이가 0.5mm 안에서 같은 모델, 흐린 점 = 다른 모델",
+  "key_numbers": "(a) 같은 미지지 12/17, 감소 중앙 7.9° (1.0~9.4°); (b) 17/17, 중앙 8.4° (1.0~11.1°) — 문서 8.4°(1.0~11.1°) 와 일치는 (b)",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "uJ": {
+    "n_tie": 12,
+    "median": 7.895276566687387,
+    "min": 1.0454826522123746,
+    "max": 9.445680230444246
+   },
+   "ub": {
+    "n_tie": 17,
+    "median": 8.393633283775504,
+    "min": 1.0454826522123746,
+    "max": 11.137659525214875
+   },
+   "uJ_lh0.4": {
+    "n_tie": 9,
+    "median": 8.263721191671058,
+    "min": 1.0454826522123746,
+    "max": 9.445680230444246
+   },
+   "ub_lh0.4": {
+    "n_tie": 15,
+    "median": 8.435189338636139,
+    "min": 1.0454826522123746,
+    "max": 11.137659525214875
+   }
+  }
+ },
+ {
+  "slug": "dof_ladder",
+  "png": "docs/report/figures/dof_ladder.png",
+  "script": "tools/report_figs/dof_ladder.py",
+  "data_sources": [
+   {
+    "path": "compare_ceiling.py",
+    "commit": "24472cf"
+   },
+   {
+    "path": "conical/bandplan.py",
+    "commit": "24472cf"
+   },
+   {
+    "path": "conical/clusters.py",
+    "commit": "24472cf"
+   },
+   {
+    "path": "conical/analytic.py",
+    "commit": "a4285a3"
+   }
+  ],
+  "description": "데모 6 모델의 남은 서포트 면적(해석식): 평면 → 균일 원뿔(최선) → 밴드 계획 → 원뿔족 천장(클러스터별 자유 각). 곡면(S4) 칸은 빈 자리",
+  "key_numbers": "구 14.7→0.0→0.0→0.0%; 깔때기 51.5→0.0→0.0→0.0%; 구+줄기 11.9→2.3→2.3→2.3%; 버섯 28.3→28.3→28.3→28.3%; 구 두 개 14.9→0.0→0.0→0.0%; 토러스 25.0→18.6→10.6→10.6% (평면→균일→밴드→천장)",
+  "generated_at_commit": "977e76a",
+  "pending": "곡면(S4) 칸 추가 예정 — docs/s4_comparison.md",
+  "numbers": {
+   "sphere": {
+    "baseline": 14.7121393500213,
+    "uniform": 0.0,
+    "banded": 0.0,
+    "ceiling": 0.0
+   },
+   "funnel": {
+    "baseline": 51.51384702600353,
+    "uniform": 0.0,
+    "banded": 0.0,
+    "ceiling": 0.0
+   },
+   "sphere+stalk": {
+    "baseline": 11.937096107243695,
+    "uniform": 2.2784504636280394,
+    "banded": 2.2784504636280394,
+    "ceiling": 2.2784504636280394
+   },
+   "mushroom": {
+    "baseline": 28.274050715670985,
+    "uniform": 28.274050715670985,
+    "banded": 28.274050715670985,
+    "ceiling": 28.274050715670988
+   },
+   "two-spheres": {
+    "baseline": 14.878506896094946,
+    "uniform": 0.0,
+    "banded": 0.0,
+    "ceiling": 0.0
+   },
+   "torus": {
+    "baseline": 24.961340959685675,
+    "uniform": 18.649196011002918,
+    "banded": 10.624218842157905,
+    "ceiling": 10.624218842157907
+   }
+  }
+ },
+ {
+  "slug": "toolpath_3d",
+  "png": "docs/report/figures/toolpath_3d.png",
+  "script": "tools/report_figs/toolpath_3d.py",
+  "data_sources": [
+   {
+    "path": "examples/rep5x_ladder/L3b_lamp_band22to0.gcode",
+    "commit": "bd6a855"
+   }
+  ],
+  "description": "L3b(램프 밴드 22°→0°) 압출 경로 3D (색 = |B|) 와 층별 B 각",
+  "key_numbers": "층 60개, 압출 선분 3634개; |B| 22° 층 34, 블렌드 층 [34, 35, 36] (|B| 17.60, 11.53, 5.18°), 0° 층 23",
+  "generated_at_commit": "977e76a"
+ },
+ {
+  "slug": "theta_star_check",
+  "png": "docs/report/figures/theta_star_check.png",
+  "script": "tools/report_figs/theta_star_check.py",
+  "data_sources": [
+   {
+    "path": "tools/verify_proofs.py",
+    "commit": "d7e7b47"
+   }
+  ],
+  "description": "임계각 닫힌 식 대 0~90° 전수 탐색(0.001° 간격): 무작위 법선 3,000개, 저장소 코드와 독립인 numpy 구현",
+  "key_numbers": "비교 397면, 최대 |차| 9.99e-04° (< 격자 0.001°), 0°에서 이미 지지 2603, 0~90° 불가 0",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "n": 3000,
+   "compared": 397,
+   "already": 2603,
+   "never": 0,
+   "max_abs_diff_deg": 0.0009986687154750484,
+   "mean_diff_deg": -0.0005112484071701204
+  }
+ },
+ {
+  "slug": "layer_spacing_measured",
+  "png": "docs/report/figures/layer_spacing_measured.png",
+  "script": "tools/report_figs/layer_spacing_measured.py",
+  "data_sources": [
+   {
+    "path": "examples/rep5x_ladder/L3b_lamp_band22to0.gcode",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "tools/check_layer_spacing.py",
+    "commit": "68011df"
+   }
+  ],
+  "description": "L3b G-code 의 이웃 층 z 간격(같은 반경 ±0.1mm, 기울기 보정) 측정 대 예측 h − r·Δtanθ, (b) 비 대 반경 (회색 띠 = T2 사전 기준 0.95~1.05)",
+  "key_numbers": "1410쌍 (블렌드 안 176); 비 중앙 1.0000 [0.997, 1.002], 블렌드 안 1.0002 [0.999, 1.002]; 예측 간격 범위 0.300~0.412 mm",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "pairs": 1410,
+   "blend_pairs": 176,
+   "rho_all": [
+    0.9971689092115282,
+    1.0,
+    1.002319627625011
+   ],
+   "rho_blend": [
+    0.9987596912896147,
+    1.000211786409769,
+    1.002319627625011
+   ],
+   "pred_min": 0.29999999999999716,
+   "pred_max": 0.412300075811069
+  }
+ },
+ {
+  "slug": "iou_angle",
+  "png": "docs/report/figures/iou_angle.png",
+  "script": "tools/report_figs/iou_angle.py",
+  "data_sources": [
+   {
+    "path": "26037-arch/R-E-second-presentation:assets/data/angle-iou.csv",
+    "commit": "fd77315"
+   },
+   {
+    "path": "26037-arch/R-E-second-presentation:assets/data/deposition-repeats.csv",
+    "commit": "fd77315"
+   }
+  ],
+  "description": "mushroom_03 퇴적 복원 IoU 대 원뿔각 (46 후보, outward/inward). (b) 0~16° 확대, ◇ = 0·10·12° 재실행 3회(가로로 ±0.3° 벌려 그림)",
+  "key_numbers": "최대 outward 10° IoU 0.9317; 0° 0.9262, 12° 0.9267, 44° 0.5365; 재실행 3회 범위 0°: 0.0e+00, 10°: 0.0e+00, 12°: 0.0e+00",
+  "generated_at_commit": "977e76a",
+  "numbers": {
+   "best": [
+    "outward",
+    "10.0",
+    "0.9317155299412344"
+   ],
+   "repeats": {
+    "0": {
+     "n": 3,
+     "range": 0.0,
+     "iou": 0.9262427385722127
+    },
+    "10": {
+     "n": 3,
+     "range": 0.0,
+     "iou": 0.9317155299412344
+    },
+    "12": {
+     "n": 3,
+     "range": 0.0,
+     "iou": 0.9267034221143492
+    }
+   }
+  }
  }
 ]
