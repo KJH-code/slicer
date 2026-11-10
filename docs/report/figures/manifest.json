@@ -1,5 +1,153 @@
 [
  {
+  "slug": "bed_cap_cost",
+  "png": "docs/report/figures/bed_cap_cost.png",
+  "script": "tools/report_figs/bed_cap_cost.py",
+  "data_sources": [
+   "report_fig_bed_cap_results.json",
+   "t1_conventional_results.json"
+  ],
+  "description": "E: 베드 상한 22.79° 전후 고른 각도(균일·밴드2 아랫각, 층고 0.4 선택)와 균일 원뿔 미지지 증가(층고 0.3/0.4)",
+  "key_numbers": {
+   "0.3:uniform:n_changed": 9,
+   "0.3:uniform:median_delta_mm": 36.4,
+   "0.3:uniform:max_delta_mm": 734.1,
+   "0.3:uniform:top": "funnel (57%)",
+   "0.3:band2:n_changed": 14,
+   "0.3:band2:median_delta_mm": 25.7,
+   "0.3:band2:max_delta_mm": 733.8,
+   "0.3:band2:top": "funnel (54%)",
+   "0.3:oracle:n_changed": 19,
+   "0.3:oracle:median_delta_mm": 29.4,
+   "0.3:oracle:max_delta_mm": 293.3,
+   "0.3:oracle:top": "허리3 ×2 (36%)",
+   "0.4:uniform:n_changed": 9,
+   "0.4:uniform:median_delta_mm": 32.8,
+   "0.4:uniform:max_delta_mm": 624.0,
+   "0.4:uniform:top": "허리3 ×2 (55%)",
+   "0.4:band2:n_changed": 14,
+   "0.4:band2:median_delta_mm": 29.7,
+   "0.4:band2:max_delta_mm": 311.7,
+   "0.4:band2:top": "허리3 ×2 (33%)",
+   "0.4:oracle:n_changed": 20,
+   "0.4:oracle:median_delta_mm": 62.8,
+   "0.4:oracle:max_delta_mm": 627.5,
+   "0.4:oracle:top": "허리3 ×2 (25%)"
+  }
+ },
+ {
+  "slug": "checker_criterion",
+  "png": "docs/report/figures/checker_criterion.png",
+  "script": "tools/report_figs/checker_criterion.py",
+  "data_sources": [
+   "report_fig_checker_results.json",
+   "conical/toolpath.py"
+  ],
+  "description": "G: 검사기 A 지지 정의(수평 ≤ 0.45mm, 수직 (0,1.5h], 베드 z ≤ h) 모식도와 합성 고리 시험",
+  "key_numbers": {
+   "width_mm": 0.45,
+   "vwin_factor": 1.5,
+   "bed_factor": 1.0,
+   "sample_spacing_mm": 0.225,
+   "six_cases_match": true,
+   "implied_planar_deg": {
+    "0.2": 66.0,
+    "0.25": 60.9,
+    "0.3": 56.3,
+    "0.35": 52.1,
+    "0.4": 48.4,
+    "0.5": 42.0
+   }
+  }
+ },
+ {
+  "slug": "critical_angle_select",
+  "png": "docs/report/figures/critical_angle_select.png",
+  "script": "tools/report_figs/critical_angle_select.py",
+  "data_sources": [
+   "report_fig_critical_angle_results.json",
+   "t1_conventional_results.json",
+   "conical/analytic.py",
+   "conical/exact_angle.py"
+  ],
+  "description": "A: 21 모델 면별 임계각 θ* 분포(0° 필요 면은 전부 아래 밴드)와 자동 균일·밴드2 각, 베드 상한 22.79°",
+  "key_numbers": {
+   "recheck_old_hist_all_match_0p1": true,
+   "why_check_pass": "20/20",
+   "exact_vs_grid_within_2deg": "12/21",
+   "over_cap_share_median_pct": 27.3,
+   "upper_band_need0_area_pct_max": 0.0
+  }
+ },
+ {
+  "slug": "direction_demo",
+  "png": "docs/report/figures/direction_demo.png",
+  "script": "tools/report_figs/direction_demo.py",
+  "data_sources": [
+   "report_fig_direction_results.json",
+   "conical/exact_angle.py",
+   "conical/toolpath.py"
+  ],
+  "description": "C: 안쪽/바깥 오버행 그릇에서 방향 자동 결정 — 단면, S(θ)·J(θ) 두 방향, 검사기 미지지(구멍 살린 분류)",
+  "key_numbers": {
+   "sample_inward_counts": {
+    "grid_uniform": 0,
+    "exact_uniform": 0,
+    "auto_uniform": 0,
+    "auto_band2": 0,
+    "cap_uniform": 0,
+    "cap_band2": 1
+   },
+   "C1_pass": true,
+   "selection": {
+    "inner": {
+     "grid_uniform": -16.0,
+     "exact_uniform": -15.011712277414517,
+     "exact_J": 7.0375429743391535,
+     "banded_j_N1": [
+      -16.0
+     ],
+     "banded_j_N2": [
+      -16.0,
+      0.0
+     ]
+    },
+    "outer": {
+     "grid_uniform": 16.0,
+     "exact_uniform": 15.011535440019943,
+     "exact_J": 12.683162677412458,
+     "banded_j_N1": [
+      16.0
+     ],
+     "banded_j_N2": [
+      10.0,
+      16.0
+     ]
+    }
+   },
+   "C2_prereg": {
+    "inner": {
+     "0.3": false,
+     "0.4": false
+    },
+    "outer": {
+     "0.3": true,
+     "0.4": false
+    }
+   },
+   "C2_hole_aware": {
+    "inner": {
+     "0.3": true,
+     "0.4": false
+    },
+    "outer": {
+     "0.3": true,
+     "0.4": false
+    }
+   }
+  }
+ },
+ {
   "slug": "funnel_cap",
   "png": "docs/report/figures/funnel_cap.png",
   "script": "tools/report_figs/funnel_cap.py",
@@ -460,6 +608,67 @@
    "cap:k0.3:uniform_theta_median": 10.0,
    "cap:k0.5:uniform_theta_median": 0.0,
    "cap:k1:uniform_theta_median": 0.0
+  }
+ },
+ {
+  "slug": "layer_height_blend",
+  "png": "docs/report/figures/layer_height_blend.png",
+  "script": "tools/report_figs/layer_height_blend.py",
+  "data_sources": [
+   "report_fig_layer_blend_results.json",
+   "report_figs_exp2_rerun.json"
+  ],
+  "description": "F: 층고별 검사기-선택기 경계식, 재실행 미지지(블렌드 층 몫), 해석식 불일치 면적",
+  "key_numbers": {
+   "vertical_window_boundary": "m > 1.5 (층고 무관)",
+   "h_c_theta0_m1.5": 0.3,
+   "h_c_min_m1": 0.373,
+   "h_c_min_m1.5": 0.249,
+   "analytic_onset_h": {
+    "램프(허리 r=2)": [
+     0.38,
+     0.39
+    ],
+    "허리 r=3": [
+     0.38,
+     0.39
+    ],
+    "구": [
+     0.39,
+     0.37
+    ]
+   },
+   "blend_m_max_measured": 1.474,
+   "램프(허리 r=2)@0.3:uni/band2/blend_mm": [
+    17.8,
+    0.0,
+    0.0
+   ],
+   "램프(허리 r=2)@0.4:uni/band2/blend_mm": [
+    59.3,
+    33.4,
+    0.0
+   ],
+   "허리 r=3@0.3:uni/band2/blend_mm": [
+    35.2,
+    6.4,
+    0.0
+   ],
+   "허리 r=3@0.4:uni/band2/blend_mm": [
+    66.4,
+    35.4,
+    0.0
+   ],
+   "구@0.3:uni/band2/blend_mm": [
+    7.7,
+    7.7,
+    0.0
+   ],
+   "구@0.4:uni/band2/blend_mm": [
+    35.6,
+    94.2,
+    57.5
+   ]
   }
  },
  {

@@ -1,0 +1,1745 @@
+{
+ "rows": [
+  {
+   "model": "구",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 28.0,
+    "mm": 7.719967075097839,
+    "theta_cap": 20.0,
+    "mm_cap": 27.967768990025206,
+    "delta_mm": 20.24780191492737,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     28.0,
+     20.0
+    ],
+    "mm": 7.719967075097839,
+    "mean_abs": 22.003881633150495,
+    "theta_cap": [
+     20.0,
+     16.0
+    ],
+    "mm_cap": 27.967768990025206,
+    "mean_abs_cap": 16.994991741959513,
+    "delta_mm": 20.24780191492737,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 45.0,
+    "mm": 0.45035261599076293,
+    "theta_cap": 22.0,
+    "mm_cap": 19.709680463766382,
+    "delta_mm": 19.25932784777562,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=7",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 18.0,
+    "mm": 43.38961763001649,
+    "theta_cap": 18.0,
+    "mm_cap": 43.38961763001649,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     18.0,
+     16.0
+    ],
+    "mm": 43.38961763001649,
+    "mean_abs": 16.95451734778763,
+    "theta_cap": [
+     18.0,
+     16.0
+    ],
+    "mm_cap": 43.38961763001649,
+    "mean_abs_cap": 16.95451734778763,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 30.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 29.46082215097278,
+    "delta_mm": 29.46082215097278,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=5",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 20.0,
+    "mm": 35.18969779756502,
+    "theta_cap": 20.0,
+    "mm_cap": 35.18969779756502,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     20.0,
+     2.0
+    ],
+    "mm": 35.18969779756502,
+    "mean_abs": 12.473168058296284,
+    "theta_cap": [
+     20.0,
+     2.0
+    ],
+    "mm_cap": 35.18969779756502,
+    "mean_abs_cap": 12.473168058296284,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 30.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 29.454640476019296,
+    "delta_mm": 29.454640476019296,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=4",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 16.0,
+    "mm": 46.5898318730754,
+    "theta_cap": 16.0,
+    "mm_cap": 46.5898318730754,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     0.0
+    ],
+    "mm": 6.904856501721376,
+    "mean_abs": 15.961705617189066,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 29.44671432196764,
+    "mean_abs_cap": 13.291483694366523,
+    "delta_mm": 22.541857820246264,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 30.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 29.44671432196764,
+    "delta_mm": 29.44671432196764,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=3",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 20.0,
+    "mm": 35.18452958819353,
+    "theta_cap": 20.0,
+    "mm_cap": 35.18452958819353,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     28.0,
+     0.0
+    ],
+    "mm": 6.405313697658655,
+    "mean_abs": 17.459635604547998,
+    "theta_cap": [
+     20.0,
+     0.0
+    ],
+    "mm_cap": 35.18452958819353,
+    "mean_abs_cap": 12.174949206634867,
+    "delta_mm": 28.77921589053487,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 30.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 29.446709381267112,
+    "delta_mm": 29.446709381267112,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=2",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 24.0,
+    "mm": 17.753569575194142,
+    "theta_cap": 22.0,
+    "mm_cap": 29.450425127164557,
+    "delta_mm": 11.696855551970415,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     30.0,
+     0.0
+    ],
+    "mm": 0.0,
+    "mean_abs": 18.862340474785118,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 29.450425127164557,
+    "mean_abs_cap": 13.615377403694234,
+    "delta_mm": 29.450425127164557,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 30.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 29.450425127164557,
+    "delta_mm": 29.450425127164557,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=1",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 26.0,
+    "mm": 6.90288519781448,
+    "theta_cap": 18.0,
+    "mm_cap": 43.31842497303698,
+    "delta_mm": 36.415539775222506,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     0.0
+    ],
+    "mm": 6.90288519781448,
+    "mean_abs": 16.554319769555754,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 29.450983713114198,
+    "mean_abs_cap": 14.005845743325608,
+    "delta_mm": 22.548098515299717,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 30.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 29.450983713114198,
+    "delta_mm": 29.450983713114198,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.1",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 34.250770614880665,
+    "theta_cap": 22.0,
+    "mm_cap": 34.250770614880665,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     0.0
+    ],
+    "mm": 34.250770614880665,
+    "mean_abs": 13.502827767333605,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 34.250770614880665,
+    "mean_abs_cap": 13.502827767333605,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 30.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 34.250770614880665,
+    "delta_mm": 34.250770614880665,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.2",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 26.0,
+    "mm": 23.367681567275987,
+    "theta_cap": 22.0,
+    "mm_cap": 53.2183195938273,
+    "delta_mm": 29.850638026551316,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     4.0
+    ],
+    "mm": 23.367681567275987,
+    "mean_abs": 17.606366716224493,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 53.2183195938273,
+    "mean_abs_cap": 13.461686541743372,
+    "delta_mm": 29.850638026551316,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 32.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 53.2183195938273,
+    "delta_mm": 53.2183195938273,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.3",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 34.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 54.78199465916949,
+    "delta_mm": 54.78199465916949,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     32.0,
+     14.0
+    ],
+    "mm": 0.0,
+    "mean_abs": 25.348542295787052,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 54.78199465916949,
+    "mean_abs_cap": 13.565021284634941,
+    "delta_mm": 54.78199465916949,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 32.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 54.78199465916949,
+    "delta_mm": 54.78199465916949,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.5",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 36.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 105.47489148370755,
+    "delta_mm": 105.47489148370755,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     36.0,
+     20.0
+    ],
+    "mm": 0.0,
+    "mean_abs": 30.538619132581285,
+    "theta_cap": [
+     22.0,
+     4.0
+    ],
+    "mm_cap": 105.47489148370755,
+    "mean_abs_cap": 15.03150897692071,
+    "delta_mm": 105.47489148370755,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 32.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 105.47489148370755,
+    "delta_mm": 105.47489148370755,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×2",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 42.0,
+    "mm": 2.0157632230287774,
+    "theta_cap": 22.0,
+    "mm_cap": 293.2602344453884,
+    "delta_mm": 291.2444712223596,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     42.0,
+     36.0
+    ],
+    "mm": 2.0157632230287774,
+    "mean_abs": 37.72569252515984,
+    "theta_cap": [
+     22.0,
+     10.0
+    ],
+    "mm_cap": 293.2602344453884,
+    "mean_abs_cap": 17.410075523632674,
+    "delta_mm": 291.2444712223596,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 36.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 293.2602344453884,
+    "delta_mm": 293.2602344453884,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.1",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 12.583964594243183,
+    "theta_cap": 22.0,
+    "mm_cap": 12.583964594243183,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     24.0,
+     0.0
+    ],
+    "mm": 9.2250752310342,
+    "mean_abs": 14.79056631179397,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 12.583964594243183,
+    "mean_abs_cap": 13.553747822450507,
+    "delta_mm": 3.3588893632089825,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 34.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 12.583964594243183,
+    "delta_mm": 12.583964594243183,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.15",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 20.0,
+    "mm": 16.49318748791765,
+    "theta_cap": 20.0,
+    "mm_cap": 16.49318748791765,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     2.0
+    ],
+    "mm": 6.589562371097955,
+    "mean_abs": 16.965801345220076,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 12.560982529017702,
+    "mean_abs_cap": 13.558725620399299,
+    "delta_mm": 5.971420157919747,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 34.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 12.560982529017702,
+    "delta_mm": 12.560982529017702,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.2",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 12.904478881301689,
+    "theta_cap": 22.0,
+    "mm_cap": 12.904478881301689,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     0.0
+    ],
+    "mm": 12.904478881301689,
+    "mean_abs": 13.564810661363861,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 12.904478881301689,
+    "mean_abs_cap": 13.564810661363861,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 34.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 12.904478881301689,
+    "delta_mm": 12.904478881301689,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.3",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 15.718975128289749,
+    "theta_cap": 22.0,
+    "mm_cap": 15.718975128289749,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     0.0
+    ],
+    "mm": 15.718975128289749,
+    "mean_abs": 13.736278808328946,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 15.718975128289749,
+    "mean_abs_cap": 13.736278808328946,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 34.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 15.718975128289749,
+    "delta_mm": 15.718975128289749,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.4",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 18.227985494874076,
+    "theta_cap": 22.0,
+    "mm_cap": 18.227985494874076,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     2.0
+    ],
+    "mm": 18.227985494874076,
+    "mean_abs": 14.50240314232616,
+    "theta_cap": [
+     22.0,
+     2.0
+    ],
+    "mm_cap": 18.227985494874076,
+    "mean_abs_cap": 14.50240314232616,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 32.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 18.227985494874076,
+    "delta_mm": 18.227985494874076,
+    "changed": true
+   }
+  },
+  {
+   "model": "sphere",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 32.0,
+    "mm": 1.2230242977250259,
+    "theta_cap": 22.0,
+    "mm_cap": 15.206048476874786,
+    "delta_mm": 13.98302417914976,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     32.0,
+     26.0
+    ],
+    "mm": 1.2230242977250259,
+    "mean_abs": 27.5039832682912,
+    "theta_cap": [
+     22.0,
+     18.0
+    ],
+    "mm_cap": 15.206048476874786,
+    "mean_abs_cap": 18.999939739759963,
+    "delta_mm": 13.98302417914976,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 45.0,
+    "mm": 0.6002843929196549,
+    "theta_cap": 22.0,
+    "mm_cap": 15.206048476874786,
+    "delta_mm": 14.605764083955131,
+    "changed": true
+   }
+  },
+  {
+   "model": "funnel",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 26.0,
+    "mm": 1.9209616182210703,
+    "theta_cap": 0.0,
+    "mm_cap": 735.9721113925076,
+    "delta_mm": 734.0511497742865,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     22.0
+    ],
+    "mm": 2.168762299214123,
+    "mean_abs": 24.060553881040143,
+    "theta_cap": [
+     0.0,
+     0.0
+    ],
+    "mm_cap": 735.9721113925076,
+    "mean_abs_cap": 0.0,
+    "delta_mm": 733.8033490932935,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 45.0,
+    "mm": 0.9758207271347843,
+    "theta_cap": 22.0,
+    "mm_cap": 2.237266030526378,
+    "delta_mm": 1.2614453033915936,
+    "changed": true
+   }
+  },
+  {
+   "model": "torus",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 6.0,
+    "mm": 162.2867356994542,
+    "theta_cap": 6.0,
+    "mm_cap": 162.2867356994542,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     6.0,
+     6.0
+    ],
+    "mm": 162.2867356994542,
+    "mean_abs": 6.000000000000003,
+    "theta_cap": [
+     -6.0,
+     2.0
+    ],
+    "mm_cap": 107.18132838702024,
+    "mean_abs_cap": 3.249832506087332,
+    "delta_mm": -55.105407312433954,
+    "changed": true
+   },
+   "oracle": {
+    "theta": -6.0,
+    "mm": 107.18132838702024,
+    "theta_cap": -6.0,
+    "mm_cap": 107.18132838702024,
+    "delta_mm": 0.0,
+    "changed": false
+   }
+  },
+  {
+   "model": "mushroom",
+   "layer_height": 0.3,
+   "uniform": {
+    "theta": 0.0,
+    "mm": 94.6964468640974,
+    "theta_cap": 0.0,
+    "mm_cap": 94.6964468640974,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     0.0,
+     0.0
+    ],
+    "mm": 94.6964468640974,
+    "mean_abs": 0.0,
+    "theta_cap": [
+     0.0,
+     0.0
+    ],
+    "mm_cap": 94.6964468640974,
+    "mean_abs_cap": 0.0,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 4.0,
+    "mm": 94.32564458525248,
+    "theta_cap": 4.0,
+    "mm_cap": 94.32564458525248,
+    "delta_mm": 0.0,
+    "changed": false
+   }
+  },
+  {
+   "model": "구",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 28.0,
+    "mm": 35.59716958182925,
+    "theta_cap": 20.0,
+    "mm_cap": 57.96498564405933,
+    "delta_mm": 22.367816062230084,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     28.0,
+     20.0
+    ],
+    "mm": 94.1551538523581,
+    "mean_abs": 22.003881633150495,
+    "theta_cap": [
+     20.0,
+     16.0
+    ],
+    "mm_cap": 76.05252952519518,
+    "mean_abs_cap": 16.994991741959513,
+    "delta_mm": -18.102624327162914,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 42.0,
+    "mm": 0.3504145195246016,
+    "theta_cap": 22.0,
+    "mm_cap": 55.21520714800933,
+    "delta_mm": 54.86479262848473,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=7",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 18.0,
+    "mm": 77.82617854483001,
+    "theta_cap": 18.0,
+    "mm_cap": 77.82617854483001,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     18.0,
+     16.0
+    ],
+    "mm": 77.82617854483001,
+    "mean_abs": 16.95451734778763,
+    "theta_cap": [
+     18.0,
+     16.0
+    ],
+    "mm_cap": 77.82617854483001,
+    "mean_abs_cap": 16.95451734778763,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 38.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 62.859117524382256,
+    "delta_mm": 62.859117524382256,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=5",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 20.0,
+    "mm": 66.4158883916307,
+    "theta_cap": 20.0,
+    "mm_cap": 66.4158883916307,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     20.0,
+     2.0
+    ],
+    "mm": 66.4158883916307,
+    "mean_abs": 12.473168058296284,
+    "theta_cap": [
+     20.0,
+     2.0
+    ],
+    "mm_cap": 66.4158883916307,
+    "mean_abs_cap": 12.473168058296284,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 38.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 62.82750998834891,
+    "delta_mm": 62.82750998834891,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=4",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 16.0,
+    "mm": 82.43136619664804,
+    "theta_cap": 16.0,
+    "mm_cap": 82.43136619664804,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     0.0
+    ],
+    "mm": 56.139852537243414,
+    "mean_abs": 15.961705617189066,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 62.82834838595578,
+    "mean_abs_cap": 13.291483694366523,
+    "delta_mm": 6.688495848712364,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 38.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 62.82834838595578,
+    "delta_mm": 62.82834838595578,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=3",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 20.0,
+    "mm": 66.39239417206855,
+    "theta_cap": 20.0,
+    "mm_cap": 66.39239417206855,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     28.0,
+     0.0
+    ],
+    "mm": 35.393071185786525,
+    "mean_abs": 17.459635604547998,
+    "theta_cap": [
+     20.0,
+     0.0
+    ],
+    "mm_cap": 66.39239417206855,
+    "mean_abs_cap": 12.174949206634867,
+    "delta_mm": 30.999322986282024,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 38.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 62.82154939394238,
+    "delta_mm": 62.82154939394238,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=2",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 24.0,
+    "mm": 59.33887650122662,
+    "theta_cap": 22.0,
+    "mm_cap": 62.82612521616463,
+    "delta_mm": 3.487248714938005,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     30.0,
+     0.0
+    ],
+    "mm": 33.352245557115616,
+    "mean_abs": 18.862340474785118,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 62.82612521616463,
+    "mean_abs_cap": 13.615377403694234,
+    "delta_mm": 29.47387965904901,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 38.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 62.82612521616463,
+    "delta_mm": 62.82612521616463,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리 r=1",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 26.0,
+    "mm": 56.13505207885588,
+    "theta_cap": 18.0,
+    "mm_cap": 77.75210054902053,
+    "delta_mm": 21.617048470164647,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     0.0
+    ],
+    "mm": 56.13505207885588,
+    "mean_abs": 16.554319769555754,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 62.80521395810587,
+    "mean_abs_cap": 14.005845743325608,
+    "delta_mm": 6.670161879249989,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 38.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 62.80521395810587,
+    "delta_mm": 62.80521395810587,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.1",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 90.43674117037159,
+    "theta_cap": 22.0,
+    "mm_cap": 90.43674117037159,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     0.0
+    ],
+    "mm": 90.43674117037159,
+    "mean_abs": 13.502827767333605,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 90.43674117037159,
+    "mean_abs_cap": 13.502827767333605,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 40.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 90.43674117037159,
+    "delta_mm": 90.43674117037159,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.2",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 26.0,
+    "mm": 90.28502082179867,
+    "theta_cap": 22.0,
+    "mm_cap": 123.0580341800207,
+    "delta_mm": 32.77301335822203,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     4.0
+    ],
+    "mm": 90.28502082179867,
+    "mean_abs": 17.606366716224493,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 123.0580341800207,
+    "mean_abs_cap": 13.461686541743372,
+    "delta_mm": 32.77301335822203,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 40.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 123.0580341800207,
+    "delta_mm": 123.0580341800207,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.3",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 34.0,
+    "mm": 40.65635886355513,
+    "theta_cap": 22.0,
+    "mm_cap": 160.73093728407076,
+    "delta_mm": 120.07457842051564,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     32.0,
+     14.0
+    ],
+    "mm": 71.59759616876993,
+    "mean_abs": 25.348542295787052,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 160.73093728407076,
+    "mean_abs_cap": 13.565021284634941,
+    "delta_mm": 89.13334111530084,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 40.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 160.73093728407076,
+    "delta_mm": 160.73093728407076,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×1.5",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 36.0,
+    "mm": 39.23541034931299,
+    "theta_cap": 22.0,
+    "mm_cap": 289.83981070782664,
+    "delta_mm": 250.60440035851366,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     36.0,
+     20.0
+    ],
+    "mm": 39.23541034931299,
+    "mean_abs": 30.538619132581285,
+    "theta_cap": [
+     22.0,
+     4.0
+    ],
+    "mm_cap": 289.83981070782664,
+    "mean_abs_cap": 15.03150897692071,
+    "delta_mm": 250.60440035851366,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 42.0,
+    "mm": 0.0,
+    "theta_cap": 20.0,
+    "mm_cap": 286.83933632726837,
+    "delta_mm": 286.83933632726837,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 ×2",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 42.0,
+    "mm": 3.415782552635304,
+    "theta_cap": 22.0,
+    "mm_cap": 627.4511723974803,
+    "delta_mm": 624.035389844845,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     42.0,
+     36.0
+    ],
+    "mm": 315.7798395981463,
+    "mean_abs": 37.72569252515984,
+    "theta_cap": [
+     22.0,
+     10.0
+    ],
+    "mm_cap": 627.4511723974803,
+    "mean_abs_cap": 17.410075523632674,
+    "delta_mm": 311.671332799334,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 44.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 627.4511723974803,
+    "delta_mm": 627.4511723974803,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.1",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 34.18503612652918,
+    "theta_cap": 22.0,
+    "mm_cap": 34.18503612652918,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     24.0,
+     0.0
+    ],
+    "mm": 31.513477328539835,
+    "mean_abs": 14.79056631179397,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 34.18503612652918,
+    "mean_abs_cap": 13.553747822450507,
+    "delta_mm": 2.6715587979893414,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 40.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 34.18503612652918,
+    "delta_mm": 34.18503612652918,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.15",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 20.0,
+    "mm": 39.09329980787269,
+    "theta_cap": 20.0,
+    "mm_cap": 39.09329980787269,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     2.0
+    ],
+    "mm": 26.63438933851477,
+    "mean_abs": 16.965801345220076,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 34.50095516371097,
+    "mean_abs_cap": 13.558725620399299,
+    "delta_mm": 7.866565825196201,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 40.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 34.50095516371097,
+    "delta_mm": 34.50095516371097,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.2",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 36.30961042022231,
+    "theta_cap": 22.0,
+    "mm_cap": 36.30961042022231,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     0.0
+    ],
+    "mm": 36.30961042022231,
+    "mean_abs": 13.564810661363861,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 36.30961042022231,
+    "mean_abs_cap": 13.564810661363861,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 40.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 36.30961042022231,
+    "delta_mm": 36.30961042022231,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.3",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 39.249583133322645,
+    "theta_cap": 22.0,
+    "mm_cap": 39.249583133322645,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     0.0
+    ],
+    "mm": 39.249583133322645,
+    "mean_abs": 13.736278808328946,
+    "theta_cap": [
+     22.0,
+     0.0
+    ],
+    "mm_cap": 39.249583133322645,
+    "mean_abs_cap": 13.736278808328946,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 42.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 39.249583133322645,
+    "delta_mm": 39.249583133322645,
+    "changed": true
+   }
+  },
+  {
+   "model": "허리3 로브0.4",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 22.0,
+    "mm": 43.30150754708894,
+    "theta_cap": 22.0,
+    "mm_cap": 43.30150754708894,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     22.0,
+     2.0
+    ],
+    "mm": 43.30150754708894,
+    "mean_abs": 14.50240314232616,
+    "theta_cap": [
+     22.0,
+     2.0
+    ],
+    "mm_cap": 43.30150754708894,
+    "mean_abs_cap": 14.50240314232616,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 42.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 43.30150754708894,
+    "delta_mm": 43.30150754708894,
+    "changed": true
+   }
+  },
+  {
+   "model": "sphere",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 32.0,
+    "mm": 20.537357018613214,
+    "theta_cap": 22.0,
+    "mm_cap": 54.79805478672557,
+    "delta_mm": 34.26069776811236,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     32.0,
+     26.0
+    ],
+    "mm": 57.66909819837589,
+    "mean_abs": 27.5039832682912,
+    "theta_cap": [
+     22.0,
+     18.0
+    ],
+    "mm_cap": 87.55748786032473,
+    "mean_abs_cap": 18.999939739759963,
+    "delta_mm": 29.888389661948835,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 42.0,
+    "mm": 0.0,
+    "theta_cap": 22.0,
+    "mm_cap": 54.79805478672557,
+    "delta_mm": 54.79805478672557,
+    "changed": true
+   }
+  },
+  {
+   "model": "funnel",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 26.0,
+    "mm": 910.4847308080141,
+    "theta_cap": 0.0,
+    "mm_cap": 942.13799354412,
+    "delta_mm": 31.653262736105944,
+    "changed": true
+   },
+   "band2": {
+    "theta": [
+     26.0,
+     22.0
+    ],
+    "mm": 809.359018683886,
+    "mean_abs": 24.060553881040143,
+    "theta_cap": [
+     0.0,
+     0.0
+    ],
+    "mm_cap": 942.13799354412,
+    "mean_abs_cap": 0.0,
+    "delta_mm": 132.77897486023403,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 34.0,
+    "mm": 0.0,
+    "theta_cap": 6.0,
+    "mm_cap": 522.502983390821,
+    "delta_mm": 522.502983390821,
+    "changed": true
+   }
+  },
+  {
+   "model": "torus",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 6.0,
+    "mm": 162.9506879890412,
+    "theta_cap": 6.0,
+    "mm_cap": 162.9506879890412,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     6.0,
+     6.0
+    ],
+    "mm": 162.9506879890412,
+    "mean_abs": 6.000000000000003,
+    "theta_cap": [
+     -6.0,
+     2.0
+    ],
+    "mm_cap": 148.44112527145103,
+    "mean_abs_cap": 3.249832506087332,
+    "delta_mm": -14.509562717590171,
+    "changed": true
+   },
+   "oracle": {
+    "theta": 28.0,
+    "mm": 115.01459815915841,
+    "theta_cap": 22.0,
+    "mm_cap": 148.25599510936212,
+    "delta_mm": 33.24139695020371,
+    "changed": true
+   }
+  },
+  {
+   "model": "mushroom",
+   "layer_height": 0.4,
+   "uniform": {
+    "theta": 0.0,
+    "mm": 94.6964468640974,
+    "theta_cap": 0.0,
+    "mm_cap": 94.6964468640974,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "band2": {
+    "theta": [
+     0.0,
+     0.0
+    ],
+    "mm": 94.6964468640974,
+    "mean_abs": 0.0,
+    "theta_cap": [
+     0.0,
+     0.0
+    ],
+    "mm_cap": 94.6964468640974,
+    "mean_abs_cap": 0.0,
+    "delta_mm": 0.0,
+    "changed": false
+   },
+   "oracle": {
+    "theta": 6.0,
+    "mm": 83.17448092385568,
+    "theta_cap": 6.0,
+    "mm_cap": 83.17448092385568,
+    "delta_mm": 0.0,
+    "changed": false
+   }
+  }
+ ],
+ "stats": {
+  "0.3": {
+   "uniform": {
+    "n_changed": 9,
+    "changed_models": [
+     "구",
+     "허리 r=2",
+     "허리 r=1",
+     "허리3 ×1.2",
+     "허리3 ×1.3",
+     "허리3 ×1.5",
+     "허리3 ×2",
+     "sphere",
+     "funnel"
+    ],
+    "n_cost_gt_tie": 9,
+    "n_gain_gt_tie": 0,
+    "delta_changed": {
+     "n": 9,
+     "median": 36.415539775222506,
+     "max": 734.0511497742865,
+     "sum": 1297.7463665873447
+    },
+    "top_model": "funnel",
+    "top_share_of_total": 0.5656352956738419,
+    "concentrated": true,
+    "sum_mm_capped_vs_free": [
+     1886.166440795611,
+     588.4200742082663
+    ]
+   },
+   "band2": {
+    "n_changed": 14,
+    "changed_models": [
+     "구",
+     "허리 r=4",
+     "허리 r=3",
+     "허리 r=2",
+     "허리 r=1",
+     "허리3 ×1.2",
+     "허리3 ×1.3",
+     "허리3 ×1.5",
+     "허리3 ×2",
+     "허리3 로브0.1",
+     "허리3 로브0.15",
+     "sphere",
+     "funnel",
+     "torus"
+    ],
+    "n_cost_gt_tie": 13,
+    "n_gain_gt_tie": 1,
+    "delta_changed": {
+     "n": 14,
+     "median": 25.663657202917292,
+     "max": 733.8033490932935,
+     "sum": 1306.9306701410987
+    },
+    "top_model": "funnel",
+    "top_share_of_total": 0.5387547079261034,
+    "concentrated": true,
+    "sum_mm_capped_vs_free": [
+     1796.1182697132465,
+     489.1875995721477
+    ]
+   },
+   "oracle": {
+    "n_changed": 19,
+    "changed_models": [
+     "구",
+     "허리 r=7",
+     "허리 r=5",
+     "허리 r=4",
+     "허리 r=3",
+     "허리 r=2",
+     "허리 r=1",
+     "허리3 ×1.1",
+     "허리3 ×1.2",
+     "허리3 ×1.3",
+     "허리3 ×1.5",
+     "허리3 ×2",
+     "허리3 로브0.1",
+     "허리3 로브0.15",
+     "허리3 로브0.2",
+     "허리3 로브0.3",
+     "허리3 로브0.4",
+     "sphere",
+     "funnel"
+    ],
+    "n_cost_gt_tie": 19,
+    "n_gain_gt_tie": 0,
+    "delta_changed": {
+     "n": 19,
+     "median": 29.44671432196764,
+     "max": 293.2602344453884,
+     "sum": 824.8194298303279
+    },
+    "top_model": "허리3 ×2",
+    "top_share_of_total": 0.3555447699694883,
+    "concentrated": false,
+    "sum_mm_capped_vs_free": [
+     1028.3528605386457,
+     203.53343070831792
+    ]
+   }
+  },
+  "0.4": {
+   "uniform": {
+    "n_changed": 9,
+    "changed_models": [
+     "구",
+     "허리 r=2",
+     "허리 r=1",
+     "허리3 ×1.2",
+     "허리3 ×1.3",
+     "허리3 ×1.5",
+     "허리3 ×2",
+     "sphere",
+     "funnel"
+    ],
+    "n_cost_gt_tie": 9,
+    "n_gain_gt_tie": 0,
+    "delta_changed": {
+     "n": 9,
+     "median": 32.77301335822203,
+     "max": 624.035389844845,
+     "sum": 1140.8734557336475
+    },
+    "top_model": "허리3 ×2",
+    "top_share_of_total": 0.546980374298878,
+    "concentrated": true,
+    "sum_mm_capped_vs_free": [
+     3229.847954673212,
+     2088.9744989395645
+    ]
+   },
+   "band2": {
+    "n_changed": 14,
+    "changed_models": [
+     "구",
+     "허리 r=4",
+     "허리 r=3",
+     "허리 r=2",
+     "허리 r=1",
+     "허리3 ×1.2",
+     "허리3 ×1.3",
+     "허리3 ×1.5",
+     "허리3 ×2",
+     "허리3 로브0.1",
+     "허리3 로브0.15",
+     "sphere",
+     "funnel",
+     "torus"
+    ],
+    "n_cost_gt_tie": 12,
+    "n_gain_gt_tie": 2,
+    "delta_changed": {
+     "n": 14,
+     "median": 29.681134660498923,
+     "max": 311.671332799334,
+     "sum": 898.6072501052791
+    },
+    "top_model": "허리3 ×2",
+    "top_share_of_total": 0.3346916101248856,
+    "concentrated": false,
+    "sum_mm_capped_vs_free": [
+     3227.043119864588,
+     2328.435869759309
+    ]
+   },
+   "oracle": {
+    "n_changed": 20,
+    "changed_models": [
+     "구",
+     "허리 r=7",
+     "허리 r=5",
+     "허리 r=4",
+     "허리 r=3",
+     "허리 r=2",
+     "허리 r=1",
+     "허리3 ×1.1",
+     "허리3 ×1.2",
+     "허리3 ×1.3",
+     "허리3 ×1.5",
+     "허리3 ×2",
+     "허리3 로브0.1",
+     "허리3 로브0.15",
+     "허리3 로브0.2",
+     "허리3 로브0.3",
+     "허리3 로브0.4",
+     "sphere",
+     "funnel",
+     "torus"
+    ],
+    "n_cost_gt_tie": 20,
+    "n_gain_gt_tie": 0,
+    "delta_changed": {
+     "n": 20,
+     "median": 62.8238373050535,
+     "max": 627.4511723974803,
+     "sum": 2518.4380059732202
+    },
+    "top_model": "허리3 ×2",
+    "top_share_of_total": 0.249142988991309,
+    "concentrated": false,
+    "sum_mm_capped_vs_free": [
+     2716.9774995757593,
+     198.5394936025387
+    ]
+   }
+  }
+ },
+ "crosscheck_gap_audit_9_3": {
+  "0.4": {
+   "n": 17,
+   "max_abs_diff": 0.04958313332264197,
+   "all_within_0p1": true
+  },
+  "0.3": {
+   "n": 17,
+   "max_abs_diff": 0.04922938511933239,
+   "all_within_0p1": true
+  }
+ },
+ "meta": {
+  "source": "t1_conventional_results.json",
+  "bed_cap_deg": 22.79,
+  "tie_mm": 0.5,
+  "prereg": "docs/test_report_figs_acefg.md §1.3"
+ }
+}

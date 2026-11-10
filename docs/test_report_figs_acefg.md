@@ -111,6 +111,158 @@
 
 ---
 
-## 2. 결과
+## 2. 결과 (2026-11-10)
 
-(결과는 이 아래에 붙인다.)
+재현: `python3 report_fig_critical_angle.py`, `report_fig_direction.py`, `report_fig_bed_cap.py`,
+`report_fig_layer_blend.py --jobs 3` (+ `--analytic-only`), `report_fig_checker.py`,
+`analyze_layer_height.py --json report_figs_exp2_rerun.json` → 그림은 `tools/report_figs/{critical_angle_select,
+direction_demo,bed_cap_cost,layer_height_blend,checker_criterion}.py`.
+
+### 2.1 A — 면별 임계각 분포 (`critical_angle_select.png`, `report_fig_critical_angle_results.json`)
+
+- **재현 확인: 일치.** 옛 그림의 5 모델 × 4 값(need0·in44·beyond44·never)이 전부 0.1%p 안에서 같다
+  (구 14.71/14.71/0/0, 깔때기 51.51/51.51/0/0, 토러스 24.96/24.96/0/0, 버섯 28.27/0/28.27/0, 램프 8.91/8.91/0/0).
+  `conical/` 은 happy-ptolemy 시점과 지금이 같은 코드다 — 옛 그림을 그대로 써도 된다.
+- **"왜 그 각도" 검산: 20/20 통과** (θ_J = 0 인 버섯 제외). 단 **약한 검산이다** — 회전체 메시는 고리마다
+  θ* 가 달라 θ* 가 0~44° 에 거의 연속으로 깔려 있으므로, 어느 2° 칸에든 면이 있다. 보고서에서 이 검산을
+  근거로 삼지 말 것. 정확 균일각(`select_uniform_exact`)과 격자 각의 차가 2° 이하인 모델은 **12/21**
+  (최대 4.6°: 허리3 ×1.1 22° 대 26.6°, 허리 r=4 16° 대 20.8°) — J 의 봉우리가 평평해서 격자 2° 가 꽤 다른
+  각을 고를 수 있다.
+- **새로 보인 것**: 0° 에서 서포트가 필요한 면은 **21 모델 모두 아래 밴드(높이 하반부)에만** 있다 (위 밴드 몫 0%).
+  밴드2 의 위 각 θ2 는 고칠 면이 없는 자리라 각도 비용만 줄이려고 내려간 값이다(0~20°).
+- **상한 아래로 못 푸는 몫**: 0° 필요 면적 중 θ* > 22.79° (또는 44° 안에서 불가)인 몫은 중앙 26%
+  (허리형 23~31%, 허리3 ×2 47%, 토러스 50%, 깔때기 100% — θ* 가 25~26° 한 점에 몰림, 버섯 100% — 평평한 아랫면).
+- inward θ* 를 가진 모델은 토러스 하나다 (0° 필요 면의 10.6%, 안쪽 아랫면).
+
+### 2.2 C — 방향 자동 결정 (`direction_demo.png`, `report_fig_direction_results.json`)
+
+**표본 계수 (21 모델):** inward 를 고른 횟수 — 격자 균일 0, 정확 균일 0, 자동 균일(J) 0, 자동 밴드2 0, 상한 균일 0,
+**상한 밴드2 1 (토러스 [−6°, 2°])**. 상한 없는 선택기는 **이 표본에서 inward 를 한 번도 고르지 않았다.** 표본이 전부
+바깥을 보는 오버행(구·허리형의 아랫반구)이라 그렇다 — A 에서 inward θ* 를 가진 모델도 토러스 하나다.
+
+**데모 (속 빈 그릇, 연직 기준 60° 어깨):**
+
+| | 선택 (격자 / 정확) | 해석식 S: 0° → 선택각 | 밴드2(J) |
+|---|---|---|---|
+| inner (안쪽 오버행) | **inward 16° / inward 15.01°** | 26.3% → 16.3% (outward 는 0~44° 내내 26.3%) | [−16°, 0°] |
+| outer (바깥 오버행) | **outward 16° / outward 15.01°** | 23.6% → 7.9% (inward 는 내내 23.6%) | [10°, 16°] |
+
+- **판정 C1: 통과.** 두 방법 모두 inner → inward, outer → outward. 근은 해석식 그대로 15° (= 60° − 45°).
+- **판정 C2 (사전 등록 지표 = 검사기 A 진짜 오버행 mm): 통과 1 / 4.**
+  - outer 0.3: 고른 outward 16° 0.0mm 대 inward 16° 607.4mm → **통과.**
+  - outer 0.4: outward 16° 670.9mm 대 inward 468.2mm → **실패.** outward 가 0 이 되는 것은 26° 부터(20° 42.1mm).
+  - inner 0.3·0.4: 두 방향 모두 0.0mm → **판정 불가(실패로 센다).** 검사기 A 의 '진짜 오버행' 분류는 아랫층 단면을
+    페리미터의 바깥 고리만 채워 만든다(`layer_cross_sections` 의 문서화된 한계). 그래서 그릇 속 빈 공간 위로 나오는
+    안쪽 오버행은 늘 '단면 안' 으로 빠진다 — **이 지표는 안쪽 오버행을 원래 볼 수 없다.**
+- **사후 진단 (판정 밖, 기본 동작 불변)**: 같은 툴패스를 구멍을 살린 단면(짝홀 규칙)으로 다시 분류하면 inner 0.3 에서
+  inward 16° 0.0mm 대 outward 16° 361.3mm (0° 410.3mm, inward 10° 부터 0) — 방향 결정이 툴패스에서도 맞다.
+  inner 0.4 는 inward 16° 499.8mm, 20° 26.0, **26° 에서 0** 이다.
+- **0.4mm 에서 고른 각이 모자란 이유는 F 의 경계식과 같다.** 벽 ψ = 60° 를 검사기가 받으려면 tanψ·(h − w·tanθ) ≤ w,
+  즉 θ ≥ atan((h − w/tanψ)/w): h = 0.3 → 5.1°, **h = 0.4 → 17.3°** (선택기는 θ ≥ 15°). 이산 층 효과로 실측은 20~26° 에서
+  0 이 된다. 층고 0.3 에서는 검사기가 선택기보다 너그러워 10° 에서도 거의 0 이다(outer 6.4mm).
+- 인공물: inner 의 −20~−30° (0.3) 와 +20° (0.4) 에 나오는 74mm 는 **바닥 가장자리 한 고리**(z ≈ 0.5mm, r ≈ 11.8mm)로
+  어깨와 무관하다(`over_zr`).
+
+### 2.3 E — 베드 안전각의 비용 (`bed_cap_cost.png`, `report_fig_bed_cap_results.json`)
+
+| 층고 | 팔 | 상한으로 각이 바뀐 모델 | 비용 > 0.5mm | 이득 > 0.5mm | Δmm 중앙 (바뀐 모델) | Δmm 최대 | 최대 모델의 몫 | 총 미지지 mm 상한 / 없음 |
+|---|---|---|---|---|---|---|---|---|
+| 0.3 | 균일 | 9/21 | 9 | 0 | 36.4 | 734.1 (깔때기) | 57% | 1886 / 588 |
+| 0.3 | 밴드2 | 14/21 | 13 | 1 (토러스 −55.1) | 25.7 | 733.8 (깔때기) | 54% | 1796 / 489 |
+| 0.4 | 균일 | 9/21 | 9 | 0 | 32.8 | 624.0 (허리3 ×2) | 55% | 3230 / 2089 |
+| 0.4 | 밴드2 | 14/21 | 12 | 2 (구 −18.1, 토러스 −14.5) | 29.7 | 311.7 (허리3 ×2) | 33% | 3227 / 2328 |
+| 0.3 | 사후 최적 균일 | 19/21 | 19 | 0 | 29.4 | 293.3 | 36% | 1028 / 204 |
+| 0.4 | 사후 최적 균일 | 20/21 | 20 | 0 | 62.8 | 627.5 | 25% | 2717 / 199 |
+
+- 균일각이 바뀐 9 모델: 구, 허리 r=2, 허리 r=1, 허리3 ×1.2·×1.3·×1.5·×2, sphere, 깔때기 (두 층고 같음 — 선택은 층고와 무관).
+  나머지 12 개는 J 가 이미 상한 아래(≤ 22°)를 골랐다.
+- 기술 규칙 (iii): **균일 팔의 비용은 한 모델에 몰린다** (0.3: 깔때기 57%, 0.4: 허리3 ×2 55%). 깔때기는 θ* 가 25~26° 에
+  몰려 있어 상한 아래 가장 좋은 균일이 0° 이고 미지지가 1.9 → 736mm 가 된다. 밴드2 는 0.3 에서만 몰린다(54%).
+- 상한 밴드2 가 상한 없는 밴드2 보다 **나은** 경우가 있다: 토러스(상한 밴드2 = [−6°, 2°], 아랫밴드 inward) 와
+  층고 0.4 의 구. 상한 판은 격자 전수, 상한 없는 판은 좌표하강이라 탐색 범위가 다르다 — 상한이 이득을 준 게 아니라
+  좌표하강이 놓친 해를 전수가 찾은 것으로 본다(J 만 보고 mm 는 안 보는 선택이므로 mm 이득은 우연일 수 있다).
+- 교차 확인: 17 모델의 상한 없는 균일(J) mm 가 `gap_audit.md` §9.3 표와 **0.05mm 안에서 같다** (두 층고).
+
+### 2.4 F — 층고와 블렌드 팽창 (`layer_height_blend.png`, `report_fig_layer_blend_results.json`, `report_figs_exp2_rerun.json`)
+
+**serene-cray exp2 는 수정 전 값이다** (그 브랜치는 F1~F4 수정 6803ae0 이전의 main 6ab063f 위). 현재 코드로
+`analyze_layer_height.py` 를 재실행했다. 28 판정 칸(모델·층고 × 낙관/비관) 중 **9 칸이 바뀌었다** — 대부분 구:
+지금 코드는 구에 밴드2 [28°, 20°] 를 고른다(예전 [28, 28] = 균일, 그래서 전부 무승부였다). 낙관 판정이 0.25~0.50 전부
+**균일** 승(0.4: 0.748 대 2.037 %p; 0.25·0.30 은 0.01 %p 미만 차), 비관은 0.25·0.30 균일 / 0.40·0.50 밴드2. 램프는 비관 0.35 하나만 균일 → 밴드2.
+램프·허리 r=3 의 수치는 0.02 %p 안에서 같다.
+
+**식.** 수직 창 조건은 m ≤ 1.5(1 + tanθ·tanψ) 로 **층고가 지워진다**. 측정한 블렌드 점의 m 최대는 1.474(구) — 계획기
+상한 1.5 를 넘는 점이 없다. **수직 창은 층고 의존성을 설명하지 못한다** (예측대로). 층고가 들어가는 것은 고정된
+수평 폭이다: h_c(θ, m) = w·(cot(θ+45°) + tanθ)/m. m = 1 에서 최소 0.373mm (θ ≈ 22°), m = 1.5 에서 θ = 0 일 때 0.30mm,
+최소 0.249mm.
+
+**측정 (낙관 미지지 mm, 균일(J) / 밴드2 / 그중 블렌드 층):**
+
+| 모델 | 0.30 | 0.35 | 0.40 | 0.50 |
+|---|---|---|---|---|
+| 램프 [24] / [30, 0] | 17.8 / 0.0 / 0.0 | 35.4 / 16.8 / 0.0 | 59.3 / 33.4 / 0.0 | 97.5 / 84.4 / 0.0 |
+| 허리 r=3 [20] / [28, 0] | 35.2 / 6.4 / 0.0 | 40.1 / 28.0 / 0.0 | 66.4 / 35.4 / 0.0 | 107.0 / 88.6 / 0.0 |
+| 구 [28] / [28, 20] | 7.7 / 7.7 / 0.0 | 18.6 / 19.0 / 0.4 | 35.6 / 94.2 / 57.5 | 63.3 / 128.9 / 79.7 |
+
+- **판정 F1: 램프·허리 r=3 실패, 구 통과.** 램프·허리 r=3 의 블렌드(Z′ 17~21mm)는 목 위에 놓여 오버행이 없다 —
+  블렌드 층 미지지가 모든 층고에서 0 이다. 그 두 모델의 0.4mm 실패는 **베드 위 0.4~1.0mm**(바닥 극점 부근, 아랫밴드
+  30°/28°)에 있다. 구만 블렌드(Z′ 3.7~6.3mm)가 아랫반구 오버행 위에 놓여 h ≤ 0.30 에서 0, 0.40 에서 57.5mm.
+- **판정 F2: 통과** (블렌드가 실패한 유일한 모델인 구에서 블렌드 안 미지지 점의 m 중앙 1.37~1.38 > 1).
+- **판정 F3: 해당 없음** (h ≤ 0.30 에서 블렌드 안 미지지 > 0.5mm 인 모델 없음).
+- **사후 해석 (판정 밖)**: 경계식을 면마다 적용한 "선택기 통과 & 검사기 실패" 면적이 6 프로필 모두 h ≤ 0.36 에서 0 이고
+  **0.37~0.39mm 에서 처음 생긴다** (균일 0.38·0.38·0.39, 밴드2 0.39·0.39·0.37 — 램프·허리 r=3·구 순).
+  즉 **0.4mm 의 실패 증가는 블렌드 고유의 현상이 아니라, 고정 수평 폭(0.45mm)에 비해 층이 두꺼워져 검사기의 실효
+  임계각이 선택기의 θ+45° 아래로 내려가는 것**이 주원인이고, 블렌드 팽창(m ≈ 1.4)은 그 경계를 0.25~0.30mm 로 당겨
+  블렌드가 오버행 위에 놓인 모델(구)에서 실패를 더한다. 측정 곡선은 0.30 → 0.35 에서 이미 오르기 시작해 면 단위 해석보다
+  조금 이르다(면 법선이 아니라 이산 층의 계단이 지지를 결정하므로).
+
+### 2.5 G — 검사기 A 의 '지지됨' 정의 (`checker_criterion.png`, `report_fig_checker_results.json`)
+
+**판정: 여섯 경우 모두 코드 읽기와 일치** (Δr 0.44 지지 / 0.46 미지지, 수직 1.49h 지지 / 1.51h 미지지, 첫 층 z = h 지지 /
+1.01h 미지지).
+
+| 항목 | 값 (`conical/toolpath.py` 기본) |
+|---|---|
+| 샘플링 | 압출 세그먼트를 압출폭/2 = 0.225mm 간격 점으로 |
+| 지지 (베드) | z ≤ 층고 × 1.0 (`bed_factor=1.0`, 2026-09-23 수정 — 첫 층만 베드) |
+| 지지 (재료) | G-code 순서상 먼저 퇴적된 점 하나가 수평 ≤ 0.45mm 이고 수직 (0, 층고 × 1.5] 아래 |
+| 프레임 | 연직 (수평 = XY 거리, 수직 = Δz). `tool_up` 없음, 같은 층도 후보에서 안 뺌 |
+| 지지 모형 | 낙관 — 미지지로 퇴적된 재료도 위층을 받친다 (`require_supported_below=False`) |
+| 지표 | 미지지 페리미터 중 아랫층 단면(페리미터 선 ± 폭/2 의 **바깥 고리를 채운** 것) 밖 = '진짜 오버행' 길이 mm |
+| 평면 층에서 함의되는 임계 오버행각 | atan(0.45/h): 0.2 → 66.0°, 0.3 → 56.3°, 0.4 → 48.4°, 0.5 → 42.0° |
+
+---
+
+## 3. 보고서에 넣을 문장과 캡션
+
+그림 번호 n 은 초안에 넣을 때 정한다.
+
+**A.** 면별 임계각 θ* = asin(κ/R) − atan2(n_z, d·n_r) 로 21 모델의 0° 서포트 필요 면을 풀면, 그 면들은 전부 높이 하반부에
+있고 θ* 가 0~44° 에 넓게 퍼져 있다. 균일 J 는 '이 각을 1° 올려 새로 풀리는 면적'이 k = 0.2 %p 보다 작아지는 자리에서
+멈추므로 모델마다 16~42° 로 다른 각을 고르고, 밴드2 의 위 각은 고칠 면이 없어 0~20° 로 내려간다. 0° 필요 면적의
+중앙 26% 는 θ* 가 베드 상한 22.79° 를 넘는다.
+`[Fig. n] Area-weighted distribution of per-face critical cone angles θ* (positive = outward, negative = inward) for the 21 sample models, with the automatically selected uniform angle (▼), the two band angles of the two-band profile (dashed) and the bed-safe limit B_safe = 22.79° (red). Numbers at right: area needing support at 0° (% of model area) / share of it whose θ* exceeds B_safe.`
+
+**C.** 표본 21 개에서 선택기는 inward 를 한 번도 고르지 않았다(상한 밴드2 의 토러스 한 건 제외) — 표본의 오버행이 전부
+바깥을 보기 때문이다. 안쪽 오버행 그릇과 바깥 오버행 그릇을 따로 만들면 해석식이 각각 inward 15°·outward 15° 를
+정확히 고르고, 툴패스에서도 층고 0.3mm 에서는 고른 방향만 미지지가 0 이 된다. 단 검사기의 기본 '진짜 오버행' 분류는
+내부 구멍을 메워 안쪽 오버행을 보지 못하며, 층고 0.4mm 에서는 고른 15~16° 로 부족하다(F 참고).
+`[Fig. n] Automatic choice of cone direction on two hollow vessels with a 60° shoulder: (a, e) cross-sections with the faces needing support at 0° in red; (b, f) remaining support S(θ) and (c, g) objective J(θ) = S(0) − S(θ) − 0.2θ for outward and inward cones; (d, h) unsupported toolpath length from checker A with hole-preserving cross-sections, versus signed cone angle, at layer heights 0.3 and 0.4 mm. Dotted line: selected angle.`
+
+**E.** 베드 안전각 22.79° 를 걸면 21 개 중 9 개의 균일각과 14 개의 밴드2 아랫각이 내려가고, 균일 원뿔의 미지지가 바뀐
+모델에서 중앙 33~36mm 늘어난다. 그러나 비용은 고르지 않다 — 늘어난 양의 55~57% 가 한 모델(층고 0.3: θ* 가 25~26° 에
+몰린 깔때기, 0.4: 허리3 ×2)에서 나온다.
+`[Fig. n] Cost of the bed-safe limit (22.79°). (a) Angles selected without and with the limit (uniform cone, circles; lower band of the two-band profile, squares). (b) Increase in unsupported toolpath length of the uniform cone caused by the limit, at layer heights 0.3 and 0.4 mm (symmetric-log scale).`
+
+**F.** 블렌드의 층간격 배율 m 과 검사기의 수직 창(1.5h)은 둘 다 층고에 비례하므로 그 경계(m > 1.5)는 층고와 무관하고,
+계획기가 m ≤ 1.5 로 묶어 실제로 넘지 않는다(측정 최대 1.47). 층고 의존성은 고정된 수평 지지 폭 w = 0.45mm 에서 나온다:
+층고가 h_c = w(cot(θ+45°) + tanθ)/m 을 넘으면 검사기가 선택기의 θ+45° 기준보다 엄격해지며, m = 1 에서 h_c 의 최소가
+0.37mm 라 0.4mm 에서 실패가 급증한다. 블렌드 팽창(m ≈ 1.4)은 이 경계를 0.25~0.30mm 로 당겨, 블렌드가 오버행 위에
+놓인 구에서만 추가 실패(0.4mm 에서 94mm 중 58mm)를 만든다.
+`[Fig. n] Why failures rise at 0.4 mm layer height. (a) Layer height h_c above which the toolpath checker (horizontal support width 0.45 mm) becomes stricter than the selector's θ + 45° rule, for layer-spacing factors m = 1, 1.25, 1.5. (b) Measured unsupported length for the uniform (solid) and two-band (dashed) profiles of three models and the part lying in blend layers (dotted). (c) Area of faces that pass the selector but fail the checker boundary, versus layer height; grey band: onset at 0.37–0.39 mm.`
+
+**G.** 툴패스 검사기 A 는 압출 경로를 0.225mm 간격 점으로 나눠, 베드 위 첫 층(z ≤ h)이거나 G-code 순서상 먼저 쌓인 점이
+수평 0.45mm·수직 (0, 1.5h] 안에 하나라도 있으면 '지지됨' 으로 본다. 미지지로 쌓인 재료도 위층을 받친다고 보는 낙관
+모형이고, 미지지 페리미터 중 아랫층 단면 밖에 있는 것의 길이(mm)를 '진짜 오버행' 으로 센다. 평면 층이라면 이 기준은
+atan(0.45/h) 의 자기지지각(0.3mm 에서 56°, 0.4mm 에서 48°)에 해당한다.
+`[Fig. n] Support criterion of toolpath checker A. (a) A sample point is supported if it lies on the first layer (z ≤ h) or if an earlier-deposited point lies within 0.45 mm horizontally and (0, 1.5h] below it. (b, c) Synthetic test with stacked rings: the supported fraction drops from 1 to 0 exactly at a radial step of 0.45 mm and at a vertical gap of 1.5h (h = 0.3 mm).`

@@ -1,0 +1,156 @@
+[
+ {
+  "model": "램프 (=허리 r=2)",
+  "layer_height": 0.2,
+  "uniform_opt": 0.0,
+  "band2_opt": 0.019326803771025997,
+  "uniform_pes": 0.0,
+  "band2_pes": 0.7648681004936061,
+  "verdict_opt": "균일",
+  "verdict_pes": "균일",
+  "seconds": 30.3
+ },
+ {
+  "model": "램프 (=허리 r=2)",
+  "layer_height": 0.25,
+  "uniform_opt": 0.043260710224647156,
+  "band2_opt": 0.0,
+  "uniform_pes": 2.684089638640786,
+  "band2_pes": 0.0,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "밴드2",
+  "seconds": 24.5
+ },
+ {
+  "model": "램프 (=허리 r=2)",
+  "layer_height": 0.3,
+  "uniform_opt": 0.2671105010723654,
+  "band2_opt": 0.0,
+  "uniform_pes": 4.113171674875953,
+  "band2_pes": 0.0,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "밴드2",
+  "seconds": 17.9
+ },
+ {
+  "model": "램프 (=허리 r=2)",
+  "layer_height": 0.35,
+  "uniform_opt": 0.6254282451959978,
+  "band2_opt": 0.3302238163890155,
+  "uniform_pes": 6.048439301608631,
+  "band2_pes": 5.95829236259728,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "밴드2",
+  "seconds": 16.6
+ },
+ {
+  "model": "램프 (=허리 r=2)",
+  "layer_height": 0.4,
+  "uniform_opt": 1.2096906300380244,
+  "band2_opt": 0.7488854369837209,
+  "uniform_pes": 7.644277134814247,
+  "band2_pes": 8.625068529502594,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "균일",
+  "seconds": 11.2
+ },
+ {
+  "model": "램프 (=허리 r=2)",
+  "layer_height": 0.5,
+  "uniform_opt": 2.439118673874411,
+  "band2_opt": 2.407556234640623,
+  "uniform_pes": 10.304403546156237,
+  "band2_pes": 26.347424196450497,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "균일",
+  "seconds": 8.4
+ },
+ {
+  "model": "허리 r=3",
+  "layer_height": 0.25,
+  "uniform_opt": 0.14072776165585968,
+  "band2_opt": 0.0,
+  "uniform_pes": 2.8869262091808743,
+  "band2_pes": 0.0,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "밴드2",
+  "seconds": 24.3
+ },
+ {
+  "model": "허리 r=3",
+  "layer_height": 0.3,
+  "uniform_opt": 0.5123225303816554,
+  "band2_opt": 0.1033319654343673,
+  "uniform_pes": 4.3385428645791295,
+  "band2_pes": 4.036908900404879,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "밴드2",
+  "seconds": 18.0
+ },
+ {
+  "model": "허리 r=3",
+  "layer_height": 0.4,
+  "uniform_opt": 1.2944236907573812,
+  "band2_opt": 0.7607900445304483,
+  "uniform_pes": 7.032411794246346,
+  "band2_pes": 7.498081703227346,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "균일",
+  "seconds": 11.5
+ },
+ {
+  "model": "허리 r=3",
+  "layer_height": 0.5,
+  "uniform_opt": 2.5956897502950733,
+  "band2_opt": 2.383203267699177,
+  "uniform_pes": 9.312526573655692,
+  "band2_pes": 11.690834286856107,
+  "verdict_opt": "밴드2",
+  "verdict_pes": "균일",
+  "seconds": 9.2
+ },
+ {
+  "model": "구",
+  "layer_height": 0.25,
+  "uniform_opt": 0.01774529144886124,
+  "band2_opt": 0.018551871132000432,
+  "uniform_pes": 3.7866659804173164,
+  "band2_pes": 8.01814244449249,
+  "verdict_opt": "균일",
+  "verdict_pes": "균일",
+  "seconds": 19.0
+ },
+ {
+  "model": "구",
+  "layer_height": 0.3,
+  "uniform_opt": 0.12090397709366299,
+  "band2_opt": 0.12569707234617097,
+  "uniform_pes": 6.42257069501706,
+  "band2_pes": 8.673651727682707,
+  "verdict_opt": "균일",
+  "verdict_pes": "균일",
+  "seconds": 21.0
+ },
+ {
+  "model": "구",
+  "layer_height": 0.4,
+  "uniform_opt": 0.7477469746897566,
+  "band2_opt": 2.0368348721809983,
+  "uniform_pes": 12.137961763121844,
+  "band2_pes": 11.638199310333599,
+  "verdict_opt": "균일",
+  "verdict_pes": "밴드2",
+  "seconds": 10.2
+ },
+ {
+  "model": "구",
+  "layer_height": 0.5,
+  "uniform_opt": 1.6302413144955543,
+  "band2_opt": 3.526986356682408,
+  "uniform_pes": 16.28815848026055,
+  "band2_pes": 15.512745356918106,
+  "verdict_opt": "균일",
+  "verdict_pes": "밴드2",
+  "seconds": 8.6
+ }
+]
