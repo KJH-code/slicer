@@ -23,6 +23,7 @@ RotBot 의 검증된 3단계 구조에 우리 '자동 각도 결정'을 앞단�
 """
 
 import argparse
+import dataclasses
 import math
 import subprocess
 import tempfile
@@ -78,6 +79,40 @@ def run_external_slicer(cmd_template, warped_mesh, workdir):
         return gc.parse(fh.readlines())
 
 
+def _rep5x_self_check(all_items, mach):
+    """방금 쓴 REP5X 파일을 **파일에 적힌 그대로** 다시 읽어 검사한다 → 종료 코드.
+
+    생성기가 스스로 지켰다고 믿는 것(베드 여유, 회전 속도 상한, TCP 전환 자리,
+    M668 줄 형식)을 검사기로 한 번 더 본다 — 생성기와 검사기가 서로를 검사하는
+    구조다. 치명이 하나라도 있으면 2 를 돌려준다. 파일은 남겨 두지만(무엇이
+    틀렸는지 봐야 하므로) **프린터에 넣으면 안 된다.**
+
+    출력물과의 간섭(`check_head_interference`)은 느려서 여기서 안 본다 —
+    `rep5x_check.py` 가 본다.
+    """
+    from conical.rep5x import check_m668_format, check_rep5x
+
+    lines = gc.to_lines(all_items)
+    findings, st = check_rep5x(gc.parse(lines), mach)
+    findings += check_m668_format(lines)[0]
+    gap = st["bed_gap_min"]
+    zj = st["joint_z_min"]
+    print("  자체 점검   : 베드 여유선까지 최소 "
+          + (f"{gap:+.2f}mm" if gap is not None else "-")
+          + f", 회전 최대 {st['omega_max_deg_s']:.0f}°/s, joint Z 최저 "
+          + (f"{zj:.2f}mm" if zj is not None else "-")
+          + (" (부품 원점 = 베드 중앙 가정)" if st["origin_assumed"] else ""))
+    for sev in ("치명", "경고"):
+        for s, msg in findings:
+            if s == sev:
+                print(f"    {'✖' if sev == '치명' else '⚠'} [{sev}] {msg}")
+    n_fatal = sum(1 for s, _ in findings if s == "치명")
+    if n_fatal:
+        print(f"  ✖✖ 치명 {n_fatal}건 — **이 파일을 프린터에 넣지 말 것.**")
+        return 2
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="adaptive conical slicing pipeline")
     ap.add_argument("stl")
@@ -123,6 +158,16 @@ def main():
                     help="되감기 전 들어올릴 여유 mm (퇴적물 최고점 위로)")
     ap.add_argument("--pivot-depth", type=float, default=50.0,
                     help="베드면→틸트축 거리 mm (Open5x 스탠드오프별, 실기 보정)")
+    ap.add_argument("--bed-clearance", type=float, default=None,
+                    help="[rep5x] 기운 핫엔드 몸체와 베드 사이에 남길 여유 mm "
+                         "(기본: Rep5xProfile.bed_clearance = 0.2)")
+    ap.add_argument("--omega-max", type=float, default=None,
+                    help="[rep5x] 회전축(B/C) 속도 상한 °/s (기본 90). 펌웨어는 F 를 "
+                         "팁 XYZ 길이에만 적용하므로 슬라이서가 F 를 깎는다")
+    ap.add_argument("--strict", action="store_true",
+                    help="[rep5x] 요청 각도가 베드 간섭 때문에 못 쓰는 값이면 "
+                         "자동으로 낮추지 않고 멈춘다 (요청 각도 그대로가 실험 "
+                         "조건일 때)")
     ap.add_argument("-o", "--output", default=None)
     ap.add_argument("--machine-profile", default=None,
                     help="기계 프로파일 INI (시작/종료 G-code). 없으면 경로만 "
@@ -132,6 +177,20 @@ def main():
     mesh = trimesh.load(args.stl, force="mesh")
     mesh = center_on_axis(mesh)
     base = analytic.support_fraction(mesh, 0.0, "outward", THRESHOLD_DEG)
+    r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
+    rprof = RadiusProfile(mesh)
+    spacing_limit = args.spacing_limit if args.spacing_limit > 1.0 else None
+    fine = refine(mesh, args.max_edge)
+
+    mach = None                     # REP5X 기계 파라미터 (rep5x 모드에서만)
+    if args.mode == "rep5x":
+        from conical.rep5x import REP5X
+        mach = dataclasses.replace(
+            REP5X,
+            bed_clearance=(REP5X.bed_clearance if args.bed_clearance is None
+                           else args.bed_clearance),
+            omega_max=(REP5X.omega_max if args.omega_max is None
+                       else args.omega_max))
 
     # [1] 각도 결정 (고정각 / 가변각 프로필)
     profile = None
@@ -144,9 +203,6 @@ def main():
             # Open5x 는 베드가 기울어 기계좌표 자체가 각도에 묶여 있어 따로 풀어야 한다.
             raise SystemExit("가변각 + Open5x 는 향후 과제 (베드 틸트가 상수라는 "
                              "가정이 깨짐) — xyz·rep5x 모드만 지원")
-        r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
-        rprof = RadiusProfile(mesh)
-        spacing_limit = args.spacing_limit if args.spacing_limit > 1.0 else None
         if args.profile is not None:
             profile = AngleProfile.parse(args.profile)
             if (args.direction or "outward") == "inward":
@@ -181,6 +237,35 @@ def main():
         after, angle, direction, j_score = auto_select(mesh, args.k)
         why = f"J 기준, k={args.k} (J={j_score:.2f})"
 
+    # [1b] REP5X: 베드에 닿는 레이어의 각도를 B_safe 이하로 (슬라이싱 **전에** 고친다).
+    #      헤드가 기운 채 첫 층을 찍으면 노즐 몸통이 베드를 친다 — 요청 프로필을
+    #      잘라내고 기존 블렌드 폭 제약으로 올려 붙인다 (`rep5x.bed_safe_profile`).
+    bed_info = None
+    if mach is not None:
+        from conical.rep5x import bed_safe_profile
+        req = profile if profile is not None else AngleProfile.constant(
+            angle if direction == "outward" else -angle)
+        # 반경 포락선은 세분화한 메시로 촘촘히 (칸 약 0.1mm) — 거친 메시의 정점만
+        # 보면 정점 사이 면의 반경을 놓쳐 팁 높이를 낙관적으로 잡는다.
+        height = float(mesh.bounds[1][2] - mesh.bounds[0][2])
+        bed_rp = RadiusProfile(fine, n_bins=int(np.clip(math.ceil(height / 0.1),
+                                                        120, 1000)))
+        safe, bed_info = bed_safe_profile(req, bed_rp, args.layer_height,
+                                          mach.hotend, mach.bed_clearance,
+                                          spacing_limit)
+        if bed_info["changed"]:
+            if args.strict:
+                raise SystemExit(
+                    "--strict: 요청한 각도는 베드 간섭 때문에 그대로 못 쓴다 "
+                    f"(팁 높이 {bed_info['tip_floor']:.2f}mm 에서 B_safe = "
+                    f"{bed_info['theta_bed']:.1f}°, 핫엔드 '{mach.hotend.name}', "
+                    f"여유 {mach.bed_clearance:g}mm).\n  고치면 이렇게 된다:\n    "
+                    + "\n    ".join(bed_info["notes"])
+                    + "\n  --strict 를 빼면 위처럼 고쳐서 낸다.")
+            profile, angle, direction = safe, None, "outward"
+            after = analytic.support_fraction_profile(mesh, profile, THRESHOLD_DEG)
+            why += " + 베드 안전"
+
     print("=" * 62)
     print(f"[conical_slice] {args.stl}")
     if profile is not None:
@@ -210,12 +295,19 @@ def main():
                   f"(select_banded, 이상적 추정)")
     else:
         print(f"  각도 결정   : {direction} {angle:.0f}°  ({why})")
+    if bed_info is not None:
+        print(f"  베드 안전   : 팁 높이 {bed_info['tip_floor']:.2f}mm 에서 B_safe = "
+              f"{bed_info['theta_bed']:.1f}°  (핫엔드 '{mach.hotend.name}', "
+              f"여유 {mach.bed_clearance:g}+{bed_info['margin']:g}mm)")
+        print("                " + ("요청 각도를 낮췄다 — 위 ↳ 줄 참조. 균일 원뿔 "
+                                    "대조군이면 더 이상 균일이 아니다"
+                                    if bed_info["changed"] else
+                                    "요청 각도가 레이어별 상한 안이라 그대로 쓴다"))
     print(f"  서포트 예측 : {base:.1f}% (평면) → {after:.1f}% "
           f"({'프로필' if profile is not None else '선택 각도'}"
           f"{', 축상 근사' if profile is not None else ''})")
 
     # [2] 세분화 + 정변환
-    fine = refine(mesh, args.max_edge)
     if profile is not None:
         warped = trimesh.Trimesh(
             vertices=transform_cone_profile(fine.vertices, profile, "outward"),
@@ -266,10 +358,18 @@ def main():
         else:
             print("  ⚠ 되감기 꺼짐 — 배선 감김을 직접 확인할 것")
     elif args.mode == "rep5x":
-        from conical.rep5x import REP5X, add_c_rewinds, to_rep5x
+        from conical.rep5x import add_c_rewinds, limit_rotary_speed, to_rep5x
+        # TCP 는 B0 C0 에서 **한 번만** 켠다. 기계 프로파일의 시작 G-code 가 켜면
+        # (호밍·프라임·원점 선언이 끝난 자리) 경로 헤더는 다시 켜지 않는다.
+        start_text = (MachineProfile.from_file(args.machine_profile).start_gcode
+                      if args.machine_profile else "")
+        rtcp_in_start = any(
+            ln.split(";", 1)[0].strip().upper().startswith(mach.rtcp_on.upper())
+            for ln in start_text.splitlines())
         real_items, r5 = to_rep5x(real_items,
                                   profile if profile is not None else angle,
-                                  direction, REP5X)
+                                  direction, mach, emit_rtcp=not rtcp_in_start,
+                                  bed_clearance=mach.bed_clearance)
         tilt_txt = (f"B={r5['b']:.0f}° 고정" if not r5["variable"] else
                     f"B 레이어별 θ(Z′) {r5['b_abs_min']:.0f}~{r5['b_abs_max']:.0f}°")
         print(f"  REP5X       : 헤드 틸트 {tilt_txt}, C 가 방위각 추종 "
@@ -278,9 +378,9 @@ def main():
               f"수직(θ=0) 구간 {r5['c_held_vertical']:,}이동은 C 고정")
         print(f"                C 누적 {r5['c_turns']:.1f}회전 "
               f"(펌웨어 소프트 엔드스톱 창 "
-              f"{REP5X.c_min:.0f}~{REP5X.c_max:.0f}°)")
+              f"{mach.c_min:.0f}~{mach.c_max:.0f}°)")
         if args.v_rewind > 0:
-            real_items, rw = add_c_rewinds(real_items, REP5X,
+            real_items, rw = add_c_rewinds(real_items, mach,
                                            clearance=args.v_rewind_clearance,
                                            rot_feed=args.v_rewind_feed)
             note = "" if rw["fixable"] else \
@@ -290,6 +390,16 @@ def main():
                   f"들어올림 +{args.v_rewind_clearance}mm){note}")
         else:
             print("  ⚠⚠ 되감기 꺼짐 — C 가 소프트 엔드스톱을 넘어 기계가 멈춘다")
+        if r5["bed_clamped"]:
+            print(f"  ⚠ 베드 방어선: 이동 {r5['bed_clamped']:,}개에서 B 를 최대 "
+                  f"{r5['bed_clamp_max_deg']:.2f}° 깎았다 — 프로필 계획이 못 잡은 "
+                  f"것이다. 그 이동에서는 공구가 레이어 법선에서 그만큼 벗어난다")
+        # 회전축 속도 상한은 **맨 마지막**에 건다 (되감기가 이동을 끼워 넣으므로).
+        real_items, fs = limit_rotary_speed(real_items, mach)
+        print(f"  회전 속도   : 상한 {mach.omega_max:g}°/s — F 를 깎은 이동 "
+              f"{fs['capped']:,}개 (+{fs['added_seconds']:.0f}초, 최저 "
+              f"F{gc.format_feed(fs['min_feed']) if fs['min_feed'] else '-'}), "
+              f"회전만 하는 이동 {fs['rotation_only']:,}개")
     out_path = args.output or (Path(args.stl).stem +
                                {"open5x": "_open5x.gcode",
                                 "rep5x": "_rep5x.gcode"}.get(args.mode,
@@ -347,11 +457,16 @@ def main():
         part_r = max((math.hypot(mv.x, mv.y) for k, mv in real_items
                       if k == "move" and mv.x is not None and mv.y is not None),
                      default=0.0)
-        pr = REP5X.printable_radius if args.mode == "rep5x" else None
-        for sev, msg in check_start_extrusion(head, part_r, printable_radius=pr):
+        # 출력 가능 반경은 넘기지 않는다: REP5X 의 한계는 원점 기준 반경이 아니라
+        # native XY 범위이고, 그건 아래 자체 점검(`check_rep5x`)이 파일 전체로 본다.
+        for sev, msg in check_start_extrusion(head, part_r):
             print(f"  {'✖' if sev == '치명' else '⚠'} [{sev}] {msg}")
-    gc.write(meta + head + real_items + tail, out_path)
+    all_items = meta + head + real_items + tail
+    gc.write(all_items, out_path)
     print(f"  출력        : {out_path}")
+    rc = 0
+    if args.mode == "rep5x":
+        rc = _rep5x_self_check(all_items, mach)
     if not args.machine_profile:
         print("  ⚠ 기계 프로파일이 없다 — 예열·호밍·프라임·냉각이 빠져 있어 "
               "이 파일로는 실물을 못 뽑는다.")
@@ -369,7 +484,7 @@ def main():
     if args.mode == "xyz":
         print("  ⚠ 3축 프린터는 작은 각도만 안전 (노즐-출력물 간섭). "
               "큰 각도는 틸트 하드웨어 필요.")
-    return 0
+    return rc
 
 
 if __name__ == "__main__":

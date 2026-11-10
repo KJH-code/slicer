@@ -183,20 +183,42 @@ python3 analyze_quality.py                       # 계단 자국 vs 서포트 �
 python3 conical_slice.py model.stl --angle 20 --mode rep5x
 python3 conical_slice.py model.stl --auto-bands 2 --mode rep5x   # 가변각도 된다 (2026-10-16)
 python3 rep5x_check.py model_rep5x.gcode
+
+# 실기용 (2026-11-10): 시작/종료 G-code 를 REP5X 프로파일로 넣는다
+python3 conical_slice.py model.stl --auto-bands 2 --mode rep5x \
+    --machine-profile profiles/rep5x_ender3v3se.ini
+#   --bed-clearance 0.2   기운 핫엔드 몸체와 베드 사이 여유 (mm)
+#   --omega-max 90        회전축 속도 상한 (°/s)
+#   --strict              요청 각도가 베드 간섭으로 못 쓰는 값이면 낮추지 않고 멈춘다
 ```
+
+- **실기 안전 (2026-11-10, `docs/rep5x_machine_facts.md`)** — 펌웨어 소스를 읽고 넣은 것:
+  - **베드 안전 틸트**: 첫 층은 팁이 Z≈층고인데 헤드가 기울어 있으면 노즐 몸통이
+    베드를 친다(공식 뷰어 모델로 팁 높이 0 에서 약 24°). 베드에 닿는 레이어의 각도를
+    `B_safe` 이하로 낮추고 기존 블렌드 폭 제약으로 올려 붙인다 (`bed_safe_profile`).
+    **요청 각도가 바뀌면 출력에 적힌다** — 균일 원뿔 대조군이면 `--strict` 를 쓸 것
+  - **회전축 속도 상한**: 펌웨어는 F 를 팁 XYZ 길이에만 적용한다. 회전이 큰 짧은
+    이동은 F 를 깎는다 (`limit_rotary_speed`, 파이프라인의 마지막 패스)
+  - **TCP 는 B0 C0 에서만 전환**: `profiles/rep5x_ender3v3se.ini` 가 G49 → G28 →
+    `G0 C0 B0` → 프라임 → 베드 중앙 → `G92 X0 Y0 C0 B0` → `G43.4` 순서로 한다.
+    `machine.example.ini` 는 B0 C0 복귀가 없어 REP5X 에 쓰면 검사기가 치명으로 막는다
+  - `conical_slice.py` 가 쓴 파일을 **스스로 다시 검사**한다. 치명이 있으면 종료 코드 2
+  - `rep5x_check.py` 는 파일 전체(시작/종료 G-code 포함)를 모달 상태 기계로 따라가며
+    베드 간섭·native XY 범위·TCP 전환 상태·회전 속도·joint Z·M668 줄 형식을 본다
 
 - **가변각 5축** — 레이어 하나는 각도 하나짜리 원뿔이라, 점의 레이어 Z′ 를 되풀어
   `B = θ(Z′)` 로 둔다. Open5x(베드 틸트)는 아직 안 된다
 - **축 통과는 B 부호 반전으로** — 공구 방향은 (B, C) 와 (−B, C+180°) 가 같다. 경로가
   축을 지날 때 C 를 180° 돌리는 대신 B 를 2θ 넘긴다. θ=0 층은 C 를 돌리지 않는다
-- **부품 위치** — 경로는 늘 원점(0,0) 둘레로 나온다. 기계 원점이 베드 모서리면
-  `machine.example.ini` 의 `part_origin_x/y` 에 베드 중앙을 적는다 (시작 G-code 가
-  그 점으로 가서 `G92 X0 Y0`)
+- **부품 위치** — 경로는 늘 원점(0,0) 둘레로 나온다. REP5X 의 native 원점은 베드
+  **모서리**라서 `rep5x_ender3v3se.ini` 의 `part_origin_x/y` 에 베드 중앙(100, 100
+  [실기 확인])을 적어 두었다 (시작 G-code 가 그 점으로 가서 `G92 X0 Y0 C0 B0`)
 
 펌웨어 설정(`Rep5x-Marlin`, `Marlin2ForPipetBot` 브랜치)에서 규약을 확정했다:
 `PENTA_AXIS_HH`, `DEFAULT_TOOL_CENTERPOINT_CONTROL true`(RTCP 기본 ON →
 **X/Y/Z 는 노즐 팁**), `AXIS4_NAME 'C'`(±360°), `AXIS5_NAME 'B'`(±135°),
-LB=54.67mm, LC=1.6mm, `PRINTABLE_RADIUS 100`.
+LB=54.67mm, LC=1.6mm. (`PRINTABLE_RADIUS 100` 은 더 이상 검사에 쓰지 않는다 —
+이 기계의 한계는 native XY 범위 [0,200]×[−40,200] 이다.)
 
 13. **공구 방향에서 각도가 유도된다** — `d̂ = Rz(C)·Ry(B)·(0,0,−1)` 을 원뿔 법선의
     반대와 맞추면 **B = c·θ (상수), C = φ(p)**. 부호가 틀리면 노즐이 반대로 기운 채

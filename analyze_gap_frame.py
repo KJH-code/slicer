@@ -156,7 +156,8 @@ def overhang_pct(pts, mid, kinds, lay, sup, wts, shift_xy=None):
     zones = {name: float(wts[is_over & (pts[:, 2] >= lo) & (pts[:, 2] < hi)].sum()
                          / tot * 100.0) for name, lo, hi in ZONES}
     return (float(wts[is_over].sum() / tot * 100.0),
-            float(wts[peri & ~sup].sum() / tot * 100.0), zones)
+            float(wts[peri & ~sup].sum() / tot * 100.0), zones,
+            float(wts[is_over].sum()), float(tot))
 
 
 CONFIGS = [  # (이름, 프레임, 수평 창)
@@ -192,10 +193,11 @@ def evaluate(items, meta, verify=False, configs=None):
                                        require_supported_below=chained)
                 diff = int((ref != sup).sum())
                 assert diff == 0, f"검산 실패: check_support 와 {diff}점 다름"
-            ov, un, zones = overhang_pct(pts, mid, kinds, lay, sup, wts,
-                                         None if frame == "vert" else foot)
+            ov, un, zones, mm, tot = overhang_pct(
+                pts, mid, kinds, lay, sup, wts, None if frame == "vert" else foot)
             out[f"{name}|{label}"] = {"overhang": ov, "peri_unsupported": un,
-                                      "zones": zones}
+                                      "zones": zones, "overhang_mm": mm,
+                                      "perimeter_mm": tot}
     out["m_range"] = [float((tn / (h * np.cos(th))).min()),
                       float((tn / (h * np.cos(th))).max())]
     if configs is None:
@@ -290,6 +292,15 @@ def main():
                 v = [cell(h, n, f"{name}|{label}")["overhang"] for n in names]
                 print(f"   {name:<22}{label}  " + "  ".join(f"{x:7.3f}" for x in v)
                       + f"   {verdict(v[0], v[1])}")
+
+    print("\n[분모] 같은 미지지 길이가 전략마다 다른 %p 가 된다 — 미지지 페리미터 mm "
+          "/ 페리미터 총 길이 mm")
+    for h in (0.3, 0.4):
+        for key in ("연직·w (현행)|낙관", "공구·w/2|낙관"):
+            cells = [cell(h, n, key) for n in names]
+            print(f"  층고 {h} {key:<18} " + "   ".join(
+                f"{n.split(' (')[0]} {c['overhang_mm']:5.1f} / {c['perimeter_mm']:.0f}"
+                for n, c in zip(names, cells, strict=True)))
 
     print("\n[어디서 생기나] 현행(연직·w) 진짜 오버행 %p 의 높이 구역별 몫")
     for h in (0.3, 0.4):

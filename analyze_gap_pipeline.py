@@ -19,6 +19,9 @@
 ④ **표면 덮임** — 내장 슬라이서에는 솔리드 상/하면이 없다. 이웃한 두 층의 바깥
    페리미터가 층 면을 따라 `페리미터 수 × w` 보다 멀리 떨어지면 그 사이 표면은
    희소 인필뿐이다. 어느 높이에서 얼마나 비는지 낸다.
+⑤ **베드 접촉** — 첫 층 높이(z ≤ h) 안에 놓이는 압출의 반경과 길이.
+⑥ **층 시간** — 층마다 걸리는 시간(가속 무시, 명령 피드 기준). 최소 층 시간·팬
+   제어가 없으므로 짧은 층은 식을 틈 없이 다음 층이 올라온다.
 
     python3 analyze_gap_pipeline.py
 """
@@ -218,11 +221,56 @@ def chord_errors(items, prof, eps=0.05, dense=24):
                 extr = mv.e is not None and mv.e > e_prev + 1e-12
                 rows.append((0 if not extr else 1 + kind_now, float(dev[i]),
                              float(foot[i, 2] - exact[i, 2]), d_axis,
-                             float(np.linalg.norm(exact[-1] - exact[0])), n))
+                             float(np.linalg.norm(exact[-1] - exact[0])), n,
+                             n_adaptive(A, B, prof, eps)))
         if mv.e is not None:
             e_prev = mv.e
         X, Y, Zw = nX, nY, nZ
     return np.array(rows)
+
+
+def n_adaptive(A, B, prof, eps, depth=0):
+    """제안 분할: 중점·사분점 편차가 ε 이하가 될 때까지 재귀 이등분한 조각 수."""
+    t = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
+    e = inv_many(A + (B - A) * t[:, None], prof)
+    chord = e[0] + (e[-1] - e[0]) * t[1:4, None]
+    if depth >= 12 or np.linalg.norm(e[1:4] - chord, axis=1).max() <= eps:
+        return 1
+    M = 0.5 * (A + B)
+    return (n_adaptive(A, M, prof, eps, depth + 1)
+            + n_adaptive(M, B, prof, eps, depth + 1))
+
+
+def bed_and_time(real, h, feed_default=1800.0):
+    """⑤ 베드 접촉(z ≤ h 인 압출의 최대 반경·길이)  ⑥ 층별 시간."""
+    pts, _mid, wts, _kinds, _lay = sample_extrusions(real, return_types=True,
+                                                    return_layers=True)
+    bed = pts[:, 2] <= h + 1e-9
+    r = np.hypot(pts[:, 0], pts[:, 1])
+    times = {}
+    layer, x, y, z, f = -1, None, None, None, feed_default
+    for kind, p in real:
+        if kind != "move":
+            if isinstance(p, str) and p.startswith("; layer ") and " z=" in p:
+                layer = int(p.split()[2])
+            continue
+        nx = p.x if p.x is not None else x
+        ny = p.y if p.y is not None else y
+        nz = p.z if p.z is not None else z
+        if p.f:
+            f = p.f
+        if None not in (x, y, z):
+            times[layer] = times.get(layer, 0.0) + math.dist(
+                (x, y, z), (nx, ny, nz)) / (f / 60.0)
+        x, y, z = nx, ny, nz
+    t = np.array([times[k] for k in sorted(times) if k >= 0])
+    return {"bed_contact_radius": float(r[bed].max()) if bed.any() else 0.0,
+            "bed_contact_path_mm": float(wts[bed].sum()),
+            "total_path_mm": float(wts.sum()),
+            "layers": int(len(t)), "layer_time_median_s": float(np.median(t)),
+            "layers_under_5s": int((t < 5.0).sum()),
+            "first10_layers_s": float(t[:10].sum()),
+            "total_min": float(t.sum() / 60.0)}
 
 
 def skin_gaps(real, prof, h):
@@ -300,6 +348,10 @@ def main():
                   f"| 최악: 축거리 {row['worst_axis_dist']:.2f}mm, 길이 "
                   f"{row['worst_len']:.1f}mm 를 {row['worst_n']}조각, "
                   f"수직 {row['worst_dz']:+.3f}mm")
+        res[name]["chord"]["moves_out_current"] = int(ce[:, 5].sum())
+        res[name]["chord"]["moves_out_adaptive"] = int(ce[:, 6].sum())
+        print(f"     제안 분할(편차 ≤ ε 까지 재귀 이등분): 출력 이동 "
+              f"{int(ce[:, 5].sum()):,} → {int(ce[:, 6].sum()):,}")
         tot = sum(g["open_mm"] for g in gaps)
         print(f"  ④ 표면 덮임: {nlay} 층 중 {len(gaps)} 곳에서 이웃 층 바깥 "
               f"페리미터가 벽 두께({PERIMS}×{W}mm)보다 멀다 (열린 폭 합 {tot:.1f}mm)")
@@ -307,6 +359,14 @@ def main():
             print(f"     층 {g['layer']:>3} z={g['z']:.2f}  r {g['r_from']:.2f}→"
                   f"{g['r_to']:.2f}  층 면 방향 {g['in_layer_step_mm']:.2f}mm "
                   f"(열린 폭 {g['open_mm']:.2f})")
+
+        bt = bed_and_time(real, h)
+        res[name]["bed_time"] = bt
+        print(f"  ⑤ 베드 접촉: z ≤ {h} 인 압출은 반경 {bt['bed_contact_radius']:.2f}mm 안, "
+              f"경로 {bt['bed_contact_path_mm']:.1f}mm (전체 {bt['total_path_mm']:.0f}mm)")
+        print(f"  ⑥ 층 시간: 중앙 {bt['layer_time_median_s']:.1f}s, 5s 미만 "
+              f"{bt['layers_under_5s']}/{bt['layers']} 층, 처음 10 층 합 "
+              f"{bt['first10_layers_s']:.1f}s, 전체 {bt['total_min']:.1f}분 (가속 무시)")
 
     with open("gap_pipeline_results.json", "w") as fh:
         json.dump(res, fh, ensure_ascii=False, indent=1)

@@ -96,7 +96,19 @@
     "worst_dz": -0.33382748031727694,
     "worst_len": 13.726441499071312,
     "worst_n": 9
-   }
+   },
+   "moves_out_current": 12952,
+   "moves_out_adaptive": 12193
+  },
+  "bed_time": {
+   "bed_contact_radius": 0.6842126031844815,
+   "bed_contact_path_mm": 4.864523857443915,
+   "total_path_mm": 9495.93869219599,
+   "layers": 110,
+   "layer_time_median_s": 3.233905350513118,
+   "layers_under_5s": 74,
+   "first10_layers_s": 10.532957479464553,
+   "total_min": 6.3826905664580655
   }
  },
  "lamp 밴드2 30→0": {
@@ -158,7 +170,19 @@
     "worst_dz": -0.40892996220788724,
     "worst_len": 13.017546142585367,
     "worst_n": 9
-   }
+   },
+   "moves_out_current": 10909,
+   "moves_out_adaptive": 9361
+  },
+  "bed_time": {
+   "bed_contact_radius": 0.5221767613241334,
+   "bed_contact_path_mm": 3.494562393402404,
+   "total_path_mm": 8888.36620113851,
+   "layers": 100,
+   "layer_time_median_s": 3.3816825415807115,
+   "layers_under_5s": 68,
+   "first10_layers_s": 8.595703148534868,
+   "total_min": 5.989700065971006
   }
  },
  "funnel 균일 26°": {
@@ -203,7 +227,19 @@
     "worst_dz": -0.2688948208460493,
     "worst_len": 9.19652814238415,
     "worst_n": 7
-   }
+   },
+   "moves_out_current": 8544,
+   "moves_out_adaptive": 7709
+  },
+  "bed_time": {
+   "bed_contact_radius": 0.0,
+   "bed_contact_path_mm": 0.0,
+   "total_path_mm": 5063.781783339995,
+   "layers": 37,
+   "layer_time_median_s": 5.5202272196326865,
+   "layers_under_5s": 16,
+   "first10_layers_s": 8.955342766525103,
+   "total_min": 3.587128204418457
   }
  }
 }

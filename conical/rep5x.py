@@ -171,7 +171,11 @@ def _q(v):
     길이가 0.0004mm 인 이동은 파일에서 길이 0 이 되고, 그러면 펌웨어가 그 줄의 F 를
     mm/min 이 아니라 °/min 으로 읽는다. 생성기와 검사기가 같은 값을 봐야 한다.
     """
-    return None if v is None else round(v, 3)
+    # ⚠ float() 가 필요하다: 좌표가 numpy 스칼라로 올 때 `round(np.float64, 3)` 은
+    #   numpy 의 반올림(1000 을 곱해 반올림)이라 `f"{v:.3f}"` 와 끝자리가 어긋나는
+    #   값이 있다. 그러면 생성기가 잰 길이와 파일의 길이가 달라 F 상한을 0.02% 넘는다
+    #   (원기둥 30° 에서 60개 이동이 90.02°/s — 자체 점검이 잡았다).
+    return None if v is None else round(float(v), 3)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -219,8 +223,11 @@ def b_safe(tip_z, hotend=None, clearance=0.2, b_cap=89.0):
         B ≤ acos(d/R) − φ
 
     전 테두리의 최솟값이 답이다. B=0 에서도 못 지키면(팁이 너무 낮다) 0 을 돌려준다.
+    팁이 베드 아래(tip_z < 0)면 어떤 자세도 안 된다 → 0.
     """
     h = hotend or REP5X_V3SE_HOTEND
+    if tip_z < -1e-9:
+        return 0.0
     lim = float(b_cap)
     for a, rho, clr in _rim_terms(h, clearance):
         d = clr - tip_z
@@ -237,6 +244,245 @@ def b_safe(tip_z, hotend=None, clearance=0.2, b_cap=89.0):
 def tip_height_needed(b_deg, hotend=None, clearance=0.2):
     """|B| 로 기운 채 베드 여유를 지키려면 팁이 얼마나 높아야 하나 (mm, `b_safe` 의 역)."""
     return -bed_gap(0.0, b_deg, hotend, clearance)
+
+
+# ─────────────────────────────────────────────────────────────
+# 베드 안전 프로필: 베드에 닿는 레이어의 각도를 B_safe 이하로
+# ─────────────────────────────────────────────────────────────
+def _layer_tip_floor(zw, tan_th, rp, layer_height):
+    """outward 레이어 Z′ 에서 팁이 내려갈 수 있는 **가장 낮은 높이** (배열).
+
+    슬라이서는 변환공간에서 Z′−h/2 를 잘라 Z′ 높이에 낸다. 그래서 낸 점의 실제
+    높이는 '자른 면 위 메시 점의 높이 + h/2' 다. 메시 점은 반경 포락선 r_env(z)
+    안에 있으므로, 원뿔 `z = Zc − r·tanθ` 가 포락선 안으로 들어오는 가장 낮은 z 가
+    하한이다 (그런 z 가 없으면 그 레이어에는 재료가 없다 → +inf).
+
+    ⚠ 포락선은 `RadiusProfile` 의 칸별 최대 반경(정점 기준)이다. 반경이 클수록
+      레이어가 더 낮게 내려오므로 최댓값을 쓰는 것이 보수적이다.
+    """
+    zk = rp.z0 + rp.h * np.arange(rp.n)             # 칸의 아래 끝
+    zc = np.asarray(zw, dtype=float) - layer_height / 2.0
+    cand = np.maximum(zk[None, :], zc[:, None] - rp.rmax[None, :] * tan_th[:, None])
+    ok = (cand <= zk[None, :] + rp.h + 1e-9) & (cand <= zc[:, None] + 1e-9)
+    return np.where(ok, cand, np.inf).min(axis=1) + layer_height / 2.0
+
+
+def bed_tilt_cap(zw, radius_profile, layer_height, hotend=None, clearance=0.2,
+                 inward=False, hi=80.0):
+    """레이어 Z′(배열)마다 베드와 안 닿고 쓸 수 있는 **최대 |θ|** (도).
+
+    레이어의 팁 최저 높이 h_low(Z′, θ) 와 그 각도가 요구하는 팁 높이
+    `tip_height_needed(θ)` 를 맞춘다. θ 가 커지면 레이어는 더 낮게 내려오고
+    (outward) 필요한 높이는 더 커지므로 가능 영역이 구간 [0, θ*] 이다 → 이분법.
+
+      · outward: h_low = `_layer_tip_floor` (반경 포락선이 필요하다)
+      · inward : 레이어 `z = Z′ + r·tan|θ|` 의 최저점은 축(r=0) 쪽이라
+                 h_low = h/2 + max(0, Z′ − h/2). 닫힌 식 `b_safe` 로 끝난다
+
+    어느 레이어든 팁은 층고의 절반보다 낮아지지 않으므로 답은 항상
+    `b_safe(h/2)` 이상이다.
+    """
+    h = hotend or REP5X_V3SE_HOTEND
+    zw = np.asarray(zw, dtype=float)
+    half = layer_height / 2.0
+    if inward:
+        return np.array([b_safe(half + max(0.0, z - half), h, clearance, hi)
+                         for z in zw])
+    lo = np.full(len(zw), min(hi, b_safe(half, h, clearance, hi)))
+    up = np.full(len(zw), float(hi))
+    for _ in range(32):
+        mid = 0.5 * (lo + up)
+        tip = _layer_tip_floor(zw, np.tan(np.radians(mid)), radius_profile,
+                               layer_height)
+        need = np.array([tip_height_needed(m, h, clearance) for m in mid])
+        ok = tip >= need
+        lo, up = np.where(ok, mid, lo), np.where(ok, up, mid)
+    return lo
+
+
+def _ramp_width(z_a, dtan, sign, rp, limit, min_blend, t_top):
+    """θ_bed → θ_top 을 올려 붙이는 블렌드의 최소 폭 (기존 층간격 제약 그대로).
+
+    반경은 **그 블렌드의 레이어가 지나가는 높이 전체**의 최댓값을 쓴다: outward
+    레이어는 바닥까지 내려오고, inward 레이어는 위로 r·tanθ 만큼 올라간다.
+    `AngleProfile.validate` 가 전 모델 반경으로 가역성을 보므로 그 폭(여유 1.5배,
+    `from_bands` 와 같다)도 함께 지킨다.
+    """
+    w = max(min_blend, 1.5 * rp.global_max * dtan if sign > 0 else min_blend)
+    for _ in range(40):
+        if sign > 0:
+            r_b = rp.max_between(rp.z0, z_a + w)
+        else:
+            r_b = rp.max_between(z_a, z_a + w + rp.global_max * t_top)
+        w_new = max(w, blend_width_for_spacing(r_b, sign * dtan, "outward", limit))
+        if w_new <= w * (1.0 + 1e-4):
+            return w_new
+        w = w_new
+    return w
+
+
+def _fit_ramp(zw, cap, t_bed, t_top, sign, rp, limit, min_blend):
+    """cap 곡선 아래에 들어가는 (시작 Z′, 끝 Z′) 를 찾는다. 없으면 None.
+
+    가장 좁은 폭만 쓰면 cap 이 완만하게 오르는 형상(구의 아랫면)에서 늦게 시작해야
+    한다. 더 넓고 일찍 시작하는 쪽이 각도를 덜 잃을 수 있어 폭 배수 몇 개를 같이
+    보고, **블렌드 중심이 가장 낮은** 것을 고른다(잃는 각도의 넓이가 그에 비례).
+    """
+    d = t_top - t_bed
+    low_top = np.where(cap < t_top - 1e-9)[0]       # 꼭대기 각도를 못 쓰는 레이어
+    if len(low_top) and low_top[-1] + 1 >= len(zw):
+        return None
+    z_free = zw[low_top[-1] + 1] if len(low_top) else zw[0]
+    best = None
+    for mult in (1.0, 1.5, 2.0, 3.0, 4.0, 6.0):
+        for z_a in zw:
+            # 폭은 0.01mm 로 올림 — 넓은 쪽이 안전하고 프로필 숫자가 깔끔해진다
+            w = math.ceil(_ramp_width(z_a, d, sign, rp, limit, min_blend, t_top)
+                          * mult * 100.0 - 1e-9) / 100.0
+            z_b = z_a + w
+            if z_b < z_free - 1e-9:
+                continue
+            seg = (zw >= z_a) & (zw <= z_b)
+            if np.all(t_bed + d * (zw[seg] - z_a) / w <= cap[seg] + 1e-9):
+                if best is None or z_a + w / 2.0 < best[0] - 1e-9:
+                    best = (z_a + w / 2.0, round(float(z_a), 6),
+                            round(float(z_b), 6))
+                break                               # 이 배수에서는 가장 낮은 시작이 최선
+    return None if best is None else best[1:]
+
+
+def bed_safe_profile(requested, radius_profile, layer_height, hotend=None,
+                     clearance=0.2, spacing_limit=MAX_SPACING_FACTOR,
+                     margin=BED_PLAN_MARGIN, min_blend=0.5, grid=0.05):
+    """요청한 각도 프로필을 **핫엔드가 베드에 안 닿게** 고친다 → (프로필, 정보 dict).
+
+    ## 문제
+
+    헤드 회전식은 노즐이 레이어 법선을 따라 기운다. 첫 층들은 팁이 Z≈층고에 있는데
+    B 가 24~30° 면 노즐 몸통이 베드를 친다 (`bed_gap`). 팁 높이 h 에서 쓸 수 있는
+    최대 틸트가 `b_safe(h)` 다.
+
+    ## 하는 것
+
+      ① θ_bed = b_safe(층고/2) — 팁은 층고의 절반보다 낮아지지 않으므로, 이 각도
+         이하인 레이어는 **어디를 지나가든** 안전하다
+      ② 레이어별 상한 cap(Z′) (`bed_tilt_cap`) — 그 레이어가 실제로 내려가는
+         높이에서 허용되는 각도. 베드에서 멀어질수록 커진다
+      ③ θ_bed 로 시작해 cap 아래로 올라가는 직선(tanθ 선형) 램프를 **기존 블렌드 폭
+         제약**(`blend_width_for_spacing`, 층간격 배율 [1/limit, limit])으로 놓는다
+      ④ 새 프로필 = 요청 프로필을 그 램프로 **잘라낸** 것 (부호별: outward 는 위에서,
+         inward 는 아래에서). 요청이 이미 램프 아래면 그대로 둔다
+
+    램프 자리가 없으면(부품이 낮거나 cap 이 끝까지 안 올라오면) 그 방향 전체를
+    θ_bed 로 낮춘다 — 안 닿는 것이 각도보다 먼저다.
+
+    ## 왜 '자동으로 낮추기' 가 기본이고 `--strict` 가 선택인가
+
+    요청 각도가 못 쓰는 값이라고 **멈추면** 사용자는 각도를 손으로 낮춰 다시
+    돌리게 되는데, 그러면 **모델 전체**의 각도가 내려간다. 필요한 것은 바닥
+    몇 mm 만 낮추는 것이고 그 계산(베드 간섭 + 블렌드 폭)을 사람이 손으로 할 수는
+    없다. 그래서 기본은 고쳐서 내고, **무엇을 바꿨는지 반드시 출력한다**
+    (`info["notes"]`, 프로필의 `.notes`). 조용히 바꾸지 않는다.
+
+    다만 실험에서는 '요청한 각도 그대로' 가 조건일 때가 있다(균일 원뿔 대조군).
+    그때는 `--strict` 로 멈추게 한다 — 바뀐 프로필로 비교하면 결론이 틀어진다.
+
+    ⚠ 여기서 쓰는 팁 높이는 **반경 포락선으로 어림한 하한**이다(내장 슬라이서의
+      '레이어 가운데를 잘라 위에 낸다' 를 가정). 그래서 `clearance` 에 `margin` 을
+      얹어 계획하고, 실제 경로는 `to_rep5x(bed_clearance=…)` 의 이동별 방어선과
+      `check_rep5x` 가 다시 본다.
+
+    정보 dict: changed, theta_bed, tip_floor, ramps{부호: (Z′ 시작, 끝) 또는 None},
+               notes[사람이 읽는 설명]
+    """
+    h = hotend or REP5X_V3SE_HOTEND
+    rp = radius_profile
+    clr = clearance + margin
+    limit = spacing_limit if spacing_limit and spacing_limit > 1.0 \
+        else MAX_SPACING_FACTOR
+    half = layer_height / 2.0
+    th_bed = math.floor(b_safe(half, h, clr) * 100.0) / 100.0
+    t_bed = math.tan(math.radians(th_bed))
+    info = {"changed": False, "theta_bed": th_bed, "tip_floor": half,
+            "clearance": clearance, "margin": margin, "ramps": {}, "notes": []}
+    if float(np.max(np.abs(requested.thetas_deg))) <= th_bed + 1e-9:
+        return requested, info
+
+    t_abs = float(np.max(np.abs(requested.tans)))
+    reach = rp.global_max * t_abs + 1.0
+    zw = grid * np.arange(math.floor((rp.z0 - reach) / grid),
+                          math.ceil((rp.z1 + reach) / grid) + 1)
+    t_req = requested.tan_at(zw)
+    limits = {}                                     # 부호 → 크기 상한 함수 R(Z′)
+    for sign in (1.0, -1.0):
+        t_top = float(np.max(sign * requested.tans))
+        if t_top <= t_bed + 1e-12:
+            continue
+        cap = np.tan(np.radians(bed_tilt_cap(zw, rp, layer_height, h, clr,
+                                             inward=sign < 0)))
+        if np.all(sign * t_req <= cap + 1e-9):
+            continue                                # 이 방향은 요청대로 안전하다
+        name = "outward" if sign > 0 else "inward"
+        th_top = math.degrees(math.atan(t_top))
+        fit = _fit_ramp(zw, cap, t_bed, t_top, sign, rp, limit, min_blend)
+        info["ramps"][name] = fit
+        if fit is None:
+            limits[sign] = ((float(zw[0]),), (t_bed,))
+            info["notes"].append(
+                f"베드 안전({name}): 요청 {th_top:.1f}° 를 올려 붙일 자리가 없어 "
+                f"그 방향 전체를 {th_bed:.1f}° 로 낮췄다")
+        else:
+            limits[sign] = (fit, (t_bed, t_top))
+            info["notes"].append(
+                f"베드 안전({name}): Z′ ≤ {fit[0]:.2f} 는 {th_bed:.1f}° 로 낮추고 "
+                f"Z′ {fit[0]:.2f}~{fit[1]:.2f} (폭 {fit[1] - fit[0]:.2f}mm) 에서 "
+                f"{th_top:.1f}° 로 올린다")
+    if not limits:
+        return requested, info
+
+    def build(lims):
+        def bound(sign, z):
+            if sign not in lims:
+                return np.full(np.shape(z), np.inf)
+            return np.interp(z, lims[sign][0], lims[sign][1])
+
+        # 꺾이는 점: 요청의 브레이크포인트 + 램프 양 끝 + 둘이 만나는 점.
+        # 이웃한 두 점 사이에서는 요청도 램프도 직선이라 교점이 닫힌 식으로 나온다.
+        zs = sorted({float(z) for z in requested.zs}
+                    | {float(z) for lim in lims.values() for z in lim[0]})
+        cross = []
+        for sign in lims:
+            g = sign * requested.tan_at(np.array(zs)) - bound(sign, np.array(zs))
+            for i in range(len(zs) - 1):
+                if g[i] * g[i + 1] < 0.0:
+                    cross.append(zs[i] + (zs[i + 1] - zs[i]) * g[i] / (g[i] - g[i + 1]))
+        zs = sorted(set(zs) | set(cross))
+        zs = [z for i, z in enumerate(zs) if i == 0 or z - zs[i - 1] > 1e-9]
+        za = np.array(zs)
+        ts = [float(t) for t in np.minimum(
+            np.maximum(requested.tan_at(za), -bound(-1.0, za)), bound(1.0, za))]
+        keep = [0] + [i for i in range(1, len(zs) - 1)
+                      if abs((ts[i] - ts[i - 1]) * (zs[i + 1] - zs[i])
+                             - (ts[i + 1] - ts[i]) * (zs[i] - zs[i - 1])) > 1e-12] \
+            + ([len(zs) - 1] if len(zs) > 1 else [])
+        prof = AngleProfile([(zs[i], round(math.degrees(math.atan(ts[i])), 6))
+                             for i in keep])
+        prof.validate(rp.global_max, "outward")
+        return prof
+
+    try:
+        new = build(limits)
+    except ValueError as err:
+        # 램프를 얹은 프로필이 가역성 검사에 걸렸다(반경 어림이 빗나간 드문 경우).
+        # 평평하게 자르면 기울기가 요청보다 커지지 않으므로 요청이 통과했다면 통과한다.
+        flat = {sign: ((float(zw[0]),), (t_bed,)) for sign in limits}
+        new = build(flat)
+        info["ramps"] = dict.fromkeys(info["ramps"])
+        info["notes"] = [f"베드 안전: 올려 붙이는 블렌드가 가역성 검사에 걸려 "
+                         f"({str(err)[:60]}…) 요청 각도를 전부 {th_bed:.1f}° 로 낮췄다"]
+    new.notes = list(getattr(requested, "notes", [])) + info["notes"]
+    info["changed"] = True
+    return new, info
 
 
 def tool_direction(b_deg, c_deg):
@@ -618,7 +864,8 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
 
     보는 것 (심각도):
       · **베드 간섭** [치명] — 기운 핫엔드 모델(`profile.hotend`)의 최저점이 베드 위
-        `bed_clearance` 아래로 내려가는 이동. 이동 안에서 (Z, B) 를 보간해 본다
+        `bed_clearance` 아래로 내려가는 이동. 이동 안에서 (Z, B) 를 보간해 본다.
+        팁 자체가 Z<0 인 이동도 치명이다
       · **native XY 범위** [치명] — 팁 XY 가 native [0,200]×[−40,200] 밖. 라이브
         TCP 에서 범위 밖의 회전 이동은 **조용히 버려진다**
       · **상태** [치명] — TCP 없이 B/C≠0 인 채 압출(G28 뒤 B0 C0 복귀 누락),
@@ -676,7 +923,9 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
     state_fatal, state_warn = [], []
     n_cold = 0              # TCP 없이 기운 채 압출
     cold_first = None
-    n_bed, bed_min, bed_at = 0, None, None
+    n_bed, n_bed_extr, bed_min, bed_at = 0, 0, None, None
+    n_below, tip_min = 0, None      # 팁 자체가 베드 아래
+    n_blind = 0                     # TCP 상태를 모르는 채 움직인 이동
     n_xy, nat = 0, [None, None, None, None]     # native X/Y 최소·최대
     n_omega, omega_top, n_omega_blind = 0, 0.0, 0
     zj_min, zj_at = None, None
@@ -839,6 +1088,9 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
             if cold_first is None:
                 cold_first = (mv.to_line(), b or 0.0, c or 0.0)
 
+        if tcp is None and not origin_assumed:
+            n_blind += 1
+
         # (ii) native XY
         if x is not None and y is not None:
             _span(nat, x + ox, y + oy)
@@ -863,7 +1115,10 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
                 if bed_min is None or gap < bed_min:
                     bed_min, bed_at = gap, (x, y, z, bt)
                 hit = hit or gap < -1e-9
+                tip_min = tip if tip_min is None else min(tip_min, tip)
+            n_below += tip < -1e-9
             n_bed += hit
+            n_bed_extr += hit and extruding
             zj = z + oz if tcp is not True else \
                 z + oz + (math.cos(math.radians(bb1)) - 1.0) * lb
             if zj_min is None or zj < zj_min:
@@ -915,10 +1170,19 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
     if n_bed:
         bx, by, bz, bt = bed_at
         findings.append(("치명", f"핫엔드({hot.name})가 베드 여유 {clr:g}mm 를 침범하는 "
-                                f"이동 {n_bed}개 — 가장 깊은 곳 {bed_min:+.2f}mm "
+                                f"이동 {n_bed}개 (그중 압출 {n_bed_extr}개) — "
+                                f"가장 깊은 곳 {bed_min:+.2f}mm "
                                 f"(X{bx:.2f} Y{by:.2f} Z{bz:.2f}, B={bt:.1f}°). "
                                 f"그 높이의 B_safe 는 "
                                 f"{b_safe(bz, hot, clr):.1f}° 다"))
+    if n_below:
+        findings.append(("치명", f"팁이 베드 아래(Z<0)로 내려가는 이동 {n_below}개 "
+                                f"(최저 {tip_min:.2f}mm) — 소프트 엔드스톱이 팁 Z 를 "
+                                f"0 에서 자르므로 경로가 뭉개진다"))
+    if n_blind:
+        findings.append(("경고", f"TCP 상태를 밝히지 않은 채 움직이는 이동 {n_blind}개 — "
+                                f"부팅 기본값이 config 마다 엇갈린다. 파일 맨 앞에서 "
+                                f"`{profile.rtcp_off}` 로 밝힐 것"))
     if n_xy:
         findings.append(("치명", f"팁 XY 가 native 범위 X[{profile.native_x[0]:g},"
                                 f"{profile.native_x[1]:g}] Y[{profile.native_y[0]:g},"
@@ -946,7 +1210,7 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
     if n_jxy:
         findings.append(("경고", f"joint XY 가 native 범위 밖인 이동 {n_jxy}개 "
                                 f"(X {jxy[0]:.1f}~{jxy[1]:.1f}, Y {jxy[2]:.1f}~{jxy[3]:.1f}) "
-                                f"— 팁은 범위 안이라 펌웨어가 막지 않는다"))
+                                f"— 리밋은 팁 좌표에 걸리므로 펌웨어가 막지 않는다"))
 
     if not b_all:
         findings.append(("치명", "틸트 축 값이 하나도 없다"))
@@ -998,8 +1262,9 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
              "moves": len(cs), "rewinds": n_rewind,
              "rewind_max_deg": rewind_max, "rtcp": has_rtcp,
              "rtcp_on_count": n_tcp_on,
-             "bed_hits": n_bed,
+             "bed_hits": n_bed, "bed_hits_extruding": n_bed_extr,
              "bed_gap_min": bed_min,            # 여유선까지 남은 거리 (음수 = 침범)
+             "tip_below_bed": n_below, "tip_z_min": tip_min,
              "native_xy_out": n_xy, "native_box": tuple(nat),
              "origin_assumed": origin_assumed,
              "state_fatal": len(set(state_fatal)) + (1 if n_cold else 0),
@@ -1219,6 +1484,7 @@ def add_c_rewinds(items, profile=REP5X, clearance=2.0, rot_feed=3600.0,
     out, mi = [], 0
     offset = start_offset
     c_prev = None
+    extra_prev = None               # 직전 이동의 자세 (B 포함) — 되감기가 그대로 쓴다
     px = py = pz = None
     z_dep = None
     e_prev = 0.0
@@ -1258,12 +1524,18 @@ def add_c_rewinds(items, profile=REP5X, clearance=2.0, rot_feed=3600.0,
                                         f"{c_prev:.1f} -> {c_new:.1f} deg "
                                         f"(lift to Z{safe_z:.2f}) [{axis} window "
                                         f"{lo_lim:.0f}..{hi_lim:.0f}]"))
+                            # 되감기는 **직전 자세 그대로** C 만 360° 배수 돌린다.
+                            # 예전에는 다음 이동의 B 를 썼다 — 그러면 되감기 끝에
+                            # '직전 위치(낮을 수 있다)에 다음 레이어의 틸트' 로
+                            # 내려오게 되어, 틸트가 커지는 구간에서 베드 여유를
+                            # 침범할 수 있다. B 는 다음 이동이 가면서 바꾼다.
+                            pose = extra_prev if extra_prev is not None else mv.extra
                             for zz, ff, cc in ((safe_z, lift_feed, c_prev),
                                                (safe_z, rot_feed, c_new),
                                                (pz, lift_feed, c_new)):
                                 out.append(("move", Move(
                                     g=0, x=px, y=py, z=zz, f=ff,
-                                    extra=_with_axis(mv.extra, axis, cc))))
+                                    extra=_with_axis(pose, axis, cc))))
                             out.append(("raw", "; V_REWIND END"))
                             rewind_deg += abs(360.0 * k)
                             offset += 360.0 * k
@@ -1272,6 +1544,7 @@ def add_c_rewinds(items, profile=REP5X, clearance=2.0, rot_feed=3600.0,
             mv = Move(g=mv.g, x=mv.x, y=mv.y, z=mv.z, e=mv.e, f=mv.f,
                       extra=_with_axis(mv.extra, axis, c))
             c_prev = c
+            extra_prev = mv.extra
 
         out.append(("move", mv))
         if mv.x is not None:

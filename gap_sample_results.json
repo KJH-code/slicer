@@ -1,0 +1,754 @@
+{
+ "zero_cost": [
+  {
+   "model": "구",
+   "planar": 14.878506896094953,
+   "uniform_angle": 42.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.9612666898931486,
+   "uniform_J_angle": 28.0,
+   "flagged_top_uniform_J_mm": 0.32464626547362013
+  },
+  {
+   "model": "허리 r=7",
+   "planar": 7.397613507515106,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.2155232061788106,
+   "uniform_J_angle": 18.0,
+   "flagged_top_uniform_J_mm": 0.7826205668623686
+  },
+  {
+   "model": "허리 r=5",
+   "planar": 8.377437338642325,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.3157661766017075,
+   "uniform_J_angle": 20.0,
+   "flagged_top_uniform_J_mm": 0.6458076632778292
+  },
+  {
+   "model": "허리 r=4",
+   "planar": 8.725709338657706,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.33603034209311,
+   "uniform_J_angle": 16.0,
+   "flagged_top_uniform_J_mm": 0.8810454298335682
+  },
+  {
+   "model": "허리 r=3",
+   "planar": 8.886725010812093,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.3077200498710964,
+   "uniform_J_angle": 20.0,
+   "flagged_top_uniform_J_mm": 0.6490061447185301
+  },
+  {
+   "model": "허리 r=2",
+   "planar": 8.909113982920713,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.2421991413517497,
+   "uniform_J_angle": 24.0,
+   "flagged_top_uniform_J_mm": 0.4244790159251484
+  },
+  {
+   "model": "허리 r=1",
+   "planar": 8.832193894767078,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.1471399731849505,
+   "uniform_J_angle": 26.0,
+   "flagged_top_uniform_J_mm": 0.335587895704671
+  },
+  {
+   "model": "허리3 ×1.1",
+   "planar": 10.264533016719511,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.576400824391188,
+   "uniform_J_angle": 22.0,
+   "flagged_top_uniform_J_mm": 0.6490061447185301
+  },
+  {
+   "model": "허리3 ×1.2",
+   "planar": 11.68858879020044,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.8569239999733234,
+   "uniform_J_angle": 26.0,
+   "flagged_top_uniform_J_mm": 0.5098097222820396
+  },
+  {
+   "model": "허리3 ×1.3",
+   "planar": 13.14437960544543,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 3.1486770556982986,
+   "uniform_J_angle": 34.0,
+   "flagged_top_uniform_J_mm": 0.1913858079734645
+  },
+  {
+   "model": "허리3 ×1.5",
+   "planar": 14.931297857574007,
+   "uniform_angle": 44.0,
+   "uniform": 0.04138177587198255,
+   "band2": 0.04138177587198255,
+   "band4": 0.04138177587198255,
+   "flagged_top_planar_mm": 3.45102295026105,
+   "uniform_J_angle": 36.0,
+   "flagged_top_uniform_J_mm": 0.1913858079734645
+  },
+  {
+   "model": "허리3 ×2",
+   "planar": 19.733964232514868,
+   "uniform_angle": 44.0,
+   "uniform": 0.047433890077188394,
+   "band2": 0.047433890077188394,
+   "band4": 0.047433890077188394,
+   "flagged_top_planar_mm": 4.414909009015665,
+   "uniform_J_angle": 42.0,
+   "flagged_top_uniform_J_mm": 0.026189224895325047
+  },
+  {
+   "model": "허리3 로브0.1",
+   "planar": 8.718783523303264,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.576400824391188,
+   "uniform_J_angle": 22.0,
+   "flagged_top_uniform_J_mm": 0.6490061447185301
+  },
+  {
+   "model": "허리3 로브0.15",
+   "planar": 8.577896494309815,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.576400824391188,
+   "uniform_J_angle": 20.0,
+   "flagged_top_uniform_J_mm": 0.9752125804132975
+  },
+  {
+   "model": "허리3 로브0.2",
+   "planar": 8.495402076546517,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 2.8569239999733234,
+   "uniform_J_angle": 22.0,
+   "flagged_top_uniform_J_mm": 0.8042534246428609
+  },
+  {
+   "model": "허리3 로브0.3",
+   "planar": 8.396465267352134,
+   "uniform_angle": 44.0,
+   "uniform": 0.0,
+   "band2": 0.0,
+   "band4": 0.0,
+   "flagged_top_planar_mm": 3.1486770556982986,
+   "uniform_J_angle": 22.0,
+   "flagged_top_uniform_J_mm": 0.9752125804132975
+  },
+  {
+   "model": "허리3 로브0.4",
+   "planar": 8.260876299180362,
+   "uniform_angle": 44.0,
+   "uniform": 0.01016304801119242,
+   "band2": 0.01016304801119242,
+   "band4": 0.01016304801119242,
+   "flagged_top_planar_mm": 3.1486770556982986,
+   "uniform_J_angle": 22.0,
+   "flagged_top_uniform_J_mm": 0.9752125804132975
+  }
+ ],
+ "toolpath": [
+  {
+   "model": "구",
+   "uniform": [
+    28.0
+   ],
+   "band2": [
+    28.0,
+    28.0
+   ],
+   "uniform_J": {
+    "pct": 0.7477469746897566,
+    "mm": 35.59716958182925,
+    "near_mm": 35.59716958182925,
+    "perimeter_mm": 4760.5902513478795
+   },
+   "band2_measured": {
+    "pct": 0.7477469746897566,
+    "mm": 35.59716958182925,
+    "near_mm": 35.59716958182925,
+    "perimeter_mm": 4760.5902513478795
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.7477469746897566,
+    "mm": 35.59716958182925,
+    "near_mm": 35.59716958182925,
+    "perimeter_mm": 4760.5902513478795
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "무승부",
+   "vs_uniform_J_mm": "무승부",
+   "vs_uniform_bottom_pct": "무승부",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리 r=7",
+   "uniform": [
+    18.0
+   ],
+   "band2": [
+    18.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.2035044390293108,
+    "mm": 77.82617854483001,
+    "near_mm": 77.82617854483001,
+    "perimeter_mm": 6466.629953405149
+   },
+   "band2_measured": {
+    "pct": 1.3370688099579617,
+    "mm": 77.82617854483001,
+    "near_mm": 77.82617854483001,
+    "perimeter_mm": 5820.656196989362
+   },
+   "uniform_bottom_angle": {
+    "pct": 1.2035044390293108,
+    "mm": 77.82617854483001,
+    "near_mm": 77.82617854483001,
+    "perimeter_mm": 6466.629953405149
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "균일",
+   "vs_uniform_J_mm": "무승부",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리 r=5",
+   "uniform": [
+    20.0
+   ],
+   "band2": [
+    20.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.1522352390620973,
+    "mm": 66.4158883916307,
+    "near_mm": 66.4158883916307,
+    "perimeter_mm": 5764.091058844223
+   },
+   "band2_measured": {
+    "pct": 1.2798017215908022,
+    "mm": 66.4158883916307,
+    "near_mm": 66.4158883916307,
+    "perimeter_mm": 5189.545167127553
+   },
+   "uniform_bottom_angle": {
+    "pct": 1.1522352390620973,
+    "mm": 66.4158883916307,
+    "near_mm": 66.4158883916307,
+    "perimeter_mm": 5764.091058844223
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "균일",
+   "vs_uniform_J_mm": "무승부",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리 r=4",
+   "uniform": [
+    16.0
+   ],
+   "band2": [
+    26.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.535348750890232,
+    "mm": 82.43136619664804,
+    "near_mm": 82.43136619664804,
+    "perimeter_mm": 5368.901765729275
+   },
+   "band2_measured": {
+    "pct": 1.1564613603907283,
+    "mm": 56.139852537243414,
+    "near_mm": 56.139852537243414,
+    "perimeter_mm": 4854.451212989572
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.9995136563247288,
+    "mm": 56.139852537243414,
+    "near_mm": 56.139852537243414,
+    "perimeter_mm": 5616.716908468565
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리 r=3",
+   "uniform": [
+    20.0
+   ],
+   "band2": [
+    28.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.2944236907573812,
+    "mm": 66.39239417206855,
+    "near_mm": 66.39239417206855,
+    "perimeter_mm": 5129.108393652905
+   },
+   "band2_measured": {
+    "pct": 0.7646789191009136,
+    "mm": 35.393071185786525,
+    "near_mm": 35.393071185786525,
+    "perimeter_mm": 4628.487892330108
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.6617451118327758,
+    "mm": 35.393071185786525,
+    "near_mm": 35.393071185786525,
+    "perimeter_mm": 5348.44467347277
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리 r=2",
+   "uniform": [
+    24.0
+   ],
+   "band2": [
+    30.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.2096906300380244,
+    "mm": 59.33887650122662,
+    "near_mm": 59.33887650122662,
+    "perimeter_mm": 4905.293554217364
+   },
+   "band2_measured": {
+    "pct": 0.7672697700481317,
+    "mm": 33.352245557115616,
+    "near_mm": 33.352245557115616,
+    "perimeter_mm": 4346.87340217032
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.6500387016637816,
+    "mm": 33.352245557115616,
+    "near_mm": 33.352245557115616,
+    "perimeter_mm": 5130.809207474901
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리 r=1",
+   "uniform": [
+    26.0
+   ],
+   "band2": [
+    32.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.1791984652232035,
+    "mm": 56.13505207885588,
+    "near_mm": 56.13505207885588,
+    "perimeter_mm": 4760.441412907572
+   },
+   "band2_measured": {
+    "pct": 0.6685006118076607,
+    "mm": 28.067822012760715,
+    "near_mm": 28.067822012760715,
+    "perimeter_mm": 4198.623234893361
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.5689714938379811,
+    "mm": 28.067822012760715,
+    "near_mm": 28.067822012760715,
+    "perimeter_mm": 4933.080535095004
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 ×1.1",
+   "uniform": [
+    22.0
+   ],
+   "band2": [
+    32.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.571837774791563,
+    "mm": 90.43674117037159,
+    "near_mm": 90.43674117037159,
+    "perimeter_mm": 5753.567106017932
+   },
+   "band2_measured": {
+    "pct": 0.6439965141213574,
+    "mm": 32.3366654890861,
+    "near_mm": 32.3366654890861,
+    "perimeter_mm": 5021.248528527352
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.5263885390443512,
+    "mm": 32.3366654890861,
+    "near_mm": 32.3366654890861,
+    "perimeter_mm": 6143.1173155465585
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 ×1.2",
+   "uniform": [
+    26.0
+   ],
+   "band2": [
+    34.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 1.3702217757476927,
+    "mm": 90.28502082179867,
+    "near_mm": 90.28502082179867,
+    "perimeter_mm": 6589.08086412016
+   },
+   "band2_measured": {
+    "pct": 0.5719022164142333,
+    "mm": 31.038268800900845,
+    "near_mm": 31.038268800900845,
+    "perimeter_mm": 5427.198550743084
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.4386836459954014,
+    "mm": 31.038268800900845,
+    "near_mm": 31.038268800900845,
+    "perimeter_mm": 7075.319329598671
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 ×1.3",
+   "uniform": [
+    34.0
+   ],
+   "band2": [
+    32.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 0.5071696851776157,
+    "mm": 40.65635886355513,
+    "near_mm": 40.65635886355513,
+    "perimeter_mm": 8016.322751884683
+   },
+   "band2_measured": {
+    "pct": 1.2128551817324,
+    "mm": 71.59759616876993,
+    "near_mm": 71.59759616876993,
+    "perimeter_mm": 5903.227132731742
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.9305103814295853,
+    "mm": 71.59759616876993,
+    "near_mm": 71.59759616876993,
+    "perimeter_mm": 7694.443565344353
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "균일",
+   "vs_uniform_J_mm": "균일",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 ×1.5",
+   "uniform": [
+    36.0
+   ],
+   "band2": [
+    32.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 0.39937844497611696,
+    "mm": 39.23541034931299,
+    "near_mm": 39.23541034931299,
+    "perimeter_mm": 9824.118162325783
+   },
+   "band2_measured": {
+    "pct": 1.741587780741681,
+    "mm": 117.16777303557205,
+    "near_mm": 117.16777303557205,
+    "perimeter_mm": 6727.640968270598
+   },
+   "uniform_bottom_angle": {
+    "pct": 1.2652776498642093,
+    "mm": 117.16777303557205,
+    "near_mm": 117.16777303557205,
+    "perimeter_mm": 9260.242054235812
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "균일",
+   "vs_uniform_J_mm": "균일",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 ×2",
+   "uniform": [
+    42.0
+   ],
+   "band2": [
+    42.0,
+    28.0
+   ],
+   "uniform_J": {
+    "pct": 0.02052715648374995,
+    "mm": 3.415782552635304,
+    "near_mm": 3.415782552635304,
+    "perimeter_mm": 16640.31038755593
+   },
+   "band2_measured": {
+    "pct": 1.5986113979787904,
+    "mm": 189.44866323242923,
+    "near_mm": 3.415782552635304,
+    "perimeter_mm": 11850.82650304879
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.02052715648374995,
+    "mm": 3.415782552635304,
+    "near_mm": 3.415782552635304,
+    "perimeter_mm": 16640.31038755593
+   },
+   "near_bed_share": 0.05220774269874685,
+   "vs_uniform_J_pct": "균일",
+   "vs_uniform_J_mm": "균일",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "균일"
+  },
+  {
+   "model": "허리3 로브0.1",
+   "uniform": [
+    22.0
+   ],
+   "band2": [
+    30.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 0.6527705330858138,
+    "mm": 34.18503612652918,
+    "near_mm": 34.18503612652918,
+    "perimeter_mm": 5236.91471870333
+   },
+   "band2_measured": {
+    "pct": 0.3591917937194017,
+    "mm": 16.732875556339355,
+    "near_mm": 16.732875556339355,
+    "perimeter_mm": 4658.479355297011
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.30382240918537956,
+    "mm": 16.732875556339355,
+    "near_mm": 16.732875556339355,
+    "perimeter_mm": 5507.452725822362
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 로브0.15",
+   "uniform": [
+    20.0
+   ],
+   "band2": [
+    30.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 0.7422029108556172,
+    "mm": 39.09329980787269,
+    "near_mm": 39.09329980787269,
+    "perimeter_mm": 5267.198394951811
+   },
+   "band2_measured": {
+    "pct": 0.36354016204423933,
+    "mm": 17.167587514352466,
+    "near_mm": 17.167587514352466,
+    "perimeter_mm": 4722.335881080268
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.3061360187273336,
+    "mm": 17.167587514352466,
+    "near_mm": 17.167587514352466,
+    "perimeter_mm": 5607.830005015887
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 로브0.2",
+   "uniform": [
+    22.0
+   ],
+   "band2": [
+    28.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 0.6693479300647381,
+    "mm": 36.30961042022231,
+    "near_mm": 36.30961042022231,
+    "perimeter_mm": 5424.624293184937
+   },
+   "band2_measured": {
+    "pct": 0.48409923187544385,
+    "mm": 23.422409491269015,
+    "near_mm": 23.422409491269015,
+    "perimeter_mm": 4838.348823758406
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.41499896972863065,
+    "mm": 23.422409491269015,
+    "near_mm": 23.422409491269015,
+    "perimeter_mm": 5643.968105893134
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 로브0.3",
+   "uniform": [
+    22.0
+   ],
+   "band2": [
+    26.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 0.6855562382613224,
+    "mm": 39.249583133322645,
+    "near_mm": 39.249583133322645,
+    "perimeter_mm": 5725.217121919233
+   },
+   "band2_measured": {
+    "pct": 0.6335936763265483,
+    "mm": 32.33867083970425,
+    "near_mm": 32.33867083970425,
+    "perimeter_mm": 5104.007828360522
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.5513919891399313,
+    "mm": 32.33867083970425,
+    "near_mm": 32.33867083970425,
+    "perimeter_mm": 5864.914883900752
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  },
+  {
+   "model": "허리3 로브0.4",
+   "uniform": [
+    22.0
+   ],
+   "band2": [
+    26.0,
+    0.0
+   ],
+   "uniform_J": {
+    "pct": 0.7118562390344746,
+    "mm": 43.30150754708894,
+    "near_mm": 43.30150754708894,
+    "perimeter_mm": 6082.900615694664
+   },
+   "band2_measured": {
+    "pct": 0.6845339690358007,
+    "mm": 37.07036499210996,
+    "near_mm": 37.07036499210996,
+    "perimeter_mm": 5415.416424743007
+   },
+   "uniform_bottom_angle": {
+    "pct": 0.5910093220566576,
+    "mm": 37.07036499210996,
+    "near_mm": 37.07036499210996,
+    "perimeter_mm": 6272.382449587856
+   },
+   "near_bed_share": 1.0,
+   "vs_uniform_J_pct": "밴드2",
+   "vs_uniform_J_mm": "밴드2",
+   "vs_uniform_bottom_pct": "균일",
+   "vs_uniform_bottom_mm": "무승부"
+  }
+ ]
+}

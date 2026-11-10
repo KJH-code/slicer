@@ -24,6 +24,7 @@
 
 * 야코비안 수치 검산 (유한차분 vs cos²θ·m)
 * 파일별 압출 배율 `E_낸것 / E_필요` — 페리미터/인필, 상수 구간/블렌드 구간
+* 낸 E 가 슬라이서 입력 E 와 얼마나 같은가 (보정이 실제로 걸렸는지)
 * 실공간 층 두께 `t_n = h·m·cosθ` 의 분포와 노즐 지름 대비 비율
 
 판정은 하지 않는다 — 이 스크립트는 **흐름(유량) 오차의 크기**만 낸다.
@@ -160,7 +161,8 @@ def analyze(name, path):
                                    s[:, 6], s[:, 7], s[:, 8] > 0.5)
     e_mm = h * w / A_FIL
     e_req = e_mm * Lw * np.cos(th) ** 2 * m           # 야코비안이 요구하는 양
-    # 검산: 코드가 낸 ΔE 는 e_mm·L′·(L/L′) = e_mm·L 이어야 한다
+    # 문서가 말한 보정대로라면 ΔE = e_mm·L′·(L/L′) = e_mm·L 이어야 한다.
+    # 실제로는 그렇지 않다 — 원인은 analyze_gap_pipeline.py ① (e_prev 혼용).
     resid = float(np.abs(dE - e_mm * L).max() / (e_mm * L).max())
     tn = h * m * np.cos(th)                           # 실공간 층 두께(법선 방향)
     out = {"file": path, "layer_height": h, "e_accounting_residual": resid,
@@ -170,7 +172,11 @@ def analyze(name, path):
         if not mask.any():
             return None
         ratio = dE[mask] / e_req[mask]
+        vs_in = dE[mask] / (e_mm * Lw[mask])          # 슬라이서가 준 양 대비
         return {"length_mm": float(L[mask].sum()),
+                "vs_input_total": float(dE[mask].sum() / (e_mm * Lw[mask]).sum()),
+                "vs_input_p99": float(np.percentile(vs_in, 99)),
+                "vs_input_max": float(vs_in.max()),
                 "flow_total": float(dE[mask].sum() / e_req[mask].sum()),
                 "flow_p05": wq(ratio, L[mask], 0.05),
                 "flow_p50": wq(ratio, L[mask], 0.50),
@@ -190,7 +196,10 @@ def analyze(name, path):
     out["perimeter_blend"] = block(peri & inb)
     out["infill_all"] = block(kind == 1)
     print(f"\n[{name}]  {path}")
-    print(f"  E 회계 검산 (ΔE = e_mm·L): 최대 잔차 {resid:.1e}")
+    pa = out["perimeter_all"]
+    print(f"  의도한 보정(ΔE = e_mm·L)과의 최대 잔차 {resid:.2f} (0 이어야 한다).  "
+          f"페리미터: 낸 E / 슬라이서 입력 E = {pa['vs_input_total']:.3f} "
+          f"(이동별 p99 {pa['vs_input_p99']:.2f} 배, 최대 {pa['vs_input_max']:.2f} 배)")
     print(f"  {'구간':<16}{'길이mm':>9}{'배율(합)':>9}{'p05':>7}{'p50':>7}{'p95':>7}"
           f"{'t_n 최소':>9}{'중앙':>7}{'최대':>7}{'>0.8d':>7}{'>d':>6}")
     for label, key in (("페리미터 전체", "perimeter_all"),

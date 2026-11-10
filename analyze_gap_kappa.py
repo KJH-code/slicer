@@ -27,12 +27,22 @@
 '승' = 파레토 우세(예측 서포트 %·평균|θ| 둘 다 낫거나 같고 하나는 엄격히 낫다).
 ⚠ 여기 서포트 % 는 **메시 면적 비율**(예측)이다. 툴패스 오버행 %p 가 아니다.
 
+추가로 닫힌 식 표 둘(수 초):
+
+* **문턱 대조표** — 축대칭 벽(실공간 오버행각 α)이 원뿔각 θ·층고 h 에서 '지지됨' 으로
+  판정되는 한계각. 예측식·검사기 A(연직 창)·공구 프레임 창·두께 반영 κ 를 나란히.
+  검사기 A 의 한계는 `h·m·cosθ·(cosθ·tanα_L + sinθ) ≤ w` 에서 나온다(유도는 gap_audit.md).
+* **J 희석** — J 의 서포트 항은 '전체 표면적 대비 %' 다. 오버행과 무관한 면적이
+  붙으면(받침·긴 기둥) 같은 오버행인데도 고르는 각도가 달라진다.
+
     python3 analyze_gap_kappa.py            # 약 10 분
     python3 analyze_gap_kappa.py --quick    # 다시 선택 생략 (약 2 분)
+    python3 analyze_gap_kappa.py --tables   # 닫힌 식 표만
 """
 
 import argparse
 import json
+import math
 import sys
 import time
 
@@ -40,6 +50,7 @@ import numpy as np
 
 import conical.varangle as varangle
 from analyze_blend_ratio import build_specs
+from compare_waist import waisted_model
 from conical.analytic import radial_normal, support_fraction
 from conical.config import DEFAULT_K, MAX_SPACING_FACTOR, THRESHOLD_DEG
 from conical.meshio import RadiusProfile
@@ -137,10 +148,58 @@ def criteria():
     return out
 
 
+def threshold_table(w=0.45):
+    """축대칭 outward 벽이 '지지됨' 으로 통과하는 실공간 오버행각의 상한(도)."""
+    rows = []
+    for h in (0.2, 0.3, 0.4):
+        for th_deg, m in ((0, 1.0), (24, 1.0), (30, 1.0), (15, 1.5), (28, 2.6)):
+            th = math.radians(th_deg)
+            tn = h * m * math.cos(th)
+            pred = 45.0 + th_deg
+            # 검사기 A: 수평 이동 h·m·cosθ·(cosθ·tanα_L + sinθ) ≤ w
+            t = (w / tn - math.sin(th)) / math.cos(th)
+            chk = math.degrees(math.atan(t)) + th_deg if t > 0 else th_deg
+            tool = math.degrees(math.atan(w / tn)) + th_deg          # 층 면 이동 ≤ w
+            half = math.degrees(math.atan(0.5 * w / tn)) + th_deg    # ≤ w/2
+            thick = math.degrees(math.atan(1.0 / (m * math.cos(th)))) + th_deg
+            rows.append({"h": h, "theta": th_deg, "m": m, "t_n": tn,
+                         "analytic": pred, "checkerA": min(chk, 90.0),
+                         "tool_w": min(tool, 90.0), "tool_half": min(half, 90.0),
+                         "thickness_kappa": min(thick, 90.0)})
+    print("\n[D] 문턱 대조표 — 통과하는 실공간 오버행각의 상한 (도, 수직=0°)")
+    print(f"{'h':>5}{'θ':>5}{'m':>5}{'t_n':>7}{'예측식':>8}{'검사기A':>8}"
+          f"{'공구·w':>8}{'공구·w/2':>9}{'두께κ':>8}")
+    for r in rows:
+        print(f"{r['h']:>5.1f}{r['theta']:>5d}{r['m']:>5.1f}{r['t_n']:>7.3f}"
+              f"{r['analytic']:>8.1f}{r['checkerA']:>8.1f}{r['tool_w']:>8.1f}"
+              f"{r['tool_half']:>9.1f}{r['thickness_kappa']:>8.1f}")
+    return rows
+
+
+def dilution_table(k=DEFAULT_K):
+    """J 의 서포트 항에 무관한 면적을 섞으면 균일 최선 각도가 어떻게 바뀌나."""
+    mesh = waisted_model(2.0)
+    angles = np.arange(0.0, 45.0, 2.0)
+    s = np.array([support_fraction(mesh, float(a), "outward") for a in angles])
+    rows = []
+    print("\n[E] J 희석 — 램프에 오버행 없는 면적을 덧붙였다고 칠 때 (균일 원뿔, k=0.2)")
+    print(f"{'램프 면적 비중':>12}{'고르는 각도':>10}{'그때 램프 서포트 %':>16}")
+    for f in (1.0, 0.75, 0.5, 0.35, 0.25):
+        j = f * (s[0] - s) - k * angles
+        i = int(j.argmax())
+        rows.append({"share": f, "angle": float(angles[i]), "support": float(s[i])})
+        print(f"{f:>12.2f}{angles[i]:>10.0f}{s[i]:>16.2f}")
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--tables", action="store_true")
     args = ap.parse_args()
+    extra = {"threshold_table": threshold_table(), "dilution": dilution_table()}
+    if args.tables:
+        return 0
     specs = build_specs(asym=True)
     crits = criteria()
     reselect = [] if args.quick else [
@@ -226,7 +285,7 @@ def main():
           f"[1/{MAX_SPACING_FACTOR}, {MAX_SPACING_FACTOR}] 를 벗어난다")
 
     with open("gap_kappa_results.json", "w") as fh:
-        json.dump(rows, fh, ensure_ascii=False, indent=1)
+        json.dump({"models": rows, **extra}, fh, ensure_ascii=False, indent=1)
     print("\n저장: gap_kappa_results.json")
 
 
