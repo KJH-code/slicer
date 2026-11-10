@@ -1,0 +1,187 @@
+{
+ "machine": {
+  "cores": 4,
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "mem_total": "16472400 kB",
+  "python": "3.13.18",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "trimesh": "5.2.0",
+  "platform": "Linux-6.18.44-fc-v338-x86_64-with-glibc2.39",
+  "note": "단일 프로세스 측정 (병렬 없음), 다른 무거운 작업이 없을 때 실행"
+ },
+ "rows": [
+  {
+   "model": "sphere",
+   "level": 3,
+   "task": "load",
+   "faces": 1280,
+   "times_s": [],
+   "median_s": null,
+   "maxrss_mb": 134.53515625,
+   "result": null
+  },
+  {
+   "model": "sphere",
+   "level": 3,
+   "task": "uniform",
+   "faces": 1280,
+   "times_s": [
+    0.011402570000427659,
+    0.011457804000201577,
+    0.01088210999932926
+   ],
+   "median_s": 0.011402570000427659,
+   "maxrss_mb": 134.7890625,
+   "result": {
+    "angle": 28.0,
+    "direction": "outward",
+    "support_pct": 1.8869452458161877
+   }
+  },
+  {
+   "model": "sphere",
+   "level": 3,
+   "task": "band2",
+   "faces": 1280,
+   "times_s": [
+    0.9132197389999419,
+    0.9407712980000724,
+    0.9453727259997322
+   ],
+   "median_s": 0.9407712980000724,
+   "maxrss_mb": 138.0625,
+   "result": {
+    "thetas": [
+     28.0,
+     20.0
+    ],
+    "support_pct": 1.8869452458161877
+   }
+  },
+  {
+   "model": "sphere",
+   "level": 4,
+   "task": "load",
+   "faces": 5120,
+   "times_s": [],
+   "median_s": null,
+   "maxrss_mb": 135.3515625,
+   "result": null
+  },
+  {
+   "model": "sphere",
+   "level": 4,
+   "task": "uniform",
+   "faces": 5120,
+   "times_s": [
+    0.0319713810004032,
+    0.03197263699985342,
+    0.0311488739998822
+   ],
+   "median_s": 0.0319713810004032,
+   "maxrss_mb": 136.06640625,
+   "result": {
+    "angle": 32.0,
+    "direction": "outward",
+    "support_pct": 1.254906654299793
+   }
+  },
+  {
+   "model": "sphere",
+   "level": 4,
+   "task": "band2",
+   "faces": 5120,
+   "times_s": [
+    2.8381937989997823,
+    2.7771992360003424,
+    2.8131484980003734
+   ],
+   "median_s": 2.8131484980003734,
+   "maxrss_mb": 143.08203125,
+   "result": {
+    "thetas": [
+     32.0,
+     26.0
+    ],
+    "support_pct": 1.254906654299793
+   }
+  },
+  {
+   "model": "sphere",
+   "level": 5,
+   "task": "load",
+   "faces": 20480,
+   "times_s": [],
+   "median_s": null,
+   "maxrss_mb": 139.4609375,
+   "result": null
+  },
+  {
+   "model": "sphere",
+   "level": 5,
+   "task": "uniform",
+   "faces": 20480,
+   "times_s": [
+    0.13084292600069602,
+    0.13523500500014052,
+    0.13334728900008486
+   ],
+   "median_s": 0.13334728900008486,
+   "maxrss_mb": 140.40625,
+   "result": {
+    "angle": 32.0,
+    "direction": "outward",
+    "support_pct": 1.302407669793877
+   }
+  },
+  {
+   "model": "sphere",
+   "level": 5,
+   "task": "band2",
+   "faces": 20480,
+   "times_s": [
+    8.912794453999595,
+    8.985330888000135,
+    8.914263745000426
+   ],
+   "median_s": 8.914263745000426,
+   "maxrss_mb": 155.609375,
+   "result": {
+    "thetas": [
+     34.0,
+     26.0
+    ],
+    "support_pct": 0.918878309204243
+   }
+  },
+  {
+   "model": "sphere",
+   "level": 6,
+   "task": "load",
+   "faces": 81920,
+   "times_s": [],
+   "median_s": null,
+   "maxrss_mb": 156.953125,
+   "result": null
+  },
+  {
+   "model": "sphere",
+   "level": 6,
+   "task": "uniform",
+   "faces": 81920,
+   "times_s": [
+    0.5375478730002214,
+    0.5451953559995673,
+    0.5379068350002854
+   ],
+   "median_s": 0.5379068350002854,
+   "maxrss_mb": 159.2421875,
+   "result": {
+    "angle": 32.0,
+    "direction": "outward",
+    "support_pct": 1.2793749187145642
+   }
+  }
+ ]
+}
