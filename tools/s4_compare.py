@@ -95,6 +95,11 @@ def load_s4_sources(s4_dir):
                        "_t0 = time.time(); input_tet.tetrahedralize(**_S4_TET_OPTS); "
                        "_S4_TIMES['tetgen'] = time.time() - _t0")
     c4 = _cut_before(c4, "NEIGHBOUR_LOSS_WEIGHT = 20")
+    # numpy 2 는 2차원 벡터 np.cross 를 없앴다. 옛 동작(z=0 으로 채움)과 같은 식으로 바꾼다
+    c4 = _replace_once(
+        c4, 'np.cross( np.array([0, 0, 1]), tet.cell_data["cell_center"][:, :2])',
+        'np.cross(np.array([0, 0, 1]), np.hstack((tet.cell_data["cell_center"][:, :2], '
+        'np.zeros((tet.number_of_cells, 1)))))')
     c7 = _cut_before(c7, "ITERATIONS = 1000")
     return c2, c3, c4, c7
 
@@ -407,6 +412,8 @@ def main():
     ap.add_argument("--res", nargs="+", default=["R1", "R2"])
     ap.add_argument("--params", nargs="+", default=["P1", "P2"])
     ap.add_argument("--out", default="s4_comparison_results.json")
+    ap.add_argument("--save-fields", default=None,
+                    help="이 폴더에 실행별 npz(원본 점·사면체·변형 점) 저장 — 그림용")
     a = ap.parse_args()
     if a.selftest:
         out = selftest(a.models, a.res)
@@ -435,6 +442,12 @@ def main():
                     tet, new_v, info = run_s4(srcs, mesh.copy(), PARAMS[pk])
                     row.update(info)
                     row.update(evaluate(tet, new_v))
+                    if a.save_fields:
+                        os.makedirs(a.save_fields, exist_ok=True)
+                        np.savez_compressed(
+                            os.path.join(a.save_fields, f"{name}_{res}_{pk}.npz"),
+                            X=np.asarray(tet.points), cells=tet.cells.reshape(-1, 5)[:, 1:],
+                            Y=new_v)
                     row["ok"] = True
                 except Exception as e:  # 실패한 설정도 결과로 남긴다
                     row["ok"] = False
