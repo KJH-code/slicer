@@ -64,7 +64,8 @@ def main(argv=None):
             continue
         if head == "G43.4" or head == "G49":
             b, c = native["B"], native["C"]
-            if abs(b) > 1e-6 or abs(c % 360.0) > 1e-6 and abs(c % 360.0 - 360) > 1e-6:
+            # 호밍 전 자세는 모른다 — 부팅 직후의 G49 는 '끄기 선언'일 뿐이라 판정하지 않는다
+            if homed and abs(b) > 1e-6 or abs(c % 360.0) > 1e-6 and abs(c % 360.0 - 360) > 1e-6:
                 fatal.append(f"{ln}: {head} at B={b:g} C={c:g} (B0 C0 에서만 전환)")
             tcp = head == "G43.4"
             continue
