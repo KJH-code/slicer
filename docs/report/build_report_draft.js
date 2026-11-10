@@ -334,7 +334,7 @@ C.push(table([W], [["【사진 대기: L1~L5 출력물 — 같은 조명·배경
 C.push(FIGCAP(`[Fig. ${++figNo}] Printed test ladder L1–L5`));
 
 C.push(H2("5. 계산 비용"));
-C.push(P("균일각 결정: 정확 탐색 1~4ms(33개 모델 합 0.09s), 2° 격자 3~78ms. 같은 사면체 메시(1.2~4.0만 개)에서 원뿔 각도 결정(균일+밴드+천장) 0.12~0.27s 대 S4 68~334s(변형 단계가 절반 이상) — 약 450~1,200배. 【보류: 메시 크기별 — T7】", { noIndent: true }));
+C.push(P("균일각 결정: 정확 탐색 1~4ms(33개 모델 합 0.09s), 2° 격자 3~78ms. 같은 사면체 메시(1.2~4.0만 개)에서 원뿔 각도 결정(균일+밴드+천장) 0.12~0.27s 대 S4 68~334s(변형 단계가 절반 이상) — 약 450~1,200배. 메시 크기별(4코어 2.1GHz, 단일 프로세스): 시간 ∝ 면 수(로그-로그 기울기 0.95~1.06), 구 130만 면에서 균일 10.5s · 밴드2 556s, 최대 메모리 564/804MB(대부분 메시 적재).", { noIndent: true }));
 C.push(PAIR(["t7_scaling", "Run time vs. number of faces (log–log)"], ["s4_runtime", "Run time: cone-angle selection vs. S4 stages"]));
 
 // Ⅴ. 고찰

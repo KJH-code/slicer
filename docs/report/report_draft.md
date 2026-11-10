@@ -583,8 +583,10 @@ per-model Spearman ρ**
 
 균일각 결정: 정확 탐색 1~4ms(33개 모델 합 0.09s), 2° 격자 3~78ms. 같은
 사면체 메시(1.2~4.0만 개)에서 원뿔 각도 결정(균일+밴드+천장) 0.12~0.27s
-대 S4 68~334s(변형 단계가 절반 이상) — 약 450~1,200배.
-**<span class="mark">【보류: 메시 크기별 — T7】</span>**
+대 S4 68~334s(변형 단계가 절반 이상) — 약 450~1,200배. 메시 크기별(4코어
+2.1GHz, 단일 프로세스): 시간 ∝ 면 수(로그-로그 기울기 0.95~1.06), 구
+130만 면에서 균일 10.5s · 밴드2 556s, 최대 메모리 564/804MB(대부분 메시
+적재).
 
 <table>
 <colgroup>
@@ -593,7 +595,8 @@ per-model Spearman ρ**
 </colgroup>
 <tbody>
 <tr class="odd">
-<td><p><strong><mark>【그림 대기: t7_scaling.png】</mark></strong></p>
+<td><p><img src="media/8be65fb340871860d6733e0f8be1a65ee0d22001.png"
+style="width:3.14583in;height:1.35417in" /></p>
 <p><strong>[Fig. 20] Run time vs. number of faces
 (log–log)</strong></p></td>
 <td><p><img src="media/61b7ce565629644311225a4ced387e9caf590540.png"
