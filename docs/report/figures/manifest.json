@@ -412,22 +412,27 @@
    "funnel.planar_pct": 51.5,
    "torus.planar_pct": 25.0,
    "mushroom.planar_pct": 27.5,
+   "lamp.planar_pct": 8.9,
    "sphere.uniform_pct": 0.0,
    "funnel.uniform_pct": 0.0,
    "torus.uniform_pct": 18.6,
    "mushroom.uniform_pct": 27.5,
+   "lamp.uniform_pct": 0.0,
    "sphere.banded_pct": 0.0,
    "funnel.banded_pct": 0.0,
    "torus.banded_pct": 10.6,
    "mushroom.banded_pct": 27.5,
+   "lamp.banded_pct": 0.0,
    "sphere.ceiling_pct": 0.0,
    "funnel.ceiling_pct": 0.0,
    "torus.ceiling_pct": 10.6,
    "mushroom.ceiling_pct": 27.5,
+   "lamp.ceiling_pct": 0.0,
    "sphere.s4_pct": 0.1,
    "funnel.s4_pct": 0.6,
    "torus.s4_pct": 13.1,
-   "mushroom.s4_pct": 0.0
+   "mushroom.s4_pct": 0.0,
+   "lamp.s4_pct": 0.0
   }
  },
  {
@@ -467,7 +472,14 @@
     65.5,
     86.6
    ],
-   "mushroom.kappa_m_r_median": 0.075
+   "mushroom.kappa_m_r_median": 0.075,
+   "lamp.cone_angle_deg": 44.0,
+   "lamp.cone_dir": "outward",
+   "lamp.s4_theta_p05_p95_deg": [
+    3.0,
+    33.1
+   ],
+   "lamp.kappa_m_r_median": 0.088
   }
  },
  {
@@ -483,22 +495,27 @@
    "funnel.cone_s": 0.19,
    "torus.cone_s": 0.27,
    "mushroom.cone_s": 0.15,
+   "lamp.cone_s": 0.34,
    "sphere.tetgen_s": 0.28,
    "funnel.tetgen_s": 0.15,
    "torus.tetgen_s": 0.59,
    "mushroom.tetgen_s": 0.21,
+   "lamp.tetgen_s": 0.77,
    "sphere.attr_s": 19.96,
    "funnel.attr_s": 20.29,
    "torus.attr_s": 60.84,
    "mushroom.attr_s": 18.33,
+   "lamp.attr_s": 83.02,
    "sphere.rot_s": 12.33,
    "funnel.rot_s": 14.38,
    "torus.rot_s": 29.21,
    "mushroom.rot_s": 17.44,
+   "lamp.rot_s": 432.94,
    "sphere.def_s": 35.46,
    "funnel.def_s": 51.46,
    "torus.def_s": 243.01,
    "mushroom.def_s": 56.01,
+   "lamp.def_s": 542.55,
    "sphere.s4_total_s": 68.0,
    "sphere.n_tets": 13094,
    "sphere.res": "R2",
@@ -510,7 +527,10 @@
    "torus.res": "R2",
    "mushroom.s4_total_s": 92.0,
    "mushroom.n_tets": 12617,
-   "mushroom.res": "R2"
+   "mushroom.res": "R2",
+   "lamp.s4_total_s": 1059.3,
+   "lamp.n_tets": 49554,
+   "lamp.res": "R1"
   }
  },
  {

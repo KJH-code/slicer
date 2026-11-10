@@ -2344,5 +2344,104 @@
   },
   "ok": true,
   "wall_s": 357.8220857619999
+ },
+ {
+  "model": "lamp",
+  "res": "R1",
+  "params": "P1",
+  "param_values": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 30,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "ITERATIONS": 100,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "n_input_faces": 9856,
+  "input_volume": 2892.2199153355396,
+  "deform_iterations": 1000,
+  "preregistered": true,
+  "cone_on_input_mesh": {
+   "planar": 8.909113822197835,
+   "uniform": 0.0,
+   "uniform_angle": 44.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "44out"
+   ],
+   "ceiling": 0.0
+  },
+  "times_s": {
+   "tetgen": 0.7664575576782227,
+   "tet_and_attributes": 83.7840654040001,
+   "rotation_field": 432.94452742700014,
+   "deformation": 542.5503796860003
+  },
+  "opt_rotation": {
+   "status": 0,
+   "cost": 0.776776119992996,
+   "nfev": 100,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "opt_deformation": {
+   "status": 0,
+   "cost": 137.93643697845837,
+   "nfev": 1000,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "n_tets": 49554,
+  "n_points": 11647,
+  "rotation_field_deg": {
+   "min": -54.98709173615888,
+   "max": 0.0
+  },
+  "n_inverted": 19,
+  "det_min": -4.50917329271496,
+  "tet_volume": 2892.219910690714,
+  "n_surface_faces": 14060,
+  "s4": 0.017819504228667658,
+  "s4_nobed": 0.0,
+  "consistency_max_abs_diff": 0.0,
+  "cone": {
+   "planar": 8.909113822197886,
+   "uniform": 0.0,
+   "uniform_angle": 44.0,
+   "uniform_dir": "outward",
+   "t_uniform_s": 0.10920335900027567,
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "44out"
+   ],
+   "t_banded_s": 0.12665062399992166,
+   "ceiling": 0.0,
+   "t_ceiling_s": 0.10858028799975727
+  },
+  "cone_nobed": {
+   "planar": 8.608397021679814,
+   "uniform": 0.0,
+   "uniform_angle": 36.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "36out"
+   ],
+   "ceiling": 0.0
+  },
+  "curvature": {
+   "r_max": 7.9404948563627675,
+   "kappa_m_r_median": 0.08826701768915816,
+   "kappa_m_r_p90": 0.3904737409717545,
+   "theta_layer_sd_deg": 2.2925811699890843,
+   "theta_deg_p05": 3.0160790946953457,
+   "theta_deg_p95": 33.10586829728796,
+   "tangential_mean": 0.02058726472348219
+  },
+  "ok": true,
+  "wall_s": 1060.553218606
  }
 ]

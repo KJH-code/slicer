@@ -98,5 +98,105 @@
   },
   "ok": true,
   "wall_s": 90.84590253200031
+ },
+ {
+  "model": "torus",
+  "res": "R2",
+  "params": "P1",
+  "param_values": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 30,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "ITERATIONS": 100,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "n_input_faces": 8192,
+  "input_volume": 3117.8943483376947,
+  "deform_iterations": 4000,
+  "preregistered": false,
+  "cone_on_input_mesh": {
+   "planar": 24.961340959685675,
+   "uniform": 18.649196011002918,
+   "uniform_angle": 40.0,
+   "uniform_dir": "outward",
+   "banded": 10.624218842157907,
+   "n_bands": 1,
+   "band_profile": [
+    "40out"
+   ],
+   "ceiling": 10.624218842157907
+  },
+  "times_s": {
+   "tetgen": 0.5450034141540527,
+   "tet_and_attributes": 69.54764002800039,
+   "rotation_field": 124.3202914880003,
+   "deformation": 1310.844497689
+  },
+  "opt_rotation": {
+   "status": 2,
+   "cost": 21.41254466188869,
+   "nfev": 36,
+   "message": "`ftol` termination condition is satisfied."
+  },
+  "opt_deformation": {
+   "status": 0,
+   "cost": 0.9123464673055663,
+   "nfev": 4000,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "n_tets": 39564,
+  "n_points": 9242,
+  "rotation_field_deg": {
+   "min": -30.291262278943865,
+   "max": 26.278622174461063
+  },
+  "n_inverted": 0,
+  "det_min": 0.07945405422257583,
+  "tet_volume": 3117.8943483376947,
+  "n_surface_faces": 10750,
+  "s4": 13.060519471044632,
+  "s4_nobed": 7.279194193992988,
+  "consistency_max_abs_diff": 0.0,
+  "cone": {
+   "planar": 24.961340959685675,
+   "uniform": 18.649196011002918,
+   "uniform_angle": 40.0,
+   "uniform_dir": "outward",
+   "t_uniform_s": 0.10651462400028322,
+   "banded": 10.624218842157905,
+   "n_bands": 1,
+   "band_profile": [
+    "40out"
+   ],
+   "t_banded_s": 0.09379052900021634,
+   "ceiling": 10.624218842157905,
+   "t_ceiling_s": 0.08583589699992444
+  },
+  "cone_nobed": {
+   "planar": 19.971399754304954,
+   "uniform": 14.676900340969695,
+   "uniform_angle": 30.0,
+   "uniform_dir": "outward",
+   "banded": 8.13552910654779,
+   "n_bands": 2,
+   "band_profile": [
+    "30inw",
+    "30out"
+   ],
+   "ceiling": 0.0
+  },
+  "curvature": {
+   "r_max": 13.90015396510249,
+   "kappa_m_r_median": 0.5889164051242239,
+   "kappa_m_r_p90": 1.8206684603693,
+   "theta_layer_sd_deg": 6.473015911433424,
+   "theta_deg_p05": -8.977716074000597,
+   "theta_deg_p95": 16.082472402422994,
+   "tangential_mean": 0.010638648080449344
+  },
+  "ok": true,
+  "wall_s": 1505.7864630169997
  }
 ]

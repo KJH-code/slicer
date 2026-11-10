@@ -83,7 +83,11 @@ def main():
         s = data[m]
         x, z, zp = np.array(s["x"]), np.array(s["z"]), np.array(s["zp"])
         tri = np.array(s["tri"])
-        T = mtri.Triangulation(x, z, tri)
+        # 단면에서 생긴 넓이 0 삼각형은 등위선 추적을 끊으므로 가린다
+        xx, zz = x[tri], z[tri]
+        area = 0.5 * np.abs((xx[:, 1] - xx[:, 0]) * (zz[:, 2] - zz[:, 0])
+                            - (xx[:, 2] - xx[:, 0]) * (zz[:, 1] - zz[:, 0]))
+        T = mtri.Triangulation(x, z, tri, mask=area < 1e-9)
         r = pick(rows, m)
         th = np.radians(r["cone"]["uniform_angle"])
         c = 1.0 if r["cone"]["uniform_dir"] == "outward" else -1.0
@@ -91,9 +95,10 @@ def main():
         for vals, col in ((zc, st.TAB10[1]), (zp, st.TAB10[0])):
             lv = np.linspace(vals.min(), vals.max(), N_LEVELS + 2)[1:-1]
             ax.tricontour(T, vals, levels=lv, colors=[col], linewidths=0.7,
-                          negative_linestyles="solid")
+                          negative_linestyles="solid", zorder=3)
         from matplotlib.collections import LineCollection
-        ax.add_collection(LineCollection(np.array(s["outline"]), colors="0.2", linewidths=0.7))
+        ax.add_collection(LineCollection(np.array(s["outline"]), colors="0.2", linewidths=0.7,
+                                          zorder=1))
         ax.set_aspect("equal")
         ax.set_ylabel("z (mm)")
         cv = r["curvature"]
