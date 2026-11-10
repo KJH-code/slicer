@@ -115,25 +115,32 @@ def run_model(task):
         ramps[f"{a:g}"] = dict(slim(measure(mesh, rprof, lh)),
                                theta_bed=float(info["theta_bed"]),
                                changed=bool(info["changed"]))
-    spot = None
-    if lh == 0.4 and f"{SPOT_NEG:g}" not in uni:
-        spot = slim(measure(mesh, AngleProfile.constant(SPOT_NEG), lh))
+    # 가지치기 확인(사전 등록) + 민감도(사후 추가, 판정 밖): −20° 가 0° 보다 0.5mm 넘게
+    # 나으면 음수 격자 전체를 따로 재서 `uniform_neg` 에 둔다.
+    spot = uni.get(f"{SPOT_NEG:g}") or slim(measure(mesh, AngleProfile.constant(SPOT_NEG), lh))
+    uni_neg = {}
+    if not neg and spot["mm"] < uni["0"]["mm"] - TIE_MM:
+        for a in varangle.angle_candidates(MAX_ANGLE_DEG, ANGLE_STEP)[1:]:
+            uni_neg[f"{-float(a):g}"] = slim(measure(mesh, AngleProfile.constant(-float(a)), lh))
     return {"model": name, "layer_height": lh,
             "auto_uniform": tu, "auto_band2": tb,
             "auto_band2_blend": [[round(a, 2), round(b, 2)] for a, b in prof_b.blend_intervals()],
             "cap_uniform": float(th_cu), "cap_band2": [float(t) for t in th_cb],
             "cap_band2_rejected_by_bed": rejected,
             "negative_in_oracle": neg, "uniform": uni, "arms": arms,
-            "ramps": ramps, "spot_neg20": spot,
+            "ramps": ramps, "spot_neg20": spot, "uniform_neg_sensitivity": uni_neg,
             "seconds": time.perf_counter() - t0}
 
 
 # ─────────────────────────────────────────────────────────────
 # 집계
 # ─────────────────────────────────────────────────────────────
-def oracle(row, cap):
+def oracle(row, cap, sens=False):
+    pool = dict(row["uniform"])
+    if sens:
+        pool.update(row.get("uniform_neg_sensitivity") or {})
     best = None
-    for k, m in row["uniform"].items():
+    for k, m in pool.items():
         a = float(k)
         if cap is not None and abs(a) > cap + 1e-9:
             continue
@@ -141,10 +148,10 @@ def oracle(row, cap):
         if best is None or m["mm"] < best[0][0] - 1e-6 or \
                 (abs(m["mm"] - best[0][0]) <= 1e-6 and abs(a) < best[0][1]):
             best = (key, a)
-    return best[1], row["uniform"][f"{best[1]:g}"]["mm"]
+    return best[1], pool[f"{best[1]:g}"]["mm"]
 
 
-def arm_values(row, cap):
+def arm_values(row, cap, sens=False):
     """판 하나에서 팔별 (mm, 평균|θ|, 각도 표기). 실현 불가는 None."""
     u = row["uniform"]
     out = {}
@@ -168,7 +175,7 @@ def arm_values(row, cap):
         out["auto_band2"] = (b["mm"], b["angle"], fmt(row["cap_band2"]))
         m = u[f"{row['cap_band2'][0]:g}"]
         out["uniform_band2_bottom"] = (m["mm"], m["angle"], f"{row['cap_band2'][0]:g}")
-    oa, omm = oracle(row, cap)
+    oa, omm = oracle(row, cap, sens)
     out["oracle"] = (omm, abs(oa), f"{oa:g}")
     return out
 
@@ -184,10 +191,10 @@ ARM_LABEL = {"fixed15": "고정15", "fixed20": "고정20", "fixed25": "고정25"
              "uniform_band2_bottom": "균일(아랫각)", "oracle": "사후최적"}
 
 
-def summarize(rows, cap):
+def summarize(rows, cap, sens=False):
     per_model = []
     for r in rows:
-        av = arm_values(r, cap)
+        av = arm_values(r, cap, sens)
         omm = av["oracle"][0]
         per_model.append({"model": r["model"],
                           "arms": {k: (None if v is None else
@@ -288,17 +295,32 @@ def main():
             s = summarize(sub, cap)
             summary[f"{lh:g}|{'none' if cap is None else 'cap'}"] = s
             print_summary(lh, cap, s)
+    sensitivity = {}
+    for lh in LAYER_HS:
+        sub = [r for r in rows if r["layer_height"] == lh]
+        for cap in (None, BED_CAP):
+            s = summarize(sub, cap, sens=True)
+            sensitivity[f"{lh:g}|{'none' if cap is None else 'cap'}"] = {
+                "criterion": s["criterion"], "oracle_angles": s["oracle_angles"],
+                "stats": s["stats"]}
+    print("\n[민감도, 판정 밖] 음수 격자를 넣은 정답지로 다시 본 기준:",
+          {k: {a: v["criterion"][a]["pass"] for a in v["criterion"]}
+           for k, v in sensitivity.items()},
+          "· 음수 격자를 잰 모델:",
+          sorted({(r["model"], r["layer_height"]) for r in rows
+                  if r["uniform_neg_sensitivity"]}))
     passed_all = {a: all(summary[k]["criterion"][a]["pass"] for k in summary)
                   for a in ("auto_uniform", "auto_band2")}
     print(f"\n사전 기준(4 셀 모두): {passed_all}")
     spots = [(r["model"], r["spot_neg20"]["mm"], r["uniform"]["0"]["mm"])
-             for r in rows if r["spot_neg20"]]
+             for r in rows if r["layer_height"] == 0.4]
     print("가지치기 확인 (층고 0.4, −20° mm 대 0° mm):",
           ", ".join(f"{m} {a:.0f}/{b:.0f}" for m, a, b in spots))
     elapsed = time.perf_counter() - t0
     print(f"실행 시간 {elapsed / 60:.1f} 분")
     with open(args.json, "w") as fh:
         json.dump({"rows": rows, "summary": summary, "criterion_all_cells": passed_all,
+                   "sensitivity_negative_grid": sensitivity,
                    "meta": {"fixed_deg": FIXED, "layer_heights": LAYER_HS,
                             "bed_cap_deg": BED_CAP, "tie_mm": TIE_MM,
                             "k": DEFAULT_K, "grid_deg": ANGLE_STEP,
