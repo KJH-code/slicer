@@ -1,5 +1,468 @@
 [
  {
+  "slug": "funnel_cap",
+  "png": "docs/report/figures/funnel_cap.png",
+  "script": "tools/report_figs/funnel_cap.py",
+  "data_sources": [
+   "k_funnel_results.json",
+   "t1_conventional_results.json",
+   "docs/test_k_sweep.md"
+  ],
+  "description": "funnel 은 오버행 면 전부가 θ*=25.26° 에서 한꺼번에 풀려 상한 22.79° 아래 ΔS=0 → J 가 0° 를 고른다; 툴패스 미지지도 계단이나 위치가 층고별(0.3: 17°, 0.4: 29°)로 다르다; S³ 모델은 ΔS 가 k·θ 선 아래(k 스케일)",
+  "key_numbers": {
+   "funnel:theta_star_deg": 25.26,
+   "funnel:overhang_area_pct": 51.51,
+   "funnel:toolpath_drop_0_to_22_mm": {
+    "0.3": 733.7,
+    "0.4": 84.9
+   },
+   "ring:k_star": 0.1635,
+   "ring:max_dS_pct": 3.14,
+   "topopt_new4:k_star": 0.0965,
+   "topopt_new4:max_dS_pct": 3.14,
+   "armadillo4:k_star": 0.1527,
+   "armadillo4:max_dS_pct": 4.04
+  }
+ },
+ {
+  "slug": "k_pareto",
+  "png": "docs/report/figures/k_pareto.png",
+  "script": "tools/report_figs/k_pareto.py",
+  "data_sources": [
+   "k_sweep_results.json",
+   "docs/test_k_sweep.md"
+  ],
+  "description": "교환 곡선: 고정 균일각 곡선(평균|θ| 대 미지지 합) 위에 k 별 자동 균일(●)·밴드2(▲) 점, 21 모델, 층고 0.3/0.4, 베드 상한 유무",
+  "key_numbers": {
+   "0.3|none:k0:uniform": [
+    40.76,
+    446.8,
+    "자동 승"
+   ],
+   "0.3|none:k0:band2": [
+    40.52,
+    267.3,
+    "자동 승"
+   ],
+   "0.3|none:k0.02:uniform": [
+    39.62,
+    448.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.02:band2": [
+    38.4,
+    267.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.05:uniform": [
+    37.71,
+    435.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.05:band2": [
+    36.33,
+    256.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.1:uniform": [
+    33.24,
+    434.6,
+    "자동 승"
+   ],
+   "0.3|none:k0.1:band2": [
+    29.28,
+    259.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.15:uniform": [
+    28.29,
+    320.6,
+    "자동 승"
+   ],
+   "0.3|none:k0.15:band2": [
+    21.2,
+    359.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.2:uniform": [
+    23.05,
+    588.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.2:band2": [
+    17.91,
+    489.2,
+    "자동 승"
+   ],
+   "0.3|none:k0.3:uniform": [
+    13.52,
+    1095.9,
+    "자동 승"
+   ],
+   "0.3|none:k0.3:band2": [
+    12.52,
+    752.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.5:uniform": [
+    3.05,
+    3001.2,
+    "자동 승"
+   ],
+   "0.3|none:k0.5:band2": [
+    5.72,
+    1776.3,
+    "자동 승"
+   ],
+   "0.3|none:k1:uniform": [
+    1.24,
+    3251.9,
+    "자동 승"
+   ],
+   "0.3|none:k1:band2": [
+    1.58,
+    3084.3,
+    "자동 승"
+   ],
+   "0.4|none:k0:uniform": [
+    40.76,
+    1185.9,
+    "자동 패"
+   ],
+   "0.4|none:k0:band2": [
+    40.52,
+    1081.6,
+    "자동 패"
+   ],
+   "0.4|none:k0.02:uniform": [
+    39.62,
+    1185.9,
+    "자동 패"
+   ],
+   "0.4|none:k0.02:band2": [
+    38.4,
+    1057.2,
+    "자동 패"
+   ],
+   "0.4|none:k0.05:uniform": [
+    37.71,
+    1193.0,
+    "자동 패"
+   ],
+   "0.4|none:k0.05:band2": [
+    36.33,
+    1064.3,
+    "자동 패"
+   ],
+   "0.4|none:k0.1:uniform": [
+    33.24,
+    1464.7,
+    "자동 패"
+   ],
+   "0.4|none:k0.1:band2": [
+    29.28,
+    1336.7,
+    "자동 승"
+   ],
+   "0.4|none:k0.15:uniform": [
+    28.29,
+    1697.0,
+    "자동 승"
+   ],
+   "0.4|none:k0.15:band2": [
+    21.2,
+    1917.6,
+    "자동 승"
+   ],
+   "0.4|none:k0.2:uniform": [
+    23.05,
+    2089.0,
+    "자동 승"
+   ],
+   "0.4|none:k0.2:band2": [
+    17.91,
+    2328.4,
+    "자동 승"
+   ],
+   "0.4|none:k0.3:uniform": [
+    13.52,
+    2842.8,
+    "자동 승"
+   ],
+   "0.4|none:k0.3:band2": [
+    12.52,
+    3099.9,
+    "자동 승"
+   ],
+   "0.4|none:k0.5:uniform": [
+    3.05,
+    4839.3,
+    "자동 패"
+   ],
+   "0.4|none:k0.5:band2": [
+    5.72,
+    3771.8,
+    "자동 승"
+   ],
+   "0.4|none:k1:uniform": [
+    1.24,
+    5255.1,
+    "자동 패"
+   ],
+   "0.4|none:k1:band2": [
+    1.58,
+    4940.3,
+    "자동 패"
+   ],
+   "0.3|cap:k0:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0:band2": [
+    20.8,
+    1808.9,
+    "자동 패"
+   ],
+   "0.3|cap:k0.02:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.02:band2": [
+    20.46,
+    1808.9,
+    "자동 패"
+   ],
+   "0.3|cap:k0.05:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.05:band2": [
+    18.61,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.1:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.1:band2": [
+    13.9,
+    1782.2,
+    "자동 승"
+   ],
+   "0.3|cap:k0.15:uniform": [
+    18.86,
+    1837.3,
+    "자동 패"
+   ],
+   "0.3|cap:k0.15:band2": [
+    13.26,
+    1782.2,
+    "자동 승"
+   ],
+   "0.3|cap:k0.2:uniform": [
+    18.1,
+    1886.2,
+    "자동 패"
+   ],
+   "0.3|cap:k0.2:band2": [
+    12.55,
+    1796.1,
+    "자동 승"
+   ],
+   "0.3|cap:k0.3:uniform": [
+    10.1,
+    2335.6,
+    "자동 승"
+   ],
+   "0.3|cap:k0.3:band2": [
+    9.71,
+    1938.4,
+    "자동 승"
+   ],
+   "0.3|cap:k0.5:uniform": [
+    1.81,
+    3735.2,
+    "자동 패"
+   ],
+   "0.3|cap:k0.5:band2": [
+    4.61,
+    2485.3,
+    "자동 승"
+   ],
+   "0.3|cap:k1:uniform": [
+    0.0,
+    3986.0,
+    "무승부"
+   ],
+   "0.3|cap:k1:band2": [
+    0.43,
+    3818.1,
+    "자동 승"
+   ],
+   "0.4|cap:k0:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0:band2": [
+    20.8,
+    3108.0,
+    "자동 승"
+   ],
+   "0.4|cap:k0.02:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.02:band2": [
+    20.46,
+    3108.0,
+    "자동 승"
+   ],
+   "0.4|cap:k0.05:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.05:band2": [
+    18.61,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.1:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.1:band2": [
+    13.9,
+    3161.2,
+    "자동 승"
+   ],
+   "0.4|cap:k0.15:uniform": [
+    18.86,
+    3175.7,
+    "자동 승"
+   ],
+   "0.4|cap:k0.15:band2": [
+    13.26,
+    3161.2,
+    "자동 승"
+   ],
+   "0.4|cap:k0.2:uniform": [
+    18.1,
+    3229.8,
+    "자동 승"
+   ],
+   "0.4|cap:k0.2:band2": [
+    12.55,
+    3227.0,
+    "자동 승"
+   ],
+   "0.4|cap:k0.3:uniform": [
+    10.1,
+    3692.5,
+    "자동 승"
+   ],
+   "0.4|cap:k0.3:band2": [
+    9.71,
+    3458.6,
+    "자동 승"
+   ],
+   "0.4|cap:k0.5:uniform": [
+    1.81,
+    4871.0,
+    "자동 패"
+   ],
+   "0.4|cap:k0.5:band2": [
+    4.61,
+    3902.0,
+    "자동 승"
+   ],
+   "0.4|cap:k1:uniform": [
+    0.0,
+    5286.7,
+    "무승부"
+   ],
+   "0.4|cap:k1:band2": [
+    0.43,
+    5073.1,
+    "자동 승"
+   ]
+  }
+ },
+ {
+  "slug": "k_sweep",
+  "png": "docs/report/figures/k_sweep.png",
+  "script": "tools/report_figs/k_sweep.py",
+  "data_sources": [
+   "k_sweep_results.json",
+   "docs/test_k_sweep.md"
+  ],
+  "description": "k 스윕: 자동 균일·밴드2 후회 중앙값(점선 = 고정 15·20·25·45° 후회 중앙값)과 고른 균일각, 21 모델, 층고 0.3/0.4, 베드 상한 유무",
+  "key_numbers": {
+   "0.3|none:k0:uniform_regret_median": 1.7,
+   "0.3|none:k0.02:uniform_regret_median": 1.7,
+   "0.3|none:k0.05:uniform_regret_median": 0.2,
+   "0.3|none:k0.1:uniform_regret_median": 0.4,
+   "0.3|none:k0.15:uniform_regret_median": 0.9,
+   "0.3|none:k0.2:uniform_regret_median": 15.7,
+   "0.3|none:k0.3:uniform_regret_median": 43.4,
+   "0.3|none:k0.5:uniform_regret_median": 97.2,
+   "0.3|none:k1:uniform_regret_median": 99.3,
+   "0.4|none:k0:uniform_regret_median": 0.0,
+   "0.4|none:k0.02:uniform_regret_median": 0.0,
+   "0.4|none:k0.05:uniform_regret_median": 0.0,
+   "0.4|none:k0.1:uniform_regret_median": 11.5,
+   "0.4|none:k0.15:uniform_regret_median": 24.4,
+   "0.4|none:k0.2:uniform_regret_median": 43.3,
+   "0.4|none:k0.3:uniform_regret_median": 96.3,
+   "0.4|none:k0.5:uniform_regret_median": 145.6,
+   "0.4|none:k1:uniform_regret_median": 145.7,
+   "none:k0:uniform_theta_median": 44.0,
+   "none:k0.02:uniform_theta_median": 42.0,
+   "none:k0.05:uniform_theta_median": 40.0,
+   "none:k0.1:uniform_theta_median": 34.0,
+   "none:k0.15:uniform_theta_median": 30.0,
+   "none:k0.2:uniform_theta_median": 22.0,
+   "none:k0.3:uniform_theta_median": 12.0,
+   "none:k0.5:uniform_theta_median": 0.0,
+   "none:k1:uniform_theta_median": 0.0,
+   "0.3|cap:k0:uniform_regret_median": 0.0,
+   "0.3|cap:k0.02:uniform_regret_median": 0.0,
+   "0.3|cap:k0.05:uniform_regret_median": 0.0,
+   "0.3|cap:k0.1:uniform_regret_median": 0.0,
+   "0.3|cap:k0.15:uniform_regret_median": 0.0,
+   "0.3|cap:k0.2:uniform_regret_median": 0.0,
+   "0.3|cap:k0.3:uniform_regret_median": 33.7,
+   "0.3|cap:k0.5:uniform_regret_median": 85.5,
+   "0.3|cap:k1:uniform_regret_median": 87.0,
+   "0.4|cap:k0:uniform_regret_median": 0.0,
+   "0.4|cap:k0.02:uniform_regret_median": 0.0,
+   "0.4|cap:k0.05:uniform_regret_median": 0.0,
+   "0.4|cap:k0.1:uniform_regret_median": 0.0,
+   "0.4|cap:k0.15:uniform_regret_median": 0.0,
+   "0.4|cap:k0.2:uniform_regret_median": 2.7,
+   "0.4|cap:k0.3:uniform_regret_median": 30.3,
+   "0.4|cap:k0.5:uniform_regret_median": 82.8,
+   "0.4|cap:k1:uniform_regret_median": 103.0,
+   "cap:k0:uniform_theta_median": 22.0,
+   "cap:k0.02:uniform_theta_median": 22.0,
+   "cap:k0.05:uniform_theta_median": 22.0,
+   "cap:k0.1:uniform_theta_median": 22.0,
+   "cap:k0.15:uniform_theta_median": 22.0,
+   "cap:k0.2:uniform_theta_median": 22.0,
+   "cap:k0.3:uniform_theta_median": 10.0,
+   "cap:k0.5:uniform_theta_median": 0.0,
+   "cap:k1:uniform_theta_median": 0.0
+  }
+ },
+ {
   "slug": "t1_angle_spread",
   "png": "docs/report/figures/t1_angle_spread.png",
   "script": "tools/report_figs/t1_angle_spread.py",
