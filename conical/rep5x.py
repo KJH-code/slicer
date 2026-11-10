@@ -111,6 +111,9 @@ def _rep5x_hotend():
     return REP5X_V3SE_HOTEND
 
 
+C_OVERSHOOT_TOL = 0.5   # 이보다 작게 C 창을 넘는 것은 경고 (°) — check_rep5x 참고
+
+
 @dataclass
 class Rep5xProfile:
     """REP5X 기계 파라미터. 기본값은 저장소 `Configuration.h` 에서 가져왔다.
@@ -1237,7 +1240,14 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
                                      f"{profile.b_max}] 밖이다"))
 
     c_lo, c_hi = (min(cs), max(cs)) if cs else (0.0, 0.0)
-    if cs and (c_lo < profile.c_min - 1e-9 or c_hi > profile.c_max + 1e-9):
+    over = max(profile.c_min - c_lo, c_hi - profile.c_max, 0.0) if cs else 0.0
+    if 1e-9 < over <= C_OVERSHOOT_TOL:
+        # 360° 폭 링을 ±360° 창에 놓으면 위상에 따라 경계에 딱 붙는다. 펌웨어가
+        # 넘친 만큼 자르면 공구 방향이 그 각도만큼 틀어진다 — 0.5° 이하는 무의미하다
+        findings.append(("경고", f"C 가 창 경계를 {over:.3f}° 넘는다 ({c_lo:.3f}~"
+                                 f"{c_hi:.3f}°) — 펌웨어가 잘라도 공구 방향 오차 "
+                                 f"{over:.3f}° (허용 {C_OVERSHOOT_TOL}°)"))
+    elif over > C_OVERSHOOT_TOL:
         findings.append(("치명", f"C 가 {c_lo:.0f}~{c_hi:.0f}° 로 펌웨어 소프트 "
                                  f"엔드스톱 [{profile.c_min:.0f}, "
                                  f"{profile.c_max:.0f}] 을 넘는다 "
@@ -1505,6 +1515,10 @@ def add_c_rewinds(items, profile=REP5X, clearance=2.0, rot_feed=3600.0,
             if (not extruding and c_prev is not None and lo is not None
                     and None not in (px, py, pz)):
                 lo_o, hi_o = lo + offset, hi + offset
+                # 되감기는 **직전 자세 c_prev** 에서 360k 만큼 돈다 — 그 끝 자세도 창 안이어야
+                # 한다. 다음 구간만 보면 c_prev+360k 가 창 밖에 떨어질 수 있었다
+                # (lamp 15°, 351.7 → −368.3°, 2026-11-10). 그래서 c_prev 를 범위에 넣는다.
+                lo_o, hi_o = min(lo_o, c_prev), max(hi_o, c_prev)
                 if lo_o < lo_lim - 1e-9 or hi_o > hi_lim + 1e-9:
                     # [lo+360k, hi+360k] ⊆ 창 인 k 들 중 가운데에 가장 가까운 것
                     k_lo = math.ceil((lo_lim - lo_o) / 360.0 - 1e-9)

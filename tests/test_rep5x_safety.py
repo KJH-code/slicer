@@ -661,7 +661,10 @@ def test_strict_refuses_to_lower_the_angle(tmp_path):
                     "--strict")
     assert r.returncode != 0 and not out.exists()
     assert "--strict" in r.stderr and "B_safe" in r.stderr
-    # 못 쓰는 각도가 아니면 --strict 여도 그냥 된다
+    # 못 쓰는 각도가 아니면 --strict 여도 그냥 된다.
+    # ⚠ 이 줄은 되감기 끝 자세 결함의 회귀 테스트도 겸한다: 링을 번갈아 돌리면 이 경로에서
+    # 되감기가 직전 C 351.7° 를 −368.3° 로 보내 창 밖에 떨어졌다 (2026-11-10, add_c_rewinds
+    # 가 c_prev 를 범위에 넣어 고침)
     r, out = _slice(tmp_path, "ok.gcode", "--angle", "15", "--layer-height", "0.6",
                     "--strict")
     assert r.returncode == 0 and out.exists(), r.stdout[-2000:] + r.stderr[-2000:]
@@ -684,3 +687,4 @@ def test_bare_rep5x_output_is_reported_not_silently_passed(tmp_path):
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+

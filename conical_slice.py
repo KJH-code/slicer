@@ -320,86 +320,109 @@ def main():
         warped = fine
     print(f"  메시        : {len(mesh.faces):,} → 세분화 {len(fine.faces):,} 면")
 
-    # [3] 평면 슬라이싱 (변환공간)
-    if args.slicer_cmd:
-        with tempfile.TemporaryDirectory() as td:
-            items = run_external_slicer(args.slicer_cmd, warped, td)
-        print(f"  슬라이서    : 외부 CLI ({args.slicer_cmd.split()[0]})")
+    # [3]~[5] 를 한 번에 시도한다. rep5x 는 링을 번갈아 돌려(C 가 쌓이지 않게) 먼저
+    # 해 보고, 되감기로 못 고치는 구간이 생기면(축 근처 링 안에서 B 부호 반전으로 C 가
+    # 180° 뛰어 한 압출 구간이 360° 를 넘는 경우) 번갈아 없이 처음부터 다시 한다.
+    import contextlib
+    import io
+
+    def _stages(alt):
+        rw = {"fixable": True}
+        r5 = {}
+        # [3] 평면 슬라이싱 (변환공간)
+        if args.slicer_cmd:
+            with tempfile.TemporaryDirectory() as td:
+                items = run_external_slicer(args.slicer_cmd, warped, td)
+            print(f"  슬라이서    : 외부 CLI ({args.slicer_cmd.split()[0]})")
+        else:
+            # rep5x: 링을 번갈아 돌아 C 가 쌓이지 않게 한다 (되감기 제거, planar_slicer 참고)
+            items = slice_mesh(warped, layer_height=args.layer_height,
+                               perimeters=args.perimeters,
+                               infill_spacing=args.infill_spacing,
+                               alternate_rings=alt)
+            print(f"  슬라이서    : 내장 (layer {args.layer_height}mm, "
+                  f"perim {args.perimeters}, infill {args.infill_spacing}mm"
+                  f"{', 링 방향 번갈아' if alt else ''})")
+
+        # [4] 역변환 (적응 현 분할; 프로필이면 점별 θ(Zw) + 블렌드 분할 2배)
+        real_items, stats = backtransform(items, profile if profile is not None else angle,
+                                          direction, chord_tol=args.chord_tol)
+        print(f"  역변환      : 이동 {stats['moves_in']:,} → {stats['moves_out']:,} "
+              f"(확장 {stats['expansion']:.2f}배, ε={args.chord_tol}mm 적응 분할)")
+
+        # [5] 출력 모드
+        if args.mode == "open5x":
+            from conical.open5x import PRUSA_UV, VORON_BC, add_v_rewinds, to_open5x
+            prof = PRUSA_UV if args.machine == "prusa-uv" else VORON_BC
+            prof.pivot_depth = args.pivot_depth
+            real_items, o5 = to_open5x(real_items, angle, direction, prof)
+            print(f"  Open5x      : 틸트 {prof.tilt_axis}={angle:.0f}° 고정 "
+                  f"(pivot {args.pivot_depth}mm) [실험적 — 부호·피벗 실기보정 필요]")
+            if args.v_rewind > 0:
+                real_items, rw = add_v_rewinds(real_items, prof,
+                                               max_turns=args.v_rewind,
+                                               clearance=args.v_rewind_clearance,
+                                               rot_feed=args.v_rewind_feed)
+                print(f"  되감기      : 트래블 중 {rw['rewinds']}회, "
+                      f"감김 ≤{args.v_rewind + 1:.1f}회전 "
+                      f"(들어올림 +{args.v_rewind_clearance}mm, "
+                      f"추가 시간 약 {rw['rewind_minutes']:.0f}분)")
+            else:
+                print("  ⚠ 되감기 꺼짐 — 배선 감김을 직접 확인할 것")
+        elif args.mode == "rep5x":
+            from conical.rep5x import add_c_rewinds, limit_rotary_speed, to_rep5x
+            # TCP 는 B0 C0 에서 **한 번만** 켠다. 기계 프로파일의 시작 G-code 가 켜면
+            # (호밍·프라임·원점 선언이 끝난 자리) 경로 헤더는 다시 켜지 않는다.
+            start_text = (MachineProfile.from_file(args.machine_profile).start_gcode
+                          if args.machine_profile else "")
+            rtcp_in_start = any(
+                ln.split(";", 1)[0].strip().upper().startswith(mach.rtcp_on.upper())
+                for ln in start_text.splitlines())
+            real_items, r5 = to_rep5x(real_items,
+                                      profile if profile is not None else angle,
+                                      direction, mach, emit_rtcp=not rtcp_in_start,
+                                      bed_clearance=mach.bed_clearance)
+            tilt_txt = (f"B={r5['b']:.0f}° 고정" if not r5["variable"] else
+                        f"B 레이어별 θ(Z′) {r5['b_abs_min']:.0f}~{r5['b_abs_max']:.0f}°")
+            print(f"  REP5X       : 헤드 틸트 {tilt_txt}, C 가 방위각 추종 "
+                  f"(펌웨어가 IK — X/Y/Z 는 노즐 팁) [실험적 — 축 부호 실기보정 필요]")
+            print(f"                축 통과 {r5['pole_flips']}회는 C 180° 대신 B 부호 반전, "
+                  f"수직(θ=0) 구간 {r5['c_held_vertical']:,}이동은 C 고정")
+            print(f"                C 누적 {r5['c_turns']:.1f}회전 "
+                  f"(펌웨어 소프트 엔드스톱 창 "
+                  f"{mach.c_min:.0f}~{mach.c_max:.0f}°)")
+            if args.v_rewind > 0:
+                real_items, rw = add_c_rewinds(real_items, mach,
+                                               clearance=args.v_rewind_clearance,
+                                               rot_feed=args.v_rewind_feed)
+                note = "" if rw["fixable"] else \
+                    f"  ⚠⚠ 못 고친 구간 {rw['unfixable_segments']}개 (창보다 넓게 감긴다)"
+                print(f"  C 되감기    : 트래블 중 {rw['rewinds']}회 "
+                      f"(시작 오프셋 {rw['start_offset']:+.0f}°, "
+                      f"들어올림 +{args.v_rewind_clearance}mm){note}")
+            else:
+                print("  ⚠⚠ 되감기 꺼짐 — C 가 소프트 엔드스톱을 넘어 기계가 멈춘다")
+            if r5["bed_clamped"]:
+                print(f"  ⚠ 베드 방어선: 이동 {r5['bed_clamped']:,}개에서 B 를 최대 "
+                      f"{r5['bed_clamp_max_deg']:.2f}° 깎았다 — 프로필 계획이 못 잡은 "
+                      f"것이다. 그 이동에서는 공구가 레이어 법선에서 그만큼 벗어난다")
+            # 회전축 속도 상한은 **맨 마지막**에 건다 (되감기가 이동을 끼워 넣으므로).
+            real_items, fs = limit_rotary_speed(real_items, mach)
+            print(f"  회전 속도   : 상한 {mach.omega_max:g}°/s — F 를 깎은 이동 "
+                  f"{fs['capped']:,}개 (+{fs['added_seconds']:.0f}초, 최저 "
+                  f"F{gc.format_feed(fs['min_feed']) if fs['min_feed'] else '-'}), "
+                  f"회전만 하는 이동 {fs['rotation_only']:,}개")
+        return real_items, stats, rw, r5
+
+    alt_first = args.mode == "rep5x" and not args.slicer_cmd
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        real_items, stats, rw, r5 = _stages(alt_first)
+    if alt_first and not rw.get("fixable", True):
+        print("  ↳ 링 번갈아 돌리기로는 C 창에 못 담는 구간이 생겨 번갈아 없이 다시 슬라이싱한다")
+        real_items, stats, rw, r5 = _stages(False)
     else:
-        items = slice_mesh(warped, layer_height=args.layer_height,
-                           perimeters=args.perimeters,
-                           infill_spacing=args.infill_spacing)
-        print(f"  슬라이서    : 내장 (layer {args.layer_height}mm, "
-              f"perim {args.perimeters}, infill {args.infill_spacing}mm)")
-
-    # [4] 역변환 (적응 현 분할; 프로필이면 점별 θ(Zw) + 블렌드 분할 2배)
-    real_items, stats = backtransform(items, profile if profile is not None else angle,
-                                      direction, chord_tol=args.chord_tol)
-    print(f"  역변환      : 이동 {stats['moves_in']:,} → {stats['moves_out']:,} "
-          f"(확장 {stats['expansion']:.2f}배, ε={args.chord_tol}mm 적응 분할)")
-
-    # [5] 출력 모드
-    if args.mode == "open5x":
-        from conical.open5x import PRUSA_UV, VORON_BC, add_v_rewinds, to_open5x
-        prof = PRUSA_UV if args.machine == "prusa-uv" else VORON_BC
-        prof.pivot_depth = args.pivot_depth
-        real_items, o5 = to_open5x(real_items, angle, direction, prof)
-        print(f"  Open5x      : 틸트 {prof.tilt_axis}={angle:.0f}° 고정 "
-              f"(pivot {args.pivot_depth}mm) [실험적 — 부호·피벗 실기보정 필요]")
-        if args.v_rewind > 0:
-            real_items, rw = add_v_rewinds(real_items, prof,
-                                           max_turns=args.v_rewind,
-                                           clearance=args.v_rewind_clearance,
-                                           rot_feed=args.v_rewind_feed)
-            print(f"  되감기      : 트래블 중 {rw['rewinds']}회, "
-                  f"감김 ≤{args.v_rewind + 1:.1f}회전 "
-                  f"(들어올림 +{args.v_rewind_clearance}mm, "
-                  f"추가 시간 약 {rw['rewind_minutes']:.0f}분)")
-        else:
-            print("  ⚠ 되감기 꺼짐 — 배선 감김을 직접 확인할 것")
-    elif args.mode == "rep5x":
-        from conical.rep5x import add_c_rewinds, limit_rotary_speed, to_rep5x
-        # TCP 는 B0 C0 에서 **한 번만** 켠다. 기계 프로파일의 시작 G-code 가 켜면
-        # (호밍·프라임·원점 선언이 끝난 자리) 경로 헤더는 다시 켜지 않는다.
-        start_text = (MachineProfile.from_file(args.machine_profile).start_gcode
-                      if args.machine_profile else "")
-        rtcp_in_start = any(
-            ln.split(";", 1)[0].strip().upper().startswith(mach.rtcp_on.upper())
-            for ln in start_text.splitlines())
-        real_items, r5 = to_rep5x(real_items,
-                                  profile if profile is not None else angle,
-                                  direction, mach, emit_rtcp=not rtcp_in_start,
-                                  bed_clearance=mach.bed_clearance)
-        tilt_txt = (f"B={r5['b']:.0f}° 고정" if not r5["variable"] else
-                    f"B 레이어별 θ(Z′) {r5['b_abs_min']:.0f}~{r5['b_abs_max']:.0f}°")
-        print(f"  REP5X       : 헤드 틸트 {tilt_txt}, C 가 방위각 추종 "
-              f"(펌웨어가 IK — X/Y/Z 는 노즐 팁) [실험적 — 축 부호 실기보정 필요]")
-        print(f"                축 통과 {r5['pole_flips']}회는 C 180° 대신 B 부호 반전, "
-              f"수직(θ=0) 구간 {r5['c_held_vertical']:,}이동은 C 고정")
-        print(f"                C 누적 {r5['c_turns']:.1f}회전 "
-              f"(펌웨어 소프트 엔드스톱 창 "
-              f"{mach.c_min:.0f}~{mach.c_max:.0f}°)")
-        if args.v_rewind > 0:
-            real_items, rw = add_c_rewinds(real_items, mach,
-                                           clearance=args.v_rewind_clearance,
-                                           rot_feed=args.v_rewind_feed)
-            note = "" if rw["fixable"] else \
-                f"  ⚠⚠ 못 고친 구간 {rw['unfixable_segments']}개 (창보다 넓게 감긴다)"
-            print(f"  C 되감기    : 트래블 중 {rw['rewinds']}회 "
-                  f"(시작 오프셋 {rw['start_offset']:+.0f}°, "
-                  f"들어올림 +{args.v_rewind_clearance}mm){note}")
-        else:
-            print("  ⚠⚠ 되감기 꺼짐 — C 가 소프트 엔드스톱을 넘어 기계가 멈춘다")
-        if r5["bed_clamped"]:
-            print(f"  ⚠ 베드 방어선: 이동 {r5['bed_clamped']:,}개에서 B 를 최대 "
-                  f"{r5['bed_clamp_max_deg']:.2f}° 깎았다 — 프로필 계획이 못 잡은 "
-                  f"것이다. 그 이동에서는 공구가 레이어 법선에서 그만큼 벗어난다")
-        # 회전축 속도 상한은 **맨 마지막**에 건다 (되감기가 이동을 끼워 넣으므로).
-        real_items, fs = limit_rotary_speed(real_items, mach)
-        print(f"  회전 속도   : 상한 {mach.omega_max:g}°/s — F 를 깎은 이동 "
-              f"{fs['capped']:,}개 (+{fs['added_seconds']:.0f}초, 최저 "
-              f"F{gc.format_feed(fs['min_feed']) if fs['min_feed'] else '-'}), "
-              f"회전만 하는 이동 {fs['rotation_only']:,}개")
+        print(buf.getvalue(), end="")
     out_path = args.output or (Path(args.stl).stem +
                                {"open5x": "_open5x.gcode",
                                 "rep5x": "_rep5x.gcode"}.get(args.mode,

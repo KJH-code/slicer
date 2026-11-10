@@ -18,7 +18,7 @@ planar_slicer.py — 내장 미니 평면 슬라이서 (연구용 최소 기능)
 import math
 
 import numpy as np
-from shapely.geometry import LineString, MultiPolygon
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 
 from .gcode import Move
@@ -60,9 +60,53 @@ def _ring_to_moves(coords, z, e_per_mm, feed, state):
     return out
 
 
+def _alternate_about_axis(coords, wind):
+    """축(원점)을 감싸는 링의 방향과 시작점을 정한다 (헤드 회전식 5축용).
+
+    - 시작점(시임)은 방위각 180°(−X 쪽)에 가장 가까운 꼭짓점으로 맞춘다. 시임이 링마다
+      제멋대로면 링 사이 트래블의 최단 회전이 한쪽으로 쌓여 층마다 C 가 약 0.35회전씩
+      흘렀다 (flare, 2026-11-10 실측)
+    - 방향은 **감긴 횟수 w 가 {0, 1} 안에만 있게** 고른다 (w=0 → 반시계, w=1 → 시계).
+      '직전과 반대'만으로는 첫 링 방향에 따라 C 가 [180°, 540°] 에서 왕복할 수 있어
+      펌웨어 창(±360°)을 넘었다. 이 규칙이면 C 가 언제나 한 바퀴 폭 안에 머물고,
+      되감기 패스의 시작 오프셋이 그 폭을 창 가운데(−180~180°)로 옮긴다
+    축을 감싸지 않는 링은 한 바퀴 돌아도 C 가 제자리라 건드리지 않는다.
+    """
+    if len(coords) < 4 or not Polygon(coords).contains(Point(0.0, 0.0)):
+        return coords
+    pts = coords[:-1] if coords[0] == coords[-1] else list(coords)
+    az = [math.pi - abs(math.atan2(y, x)) for x, y in pts]   # 0 = 방위각 180°
+    i0 = int(np.argmin(az))
+    pts = pts[i0:] + pts[:i0]
+    coords = pts + [pts[0]]
+    xs = np.asarray(coords)
+    area2 = float(np.sum(xs[:-1, 0] * xs[1:, 1] - xs[1:, 0] * xs[:-1, 1]))
+    d = 1 if area2 > 0 else -1           # +1 반시계 (C 증가)
+    want = 1 if wind[0] <= 0 else -1
+    if d != want:
+        coords = coords[::-1]
+    wind[0] += want
+    return coords
+
+
 def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
-               infill_spacing=2.5, feed=1800.0, simplify_tol=0.05):
-    """메시를 평면 슬라이싱해 (kind, payload) 리스트(G-code 아이템)를 돌려준다."""
+               infill_spacing=2.5, feed=1800.0, simplify_tol=0.05,
+               alternate_rings=False):
+    """메시를 평면 슬라이싱해 (kind, payload) 리스트(G-code 아이템)를 돌려준다.
+
+    alternate_rings: 닫힌 링(페리미터)을 하나 걸러 **반대 방향**으로 돈다.
+      헤드 회전식 5축(REP5X)에서 C 는 방위각을 따라가므로, 축을 감싸는 링을 늘
+      같은 방향으로 돌면 링마다 C 가 360° 씩 쌓인다 → 펌웨어 창(±360°)을 넘어
+      트래블 중 되감기가 필요해진다 (램프 131회, 출력 시간의 2/3). 번갈아 돌면 C 가
+      쌓이지 않고 왕복만 한다. 시작점(시임)은 그대로다 — 닫힌 링이라 뒤집어도
+      첫 점이 같다. 3축 출력에는 의미가 없어서 기본은 끔.
+
+      ⚠ 기준은 '링 개수'가 아니라 **축(원점)을 감싸는 링의 회전 방향**이다. 구멍 있는
+      단면은 바깥 링과 안쪽 링이 이미 반대 방향으로 나오는데(shapely), 개수로 하나
+      걸러 뒤집으면 둘이 같은 방향이 돼 오히려 층마다 C 가 4회전씩 쌓였다
+      (flare 34층 이후, 2026-11-10 실측). 축을 감싸지 않는 링은 한 바퀴 돌아도 C 가
+      제자리라 건드리지 않는다.
+    """
     e_per_mm = (layer_height * extrusion_width) / (math.pi * (FILAMENT_D / 2) ** 2)
     z0, z1 = mesh.bounds[0][2], mesh.bounds[1][2]
     n_layers = max(1, int(round((z1 - z0) / layer_height)))
@@ -71,6 +115,7 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
              ("raw", f"; layers={n_layers} layer_h={layer_height} width={extrusion_width}"),
              ("raw", "G21"), ("raw", "G90"), ("raw", "M82")]  # mm, 절대좌표, 절대 E(M82)
     state = {"e": 0.0}
+    wind = [0]               # 축을 감싸는 링이 감은 횟수 (반시계 +1)
 
     for i in range(n_layers):
         z_cut = z0 + (i + 0.5) * layer_height          # 층 '중앙'에서 자름
@@ -92,6 +137,8 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
                 for g in geoms:
                     for ring in [g.exterior, *g.interiors]:
                         coords = list(ring.coords)
+                        if alternate_rings:
+                            coords = _alternate_about_axis(coords, wind)
                         if len(coords) >= 3:
                             for it in _ring_to_moves(coords, z_out, e_per_mm, feed, state):
                                 items.append(("move", it))
