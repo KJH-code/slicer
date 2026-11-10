@@ -272,6 +272,70 @@ def fig_layer_height(path, src="layer_height_results.json"):
     plt.close(fig)
 
 
+COST_MAP = {"램프 (examples/lamp.stl)": "허리 r=2", "허리 r=3": "허리 r=3", "구": "구"}
+
+
+def fig_cost(g, cost, lh, path):
+    """'왜 그냥 44° 균일이 아닌가' — 오버행 vs 출력 시간(되감기 제외)."""
+    names = [m for m in COST_MAP if any(c["model"] == m for c in cost)]
+    fig, axes = plt.subplots(2, len(names), figsize=(3.6 * len(names), 5.8), squeeze=False)
+    md = ["# 실험 5 — 왜곡의 비용 (REP5X G-code, 층고 0.3)", "",
+          "출력 시간은 되감기 제외 (`motion.plan_motion`, REP5X 실측 축 한계). "
+          "정렬비 = 계단 정렬 |n̂·b̂| 의 평면 대비 비 (1 보다 크면 평면보다 계단이 심하다).", ""]
+    for j, m in enumerate(names):
+        d = g.get((COST_MAP[m], lh))
+        rows = [c for c in cost if c["model"] == m]
+        uni = {int(round(c["profile"][0][1])): c for c in rows if c["label"].startswith("균일")}
+        band = next((c for c in rows if c["label"] == "밴드2"), None)
+        md += [f"## {m}", "", "| 조건 | 출력 시간(분) | 되감기 | 정렬비 | 나빠진 면적 % | 오버행 낙관 / 비관 %p |",
+               "|---|---|---|---|---|---|"]
+        for a in sorted(uni):
+            oh = d["sweep"].get(a) if d else None
+            ohs = f"{oh['opt']:.2f} / {oh['pes']:.2f}" if oh else "—"
+            c = uni[a]
+            md.append(f"| 균일 {a}° | {c['minutes']:.1f} | {c['rewinds']} | {c['align_ratio']:.2f} "
+                      f"| {c['worse_area_pct']:.1f} | {ohs} |")
+        if band and d and "band2" in d:
+            md.append(f"| **밴드2** | **{band['minutes']:.1f}** | {band['rewinds']} | {band['align_ratio']:.2f} "
+                      f"| {band['worse_area_pct']:.1f} | **{d['band2']['opt']:.2f} / {d['band2']['pes']:.2f}** |")
+        md.append("")
+        if not d:
+            continue
+        for i, (key, nm) in enumerate(SUPPORT):
+            ax = axes[i][j]
+            style(ax)
+            a_s = [a for a in sorted(uni) if a in d["sweep"] and a > 0]
+            xs = [uni[a]["minutes"] for a in a_s]
+            ys = [d["sweep"][a][key] for a in a_s]
+            ax.plot(xs, ys, color=C_UNI, lw=2, marker="o", ms=4,
+                    label=L("uniform 4–44°", "균일 4~44°"))
+            for a, x, y in zip(a_s, xs, ys, strict=True):
+                if a in (4, 24, 44):
+                    ax.annotate(f"{a}°", (x, y), xytext=(4, 4), textcoords="offset points",
+                                fontsize=7, color=MUTED)
+            if band and "band2" in d:
+                ax.plot([band["minutes"]], [d["band2"][key]], "D", color=C_BAND, ms=9,
+                        mec="white", mew=1.5, label=L("band2", "밴드2"))
+            if i == 0:
+                ax.set_title(m, fontsize=10, color=INK)
+            if j == 0:
+                ax.set_ylabel(L(f"overhang %p ({key})", f"진짜 오버행 %p ({nm})"),
+                              fontsize=9, color=INK)
+            if i == 1:
+                ax.set_xlabel(L("print time, min (no rewinds)", "출력 시간 (분, 되감기 제외)"),
+                              fontsize=9, color=INK)
+    h, lab = axes[0][0].get_legend_handles_labels()
+    fig.suptitle(L("Cost of distortion: overhang vs print time",
+                   f"왜곡의 비용 — 오버행 vs 출력 시간 (층고 {lh} mm)"),
+                 y=0.985, fontsize=11, color=INK, va="top")
+    fig.legend(h, lab, loc="upper center", bbox_to_anchor=(0.5, 0.94), ncol=2,
+               frameon=False, fontsize=9)
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    open("report/exp5_cost_table.md", "w", encoding="utf-8").write("\n".join(md) + "\n")
+
+
 def main():
     os.makedirs("report", exist_ok=True)
     from analyze_blend_ratio import build_specs
@@ -291,6 +355,9 @@ def main():
             fig_delta(res, "report/fig2_delta_exp1.png",
                       L("Exp 1: band2 − equal-distortion uniform",
                         "실험 1 — 밴드2 − 등왜곡 균일 (진짜 오버행 %p)"))
+            if os.path.exists("report/exp5_angle_cost.json"):
+                cost = json.load(open("report/exp5_angle_cost.json", encoding="utf-8"))
+                fig_cost(g, cost, 0.3, "report/fig5_cost.png")
     src = "report/exp2_layer_height.json"
     fig_layer_height("report/fig3_layer_height.png",
                      src if os.path.exists(src) else "layer_height_results.json")
