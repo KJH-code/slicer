@@ -8,6 +8,7 @@ toolpath_check.py — 출력 G-code 의 툴패스 가상 검증 (하드웨어 �
     python3 toolpath_check.py out.gcode
     python3 toolpath_check.py out.gcode --nozzle
     python3 toolpath_check.py out.gcode --layer-height 0.4 --width 0.45
+    python3 toolpath_check.py out_rep5x.gcode --tool-frame   # 5축: 층 법선(공구) 기준
 
 ⚠ 이 검사는 브리징·수축·유변학을 무시한 기하 판정이며, 메시 기반 예측과 측정
   대상이 다르다(툴패스에는 인필·트래블·시임이 있음) — 절대값이 아니라 각도 간
@@ -66,12 +67,36 @@ def detect_layer_height(lines, fallback=0.3):
     return fallback, False
 
 
+def tool_frame_from_meta(lines, pts, layer_height):
+    """`;CONICAL_META` 의 각도 프로필로 점별 층 법선(공구 '위')과 법선 두께를 만든다.
+
+    REP5X 는 노즐이 층 법선을 따라가므로(B = θ(Z′)) 접착 판정의 '아래' 는 −b 다.
+    5축 파일을 연직 프레임으로 재면 실험 A 의 0.4mm 갈림처럼 프레임이 만든 차이를
+    결과로 읽게 된다 (docs/gap_audit.md G6). 메타가 없으면 멈춘다 — 조용히 연직으로
+    재면 안 된다.
+    """
+    from conical.profile import AngleProfile
+    from conical.toolpath import layer_frames
+    for ln in lines[:40]:
+        if ";CONICAL_META" in ln:
+            meta = json.loads(ln.split(";CONICAL_META", 1)[1].strip())
+            bps = [(float(z), float(t)) for z, t in meta["profile"]]
+            prof = (AngleProfile.constant(bps[0][1]) if len(bps) == 1
+                    else AngleProfile(bps))
+            return layer_frames(pts, prof, meta.get("direction", "outward"),
+                                layer_height=layer_height)
+    raise SystemExit("--tool-frame: ;CONICAL_META 가 없어 층 법선을 못 만든다")
+
+
 def main():
     ap = argparse.ArgumentParser(description="toolpath virtual checker")
     ap.add_argument("gcode")
     ap.add_argument("--width", type=float, default=0.45)
     ap.add_argument("--layer-height", type=float, default=None)
     ap.add_argument("--nozzle", action="store_true", help="노즐 간섭 검사도 수행")
+    ap.add_argument("--tool-frame", action="store_true",
+                    help="'아래' 를 연직이 아니라 층 법선(=REP5X 공구 축)으로 판정한다. "
+                         "G-code 의 ;CONICAL_META 프로필이 필요 (docs/gap_audit.md G6)")
     ap.add_argument("--png", default=None)
     ap.add_argument("--export-json", default=None,
                     help="샘플점·판정·파라미터·집계를 JSON으로 저장 (검증 탭 대조용 정답지)")
@@ -95,9 +120,14 @@ def main():
 
     # 지지 판정은 '퇴적된 모든 재료'로 한다(인필도 실제로 받쳐준다).
     # 종류 구분은 '무엇을 보고할지'에만 쓴다.
-    sup, st = check_support(pts, mid, w, layer_height=lh, width=args.width)
+    up = t_n = None
+    if args.tool_frame:
+        up, t_n = tool_frame_from_meta(lines, pts, lh)
+    sup, st = check_support(pts, mid, w, layer_height=lh, width=args.width,
+                            tool_up=up, layer=lay if up is not None else None)
     print("=" * 62)
-    print(f"[toolpath_check] {args.gcode}  (layer_h={lh}, width={args.width})")
+    print(f"[toolpath_check] {args.gcode}  (layer_h={lh}, width={args.width}, "
+          f"프레임={'공구(층 법선)' if up is not None else '연직(3축)'})")
     print(f"  샘플점        : {len(pts):,}  (압출 경로 {w.sum()/1000:.2f} m)")
     print(f"  미지지 압출   : {st['unsupported_pct']:.2f} %  (길이 가중, 전체)")
 
@@ -112,7 +142,8 @@ def main():
         # 페리미터 미지지에는 오버행이 아닌 몫이 섞인다 — 위로 좁아지는 형상은
         # 페리미터가 아랫층 희소 인필 위에 놓인다(평범한 브리징). 갈라서 보고한다.
         if (lay >= 0).any():
-            b = support_breakdown(pts, mid, kinds, lay, sup, w, width=args.width)
+            b = support_breakdown(pts, mid, kinds, lay, sup, w, width=args.width,
+                                  tool_up=up, layer_thickness=t_n)
             print(f"    │  ├ 진짜 오버행   : {b['overhang_pct']:.2f} %p"
                   f"   ← **서포트 판단은 이 값으로**")
             print(f"    │  └ 아랫층 단면 안: {b['inside_pct']:.2f} %p"

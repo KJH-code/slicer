@@ -17,6 +17,8 @@ PLA, 노즐 0.4, 210/60, 층고 0.3. 전부 두 검사기에서 치명 0:
 | 4 | `L2_flare_u15.gcode` | `flare.stl` | 균일 15° |
 | 5 | `L3a_lamp_u22.gcode` | `lamp_small.stl` (램프 0.6배) | 균일 22° (기준선) |
 | 6 | `L3b_lamp_band22to0.gcode` | `lamp_small.stl` | 밴드2 22° → 0° |
+| + | `L4a_wall_b0.gcode` / `L4b_wall_u22.gcode` | `cylinder.stl`, 둘레 1줄·인필 없음 | 단벽 B=0 / 22° — 압출 배율 판정 |
+| + | `L5_overhang_steps_planar.gcode` | `overhang_steps.stl` (40~65° 단 6개) | 평면 — 이 기계의 오버행 한계 |
 
 ## ⚠ 넣기 전에
 
@@ -42,6 +44,9 @@ python3 conical_slice.py $D/flare.stl --angle 0 --mode rep5x --layer-height 0.3 
 python3 conical_slice.py $D/flare.stl --angle 15 --direction outward --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L2_flare_u15.gcode
 python3 conical_slice.py $D/lamp_small.stl --angle 22 --direction outward --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L3a_lamp_u22.gcode
 python3 conical_slice.py $D/lamp_small.stl --profile "0:22,10.27:22,11.34:0,18:0" --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L3b_lamp_band22to0.gcode
+python3 conical_slice.py $D/cylinder.stl --angle 0 --perimeters 1 --infill-spacing 0 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L4a_wall_b0.gcode
+python3 conical_slice.py $D/cylinder.stl --angle 22 --direction outward --perimeters 1 --infill-spacing 0 --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L4b_wall_u22.gcode
+python3 conical_slice.py $D/overhang_steps.stl --angle 0 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L5_overhang_steps_planar.gcode
 ```
 
 검사:
