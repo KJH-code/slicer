@@ -48,6 +48,7 @@ M104 S210
 ; RTCP (G43.4) is enabled by the machine start G-code at B0 C0
 ; conical built-in planar slicer
 ; layers=27 layer_h=0.3 width=0.45
+; min_layer_time=8s min_print_speed=10mm/s
 G21
 G90
 M82

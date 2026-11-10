@@ -503,8 +503,8 @@ def main():
                           f"윤곽 바깥에서 베드로 내려가기 때문이다")
             if args.fan:
                 print(f"  팬          : {FAN_AFTER_LAYERS}층을 낸 뒤 M106 S255, 끝에 M106 S0"
-                      if len(sl["layer_times"]) > FAN_AFTER_LAYERS else
-                      f"  팬          : 층이 {len(sl['layer_times'])}개뿐이라 켜지 않았다")
+                      if sl["fan_on"] else
+                      f"  팬          : 층이 {FAN_AFTER_LAYERS}개 이하라 켜지 않았다")
             # 층 시간 (변환공간 길이 / 명령 피드 — 슬라이서가 감속을 정할 때 쓴 값)
             lt = np.array([[b, a] for _i, b, a in sl["layer_times"]])
             if len(lt):

@@ -4,7 +4,7 @@ Ender-3 V3 SE + REP5X 키트(REP5X Marlin)에서 **처음 돌릴** 파일들. �
 [`docs/experiment_plan.md`](../../docs/experiment_plan.md) 「R」절, 기계 규약은
 [`docs/rep5x_machine_facts.md`](../../docs/rep5x_machine_facts.md).
 
-PLA, 노즐 0.4, 210/60, 층고 0.3. 전부 두 검사기에서 치명 0:
+PLA, 노즐 0.4, 210/60, 층고 0.3, 최소 층 시간 8초, 팬 없음(M106 이 무엇을 켜는지 [실기 확인] — 파트 냉각 팬이면 `--fan` 을 붙여 다시 뽑는다). 전부 두 검사기에서 치명 0:
 
 - 검사기 C: `rep5x_check.py`
 - 팀 가상 프린터의 역기구학·축 한계: `tools/fibr3d_crosscheck.py`
@@ -39,14 +39,14 @@ python3 tools/make_ladder_models.py && python3 tools/make_dry_run.py
 
 ```bash
 D=examples/rep5x_ladder; MP=profiles/rep5x_ender3v3se.ini
-python3 conical_slice.py $D/cylinder.stl --angle 0 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L1_cylinder_b0.gcode
-python3 conical_slice.py $D/flare.stl --angle 0 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L2p_flare_planar.gcode
-python3 conical_slice.py $D/flare.stl --angle 15 --direction outward --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L2_flare_u15.gcode
-python3 conical_slice.py $D/lamp_small.stl --angle 22 --direction outward --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L3a_lamp_u22.gcode
-python3 conical_slice.py $D/lamp_small.stl --profile "0:22,10.27:22,11.34:0,18:0" --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L3b_lamp_band22to0.gcode
-python3 conical_slice.py $D/cylinder.stl --angle 0 --perimeters 1 --infill-spacing 0 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L4a_wall_b0.gcode
-python3 conical_slice.py $D/cylinder.stl --angle 22 --direction outward --perimeters 1 --infill-spacing 0 --omega-max 180 --strict --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L4b_wall_u22.gcode
-python3 conical_slice.py $D/overhang_steps.stl --angle 0 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L5_overhang_steps_planar.gcode
+python3 conical_slice.py $D/cylinder.stl --angle 0 --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L1_cylinder_b0.gcode
+python3 conical_slice.py $D/flare.stl --angle 0 --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L2p_flare_planar.gcode
+python3 conical_slice.py $D/flare.stl --angle 15 --direction outward --omega-max 180 --strict --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L2_flare_u15.gcode
+python3 conical_slice.py $D/lamp_small.stl --angle 22 --direction outward --omega-max 180 --strict --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L3a_lamp_u22.gcode
+python3 conical_slice.py $D/lamp_small.stl --profile "0:22,10.27:22,11.34:0,18:0" --omega-max 180 --strict --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L3b_lamp_band22to0.gcode
+python3 conical_slice.py $D/cylinder.stl --angle 0 --perimeters 1 --infill-spacing 0 --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L4a_wall_b0.gcode
+python3 conical_slice.py $D/cylinder.stl --angle 22 --direction outward --perimeters 1 --infill-spacing 0 --omega-max 180 --strict --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L4b_wall_u22.gcode
+python3 conical_slice.py $D/overhang_steps.stl --angle 0 --min-layer-time 8 --mode rep5x --layer-height 0.3 --machine-profile $MP -o $D/L5_overhang_steps_planar.gcode
 ```
 
 검사:

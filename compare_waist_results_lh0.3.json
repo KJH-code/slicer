@@ -1,0 +1,119 @@
+{
+ "layer_height": 0.3,
+ "models": {
+  "구 (허리 없음)": [
+   {
+    "strategy": "평면 (0°)",
+    "perimeter_pct": 3.7862657573161265,
+    "total_pct": 27.671235154834434,
+    "infill_pct": 63.07190416723479,
+    "note": "기준선",
+    "mean_abs_angle": 0.0,
+    "overhang_pct": 2.4912128232047968,
+    "inside_pct": 1.29505293411133,
+    "inside_gap_median": 0.8999999999999986
+   },
+   {
+    "strategy": "균일 28° (J 자동)",
+    "perimeter_pct": 0.5938660186540616,
+    "total_pct": 9.056718567245602,
+    "infill_pct": 19.445807497874437,
+    "note": "RotBot식 균일 원뿔, k=0.2",
+    "mean_abs_angle": 28.0,
+    "overhang_pct": 0.12090397709366299,
+    "inside_pct": 0.4729620415603987,
+    "inside_gap_median": 0.736132725721081
+   },
+   {
+    "strategy": "밴드2 (층간격 제약 없음)",
+    "perimeter_pct": 5.224697177423852,
+    "total_pct": 23.05619088567773,
+    "infill_pct": 50.20798831727592,
+    "note": "블렌드 0.5mm, 배율 15.5배",
+    "mean_abs_angle": 18.052147948116723,
+    "overhang_pct": 1.1541672820751088,
+    "inside_pct": 4.070529895348743,
+    "inside_gap_median": 0.9752911649188523
+   },
+   {
+    "strategy": "밴드2 (층간격 제약)",
+    "perimeter_pct": 1.6456070142538983,
+    "total_pct": 14.530279207406469,
+    "infill_pct": 33.34198395131595,
+    "note": "블렌드 14.5mm, 배율 1.50배",
+    "mean_abs_angle": 18.938255923178446,
+    "overhang_pct": 0.01997349116711626,
+    "inside_pct": 1.6256335230867822,
+    "inside_gap_median": 0.8999999999999986
+   },
+   {
+    "strategy": "밴드2 (제약 + J에 블렌드비용)",
+    "perimeter_pct": 0.47273279386835076,
+    "total_pct": 12.815391968479947,
+    "infill_pct": 29.312192176830504,
+    "note": "각도 [28.0, 20.0], 블렌드 2.6mm, 배율 1.50배",
+    "mean_abs_angle": 22.003881633150495,
+    "overhang_pct": 0.12569707234617097,
+    "inside_pct": 0.3470357215221797,
+    "inside_gap_median": 0.8120318235476276
+   }
+  ],
+  "램프 (허리 있음)": [
+   {
+    "strategy": "평면 (0°)",
+    "perimeter_pct": 2.629716611538699,
+    "total_pct": 20.58945566399791,
+    "infill_pct": 62.33043054190341,
+    "note": "기준선",
+    "mean_abs_angle": 0.0,
+    "overhang_pct": 1.658851052553138,
+    "inside_pct": 0.9708655589855602,
+    "inside_gap_median": 0.9000000000000004
+   },
+   {
+    "strategy": "균일 24° (J 자동)",
+    "perimeter_pct": 1.5186103595200706,
+    "total_pct": 8.348040388783767,
+    "infill_pct": 24.259487126197417,
+    "note": "RotBot식 균일 원뿔, k=0.2",
+    "mean_abs_angle": 24.0,
+    "overhang_pct": 0.2671105010723654,
+    "inside_pct": 1.2514998584477048,
+    "inside_gap_median": 0.8756629647047101
+   },
+   {
+    "strategy": "밴드2 (층간격 제약 없음)",
+    "perimeter_pct": 2.0329362271333,
+    "total_pct": 10.542489216709962,
+    "infill_pct": 27.23807408301167,
+    "note": "블렌드 0.5mm, 배율 9.8배",
+    "mean_abs_angle": 17.221529185130958,
+    "overhang_pct": 0.0,
+    "inside_pct": 2.0329362271333,
+    "inside_gap_median": 2.257064734981217
+   },
+   {
+    "strategy": "밴드2 (층간격 제약)",
+    "perimeter_pct": 0.283445935378871,
+    "total_pct": 9.05617127619045,
+    "infill_pct": 25.575663933409043,
+    "note": "블렌드 2.3mm, 배율 1.50배; 경계 15.00 → 18.50 mm 로 이동 (그 높이 반경 2.0mm, 블렌드 폭 2.31mm)",
+    "mean_abs_angle": 18.862340474785118,
+    "overhang_pct": 0.0,
+    "inside_pct": 0.283445935378871,
+    "inside_gap_median": 0.8847284675465623
+   },
+   {
+    "strategy": "밴드2 (제약 + J에 블렌드비용)",
+    "perimeter_pct": 0.283445935378871,
+    "total_pct": 9.05617127619045,
+    "infill_pct": 25.575663933409043,
+    "note": "각도 [30.0, 0.0], 블렌드 2.3mm, 배율 1.50배",
+    "mean_abs_angle": 18.862340474785118,
+    "overhang_pct": 0.0,
+    "inside_pct": 0.283445935378871,
+    "inside_gap_median": 0.8847284675465623
+   }
+  ]
+ }
+}

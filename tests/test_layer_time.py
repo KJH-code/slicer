@@ -243,7 +243,9 @@ def test_rep5x_final_feeds_never_exceed_default(tmp_path):
 # ───────── (f) 팬 ─────────
 def test_fan_turns_on_once_after_first_layers():
     mesh = _cylinder()
-    lines = gc.to_lines(slice_mesh(mesh, fan=True))
+    st = {}
+    lines = gc.to_lines(slice_mesh(mesh, fan=True, stats=st))
+    assert st["fan_on"] is True
     on = [i for i, ln in enumerate(lines) if ln == "M106 S255"]
     assert len(on) == 1
     assert lines[on[0] - 1] == f"; layer {FAN_AFTER_LAYERS} z=0.900", "처음 2층은 팬 없이"
@@ -256,7 +258,9 @@ def test_fan_turns_on_once_after_first_layers():
 
 def test_fan_stays_off_when_part_has_too_few_layers():
     mesh = _cylinder(height=0.6)                   # 2층뿐 — 켤 자리가 없다
-    lines = gc.to_lines(slice_mesh(mesh, fan=True))
+    st = {}
+    lines = gc.to_lines(slice_mesh(mesh, fan=True, stats=st))
+    assert st["fan_on"] is False
     assert sum(ln.startswith("; layer ") for ln in lines) == 2
     assert not any(ln.startswith("M106") for ln in lines), "켜지 않았으면 끄는 줄도 없다"
 

@@ -28,7 +28,7 @@ REP5X 시험 출력물은 작다(lamp_small 지름 9.6mm). 층 하나가 1~3초�
     `rep5x.limit_rotary_speed`(회전축 상한으로 F 를 더 깎는다)와 순서가 엇갈려도
     서로를 무르지 않는다: 최종 F = min(여기서 낮춘 값, 회전 상한).
     ⚠ 작은 층은 하한에 걸린다. lamp_small 22° 는 층당 경로가 40mm 안팎이라 10mm/s 로도
-      4초다 — 8초를 요청하면 66층 중 55층이 못 채운다(중앙 1.4 → 3.9초). 느리게 가는
+      4초다 — 8초를 요청하면 65층 중 55층이 못 채운다(중앙 1.4 → 3.9초). 느리게 가는
       것만으로는 한계가 있고, 그 너머는 머무름·여러 개 동시 출력의 영역이다(없다).
   · `fan` — 처음 `FAN_AFTER_LAYERS`(2) 층 뒤에 `M106 S255`. 첫 층들은 베드 부착 때문에
     팬 없이 찍는다. 켰으면 끝에 `M106 S0` 으로 끈다.
@@ -282,7 +282,8 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
       ⚠ 원뿔 변환한 메시면 이 고리들은 실공간에서 베드 아래나 공중에 놓일 수 있다 —
         역변환한 뒤에 호출자가 검사할 것 (모듈 docstring).
     stats: dict 를 주면 채운다 — layer_times [(층, 감속 전 초, 감속 후 초)] (이동이 있는
-      층만), slowed_layers, floor_limited, min_feed, brim_ring_k [고리마다 k, 낸 순서].
+      층만), slowed_layers, floor_limited, min_feed, fan_on (팬을 실제로 켰나),
+      brim_ring_k [고리마다 k, 낸 순서].
       (반환값은 여러 스크립트가 아이템 목록으로 쓰고 있어 그대로 둔다.)
     셋 다 기본값이면 출력은 이 인자들이 생기기 전과 비트 단위로 같다.
 
@@ -410,5 +411,5 @@ def slice_mesh(mesh, layer_height=0.3, extrusion_width=0.45, perimeters=2,
     items.append(("raw", "; end"))
     if stats is not None:
         stats.update(layer_times=times, slowed_layers=n_slowed, floor_limited=n_floor,
-                     min_feed=f_min, brim_ring_k=ring_k)
+                     min_feed=f_min, fan_on=fan_on, brim_ring_k=ring_k)
     return items
