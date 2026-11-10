@@ -55,8 +55,9 @@ def main():
         panel_label(ax, lab)
     axes[0].plot([], [], marker="*", ms=7, color="0.5", markeredgecolor="k",
                  markeredgewidth=0.4, ls="none", label="포화 N*")
-    axes[0].legend(ncol=2, frameon=False)
     fig.tight_layout()
+    fig.legend(*axes[0].get_legend_handles_labels(), ncol=6, frameon=False,
+               loc="lower center", bbox_to_anchor=(0.5, 1.0))
     tally = s["nstar_tally"][f"{TAG}_{LH}"]
     a1 = [r["best"][TAG]["1"]["mean_abs_deg"] for r in s["rows"]]
     a3 = [r["best"][TAG]["3"]["mean_abs_deg"] for r in s["rows"] if r["best"][TAG].get("3")]

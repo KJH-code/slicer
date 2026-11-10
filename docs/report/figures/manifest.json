@@ -1,0 +1,79 @@
+[
+ {
+  "slug": "t3_band_curve",
+  "png": "docs/report/figures/t3_band_curve.png",
+  "script": "tools/report_figs/t3_band_curve.py",
+  "data_sources": [
+   "t3_band_optimum_results.json",
+   "t3_search/",
+   "t3_measure/"
+  ],
+  "설명": "밴드 수 N 별 전수 탐색 최선해(서포트 최소, 동점 평균|θ|): 툴패스 미지지와 평균|θ|, 21 모델",
+  "핵심 수치": {
+   "N*_분포_층고0.3": {
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    ">=4": 17
+   },
+   "평균|θ|_중앙값_N1": 44.0,
+   "평균|θ|_중앙값_N3": 10.793354681469223,
+   "단조성_위반": 0
+  }
+ },
+ {
+  "slug": "t3_nstar_hist",
+  "png": "docs/report/figures/t3_nstar_hist.png",
+  "script": "tools/report_figs/t3_nstar_hist.py",
+  "data_sources": [
+   "t3_band_optimum_results.json"
+  ],
+  "설명": "포화 N* (N→N+1 에서 미지지 감소<0.5mm 그리고 평균|θ| 감소<1° 인 첫 N) 의 분포",
+  "핵심 수치": {
+   "obj1_0.3": {
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    ">=4": 17
+   },
+   "obj1_0.4": {
+    "1": 1,
+    "3": 3,
+    ">=4": 17
+   },
+   "obj2_0.3": {
+    "1": 1,
+    "2": 9,
+    "3": 7,
+    ">=4": 4
+   },
+   "obj2_0.4": {
+    "1": 1,
+    "2": 6,
+    "3": 10,
+    ">=4": 4
+   }
+  }
+ },
+ {
+  "slug": "t5_pred_vs_meas",
+  "png": "docs/report/figures/t5_pred_vs_meas.png",
+  "script": "tools/report_figs/t5_pred_vs_meas.py",
+  "data_sources": [
+   "t5_prediction_results.json",
+   "t5_results/"
+  ],
+  "설명": "균일 원뿔 0~44° 에서 메시 해석식 예측과 G-code 툴패스 미지지의 순위 일치",
+  "핵심 수치": {
+   "ρ_중앙값": {
+    "0.3": 0.9562186292818428,
+    "0.4": 0.9982502173821435
+   },
+   "ρ_정의안됨": {
+    "0.3": 1,
+    "0.4": 1
+   },
+   "기준통과": true
+  }
+ }
+]

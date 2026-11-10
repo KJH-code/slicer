@@ -27,6 +27,9 @@ def setup():
     if not _FONT.exists():
         raise SystemExit("NanumGothic 없음: apt-get install -y fonts-nanum")
     font_manager.fontManager.addfont(str(_FONT))
+    bold = _FONT.with_name("NanumGothicBold.ttf")
+    if bold.exists():
+        font_manager.fontManager.addfont(str(bold))
     plt.rcParams.update({
         "font.family": "NanumGothic", "font.size": 9, "axes.titlesize": 9,
         "axes.labelsize": 9, "xtick.labelsize": 8, "ytick.labelsize": 8,
