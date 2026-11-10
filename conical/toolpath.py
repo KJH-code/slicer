@@ -7,6 +7,8 @@ toolpath.py — 툴패스(G-code) 기반 가상 검증기. 하드웨어 없이 �
       (2) '이전에 퇴적된'(G-code 순서 기준) 샘플점 중 수평거리 ≤ 압출폭,
           수직으로 (0, layer_height×1.5] 아래에 존재
     하면 지지로 판정. 배치(이동 500개)마다 cKDTree 재구축 → O(n log n).
+    '수평·수직' 은 기본이 연직(3축) 프레임이다. `tool_up` 을 주면 공구(층 법선)
+    프레임에서 잰다 — 노즐이 층 법선을 따라 기우는 5축 파일용 (`check_support`).
 
 검사기 B (노즐 간섭):
     3축 가정(노즐 수직). 각 압출점에 팁을 놓고, 이미 퇴적된 점 q 중
@@ -135,7 +137,7 @@ def sample_extrusions(items, width=0.45, return_types=False, return_layers=False
 # ─────────────────────────────────────────────────────────────
 def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
                   batch_samples=2000, vwin_factor=1.5,
-                  require_supported_below=False, bed_factor=1.0):
+                  require_supported_below=False, bed_factor=1.0, tool_up=None):
     """각 샘플점의 지지 여부. 반환: supported(bool 배열), 통계 dict.
 
     '이전에 퇴적'은 G-code 순서를 엄밀히 따른다: 이전 배치들은 cKDTree 로,
@@ -179,6 +181,26 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
 
     ⚠ `vwin_factor` 와 `require_supported_below` 의 기본값은 예전 그대로다 —
       연쇄 쪽은 결함이 아니라 **모델링 선택**이라 건드리지 않았다.
+
+    ── `tool_up`: 어느 '아래' 인가 (2026-11-10, docs/gap_audit.md G6) ──────
+    기본(None)은 **연직** 프레임이다: 수평 = XY 거리, 수직 = Δz. 3축 기계의 판정이다.
+    노즐이 층 법선을 따라 기우는 5축(REP5X)에서는 비드가 눌리는 방향이 노즐 축이므로
+    '아래에 앞 층이 있는가' 를 **공구 프레임**에서 물어야 한다. `tool_up` 에 점별
+    '위' 단위벡터 (N,3) 를 주면 (`check_nozzle` 과 같은 규약: 팁에서 공구 축을 따라
+    위 = 층 법선. `layer_frames` 나 `rep5x.sample_tool_frames` 가 만든다)
+
+        dz    = (p − q)·u_p              ← 공구 축 성분 (창: (0, 층고×vwin_factor])
+        horiz = ‖(p − q) − dz·u_p‖        ← 공구 축에 수직인 성분 (창: ≤ 압출폭)
+
+    로 잰다. 전부 (0,0,1) 이면 연직 판정과 같다. 베드 판정(z ≤ 층고×bed_factor)은
+    프레임과 무관하게 **연직 그대로**다 — 베드는 기울지 않는다.
+    연직 창이 원뿔 층에서 만드는 인공물 둘이 공구 프레임에서는 사라진다: ⓐ 층
+    법선이 기운 만큼(t_n·sinθ) 수평 이동을 덤으로 세는 것, ⓑ 같은 층의 바깥
+    페리미터(w·sinθ 낮다)를 '아래 지지' 로 세는 것.
+    ⚠ 수직 창은 여전히 `층고×vwin_factor` 다. 층 법선 방향 두께는 t_n = h·m·cosθ 라
+      균일 원뿔에서는 창이 그만큼 넉넉하다. 창을 t_n 에 묶을지는 정해지지 않았다
+      (gap_audit J7) — 그래서 건드리지 않았다.
+    ⚠ 기본값은 바꾸지 않았다(연직). 사전등록 수치가 연직 프레임으로 적혀 있다.
     """
     n = len(pts)
     supported = np.zeros(n, dtype=bool)
@@ -188,9 +210,10 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
     bed_h = vwin if bed_factor is None else layer_height * float(bed_factor)
     supported |= pts[:, 2] <= bed_h + 1e-9         # 베드 지지
     radius = math.sqrt(width ** 2 + vwin ** 2)
+    up = _unit_rows(tool_up, n)
 
     if require_supported_below:
-        _chained_support(pts, supported, vwin, width, radius, batch_samples)
+        _chained_support(pts, supported, vwin, width, radius, batch_samples, up)
         return supported, _support_stats(pts, supported, weight, layer_height)
 
     tree = None
@@ -205,16 +228,27 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
                     if not nb:
                         continue
                     q = pts[np.array(nb)]
-                    dz = pts[k, 2] - q[:, 2]
-                    horiz = np.hypot(pts[k, 0] - q[:, 0], pts[k, 1] - q[:, 1])
+                    if up is None:
+                        dz = pts[k, 2] - q[:, 2]
+                        horiz = np.hypot(pts[k, 0] - q[:, 0], pts[k, 1] - q[:, 1])
+                    else:
+                        dz, horiz = _tool_split(pts[k] - q, up[k])
                     if np.any((dz > 1e-9) & (dz <= vwin + 1e-9) &
                               (horiz <= width + 1e-9)):
                         supported[k] = True
         # (2) 같은 배치 안의 앞선 점들 (브루트포스, G-code 순서 엄수)
         b = pts[idx]
-        dzm = b[:, 2][:, None] - b[:, 2][None, :]          # p_i.z − p_j.z
-        horizm = np.hypot(b[:, 0][:, None] - b[:, 0][None, :],
-                          b[:, 1][:, None] - b[:, 1][None, :])
+        if up is None:
+            dzm = b[:, 2][:, None] - b[:, 2][None, :]          # p_i.z − p_j.z
+            horizm = np.hypot(b[:, 0][:, None] - b[:, 0][None, :],
+                              b[:, 1][:, None] - b[:, 1][None, :])
+        else:
+            ub = up[idx]
+            # dz[i,j] = (b_i − b_j)·u_i = (b_i·u_i) − (b @ u_iᵀ)[j,i]
+            dzm = np.einsum("ij,ij->i", b, ub)[:, None] - (b @ ub.T).T
+            bb = np.einsum("ij,ij->i", b, b)
+            d2 = bb[:, None] + bb[None, :] - 2.0 * (b @ b.T)
+            horizm = np.sqrt(np.maximum(d2 - dzm * dzm, 0.0))
         earlier = np.tril(np.ones((len(b), len(b)), dtype=bool), k=-1)
         ok = earlier & (dzm > 1e-9) & (dzm <= vwin + 1e-9) & \
              (horizm <= width + 1e-9)
@@ -222,6 +256,46 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
         tree = cKDTree(pts[:idx[-1] + 1])
 
     return supported, _support_stats(pts, supported, weight, layer_height)
+
+
+def _unit_rows(tool_up, n):
+    """`tool_up` → 행마다 단위벡터인 (n,3) 배열. None 이면 None(연직 프레임)."""
+    if tool_up is None:
+        return None
+    up = np.asarray(tool_up, dtype=float)
+    if up.shape != (n, 3):
+        raise ValueError(f"tool_up 은 점마다 하나씩 (N,3) 이어야 함: {up.shape} vs N={n}")
+    return up / np.linalg.norm(up, axis=1, keepdims=True)
+
+
+def _tool_split(diff, u):
+    """차 벡터들 (M,3) 을 축 u 성분과 그에 수직인 성분의 크기로 가른다."""
+    dz = diff @ u
+    horiz = np.sqrt(np.maximum(np.einsum("ij,ij->i", diff, diff) - dz * dz, 0.0))
+    return dz, horiz
+
+
+def layer_frames(pts, profile, direction="outward", layer_height=0.3):
+    """점마다 **층 법선** b 와 층 법선 방향 두께 t_n → (up (N,3), t_n (N,)).
+
+    원뿔 층 `z = Z′ − c·r·tanθ(Z′)` 의 위쪽 법선은 b = c·sinθ·r̂ + cosθ·ẑ 이고
+    (θ = 그 점이 놓인 층의 각도 — `AngleProfile.solve_forward` 로 Z′ 를 정확히 푼다),
+    이웃 층까지의 법선 방향 거리는 t_n = h·m·cosθ 다 (m = 층간격 배율).
+    노즐이 층 법선을 따라가는 기계(REP5X)의 공구 '위' 방향이 이 b 다 —
+    `check_support(tool_up=…)`·`classify_unsupported(tool_up=…, layer_thickness=…)`
+    에 그대로 넘긴다. profile 은 `AngleProfile` (상수각이면 `AngleProfile.constant`).
+    """
+    pts = np.asarray(pts, dtype=float)
+    c = 1.0 if direction == "outward" else -1.0
+    r = np.hypot(pts[:, 0], pts[:, 1])
+    zw = profile.solve_forward(pts[:, 2], r, direction)
+    th = np.radians(profile.theta_at(zw))
+    safe = np.where(r > 1e-9, r, 1.0)
+    rx, ry = pts[:, 0] / safe, pts[:, 1] / safe      # 축 위(r=0)에서는 수평 성분 0
+    up = np.column_stack([c * np.sin(th) * rx, c * np.sin(th) * ry, np.cos(th)])
+    up /= np.linalg.norm(up, axis=1, keepdims=True)
+    t_n = layer_height * profile.spacing_factor(zw, r, direction) * np.cos(th)
+    return up, t_n
 
 
 def _support_stats(pts, supported, weight, layer_height):
@@ -238,36 +312,41 @@ def _support_stats(pts, supported, weight, layer_height):
     return {"unsupported_pct": float(bad / total * 100.0), "layers": layers}
 
 
-def _chained_support(pts, supported, vwin, width, radius, batch_samples):
+def _chained_support(pts, supported, vwin, width, radius, batch_samples, up=None):
     """지지된 재료만 지지 후보로 쓰는 판정 (supported 를 제자리에서 갱신).
 
     배치 벡터화가 안 되는 이유: 어떤 점의 지지가 **같은 배치 안의 앞선 점이
     방금 지지로 바뀌었는지**에 달려 있어 순서 의존이 생긴다. 그래서 순차로
     돌되, 오래된 지지점은 cKDTree 로 묶고 최근 것만 브루트포스로 본다.
+    up 을 주면(점별 단위벡터) 공구 프레임에서 잰다 — `check_support` 의 `tool_up`.
     """
     n = len(pts)
     tree = None
     tree_pts = None
     tail = []                 # 마지막 트리 재구성 이후 새로 지지된 점들
 
-    def _hit(p, q):
+    def _hit(p, q, u):
         if len(q) == 0:
             return False
-        dz = p[2] - q[:, 2]
-        horiz = np.hypot(p[0] - q[:, 0], p[1] - q[:, 1])
+        if u is None:
+            dz = p[2] - q[:, 2]
+            horiz = np.hypot(p[0] - q[:, 0], p[1] - q[:, 1])
+        else:
+            dz, horiz = _tool_split(p - q, u)
         return bool(np.any((dz > 1e-9) & (dz <= vwin + 1e-9) &
                            (horiz <= width + 1e-9)))
 
     for i in range(n):
         p = pts[i]
         if not supported[i]:
+            u = None if up is None else up[i]
             found = False
             if tree is not None:
                 nb = tree.query_ball_point(p, r=radius)
                 if nb:
-                    found = _hit(p, tree_pts[np.asarray(nb)])
+                    found = _hit(p, tree_pts[np.asarray(nb)], u)
             if not found and tail:
-                found = _hit(p, np.asarray(tail))
+                found = _hit(p, np.asarray(tail), u)
             supported[i] = found
         if supported[i]:
             tail.append(p)
@@ -317,7 +396,8 @@ OVERHANG, INSIDE = 0, 1
 UNSUPPORTED_KINDS = {OVERHANG: "진짜 오버행", INSIDE: "아랫층 단면 안"}
 
 
-def classify_unsupported(pts, move_id, kinds, layer, supported, width=0.45):
+def classify_unsupported(pts, move_id, kinds, layer, supported, width=0.45,
+                         tool_up=None, layer_thickness=None):
     """미지지 페리미터를 '진짜 오버행' / '아랫층 단면 안'으로 가른다.
     반환: label (N,), 해당 없으면 −1.
 
@@ -343,6 +423,13 @@ def classify_unsupported(pts, move_id, kinds, layer, supported, width=0.45):
     단면은 `layer_cross_sections` 가 페리미터 압출선만으로 복원한다(메시 불필요).
     층을 모르면(첫 층·주석 없음) 판정할 수 없으므로 오버행으로 둔다 — 모르는
     것을 유리하게 세지 않는다.
+
+    `tool_up`·`layer_thickness` (기본 None = 연직 투영, 2026-11-10): '아랫층 단면
+    안인가' 를 묻는 점은 그 점에서 **아랫층에 내린 발**이다. 연직 프레임에서는
+    같은 XY 지만, 공구(층 법선) 프레임에서는 −t_n·b 만큼 옮긴 자리다 (b = `tool_up`,
+    t_n = `layer_thickness`: 층 법선 방향 두께, 스칼라 또는 점별 배열 —
+    `layer_frames` 가 둘 다 만든다). `check_support(tool_up=…)` 로 판정했으면
+    여기도 같은 프레임을 넘길 것. 단면 폴리곤 자체는 그대로 XY 평면에서 만든다.
     """
     n = len(pts)
     label = np.full(n, -1, dtype=int)
@@ -351,10 +438,17 @@ def classify_unsupported(pts, move_id, kinds, layer, supported, width=0.45):
         return label
     idx = np.where(target)[0]
     label[idx] = OVERHANG
+    xy = pts[:, :2]
+    up = _unit_rows(tool_up, n)
+    if up is not None:
+        if layer_thickness is None:
+            raise ValueError("tool_up 을 주면 layer_thickness(층 법선 방향 두께)도 필요")
+        t_n = np.broadcast_to(np.asarray(layer_thickness, dtype=float), (n,))
+        xy = xy - t_n[:, None] * up[:, :2]
     sections = layer_cross_sections(pts, move_id, kinds, layer, width)
     for i in idx:
         below = sections.get(int(layer[i]) - 1)
-        if below is not None and below.contains(Point(pts[i, 0], pts[i, 1])):
+        if below is not None and below.contains(Point(xy[i, 0], xy[i, 1])):
             label[i] = INSIDE
     return label
 
@@ -393,7 +487,7 @@ def vertical_gaps(pts, mask, width=0.45, max_depth=4.0):
 
 
 def support_breakdown(pts, move_id, kinds, layer, supported, weight,
-                      width=0.45):
+                      width=0.45, tool_up=None, layer_thickness=None):
     """페리미터 미지지를 갈라 % 로 돌려준다 + '단면 안' 수직 간격 진단.
 
     반환: dict(perimeter_unsupported_pct, overhang_pct, inside_pct,
@@ -402,6 +496,8 @@ def support_breakdown(pts, move_id, kinds, layer, supported, weight,
     **서포트 판단은 `overhang_pct` 로 한다.** `inside_pct` 는 오버행이 아니지만
     무죄도 아니다 — 수직 간격이 층고 수준이면 브리징(정상), 크게 넘으면
     층간격 팽창(결함)을 의심하고 `check_spacing` 으로 확인한다.
+    `tool_up`·`layer_thickness` 는 `classify_unsupported` 로 그대로 넘어간다
+    (공구 프레임 판정 — 기본은 연직). 수직 간격 진단은 언제나 연직이다.
     """
     peri = kinds == 0
     tot = weight[peri].sum()
@@ -409,7 +505,8 @@ def support_breakdown(pts, move_id, kinds, layer, supported, weight,
             "inside_gap_median", "inside_gap_p90")
     if tot <= 0:
         return dict.fromkeys(keys, float("nan"))
-    lab = classify_unsupported(pts, move_id, kinds, layer, supported, width)
+    lab = classify_unsupported(pts, move_id, kinds, layer, supported, width,
+                               tool_up, layer_thickness)
     bad = peri & ~supported
     ins = lab == INSIDE
     gaps = vertical_gaps(pts, ins, width)

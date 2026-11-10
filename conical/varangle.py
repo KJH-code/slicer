@@ -173,6 +173,9 @@ def blend_penalty(mesh, profile, radius_profile=None,
     각도 변화가 없으면 블렌드 구간 자체가 없어 0 이 되고, J 는 균일각 J 와
     정확히 같아진다.
 
+    '그 구간에 있는' = 면 중심의 **변환높이 Z′** 가 블렌드 구간 안이라는 뜻이다
+    (2026-11-10 고침). 아래 2026-09-22 의 수치들은 실공간 z 구간으로 세던 때 잰 것이다.
+
     ⚠⚠ **이 항이 무엇인지 2026-09-22 에 다시 쟀다. 세 가지가 전부 틀렸다**
         (`analyze_blend_cost.py`, docs/verification.md):
 
@@ -205,7 +208,8 @@ def blend_penalty(mesh, profile, radius_profile=None,
     if spacing_limit is None or spacing_limit <= 1.0:
         return 0.0
     c = 1.0 if direction == "outward" else -1.0
-    fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
+    fc = mesh.vertices[mesh.faces].mean(axis=1)
+    fr, fz = np.hypot(fc[:, 0], fc[:, 1]), fc[:, 2]
     areas = mesh.area_faces
     total = areas.sum()
     cost = 0.0
@@ -215,11 +219,19 @@ def blend_penalty(mesh, profile, radius_profile=None,
         if abs(dt) < 1e-12:
             continue
         s = dt / (b - a)
-        r = (radius_profile.max_between(a, b) if radius_profile is not None
+        # 블렌드는 변환높이 Z′ 구간이다 — 그 층들이 실제로 닿는 곳은 실공간 z 구간
+        # [a, b] 가 아니라 슬랩  a − r·tanθ_i ≤ z ≤ b − r·tanθ_{i+1}  이다
+        # (profile.py docstring ⚠⚠, docs/gap_audit.md G1·G13). 반경도 면적도 그
+        # 조건으로 센다. 예전에는 둘 다 z 구간으로 세서 램프 밴드2 의 블렌드 면적을
+        # 2.3% 로 봤다(실제 15.0%).
+        t_lo, t_hi = c * profile.tans[i], c * profile.tans[i + 1]
+        r = (radius_profile.max_in_slab(a, b, t_lo, t_hi)
+             if radius_profile is not None
              else float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max()))
         m = abs(1.0 - c * r * s)
         risk = min(1.0, max(0.0, (m - 1.0) / (spacing_limit - 1.0)))
-        area_pct = areas[(fz >= a) & (fz <= b)].sum() / total * 100.0
+        in_blend = (fz >= a - fr * t_lo) & (fz <= b - fr * t_hi)
+        area_pct = areas[in_blend].sum() / total * 100.0
         cost += area_pct * risk
     return float(cost)
 
