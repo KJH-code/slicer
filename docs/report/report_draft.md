@@ -238,15 +238,60 @@ wall)**
 (independent numpy implementation)**
 
 검산: 닫힌 식 θ\* 와 0~90° 전수 탐색이 무작위 면 423개에서 불일치 0,
-팀원 독립 구현과 약 22,000면에서 최대 차 1.42×10⁻¹⁴° 였다.
-**<span class="mark">【보류: 정확 선택 세션 — S(θ) 는 θ\* 들에서만
-바뀌는 계단함수이므로 최적 θ 는 유한 후보 {θ\*} 안에 있다】</span>**
+팀원 독립 구현과 약 22,000면에서 최대 차 1.42×10⁻¹⁴°, 실제 원뿔 층
+법선으로 잰 유효 오버행과 α − θ 의 차는 40,000점에서 최대 1.2×10⁻⁷°
+였다.
+
+**정확한 최적 각도.** 면마다 g 는 θ 의 연속함수이므로 서포트 면적 S(θ)
+는 g = κ 가 되는 근에서만 바뀌는 계단함수이다. 근 사이에서 J = S(0) −
+S(θ) − k·θ 는 −k·θ 로 감소하므로
+
+θ̂ ∈ {0°} ∪ {면이 고쳐지는 근 θ\* = asin(κ/R) − atan2(n_z, c·n_r)} (4)
+
+이다. 격자 없이 이 후보만 평가하면 최적이 정확히 나온다(Fig. 3, 4).
+
+<table>
+<colgroup>
+<col style="width: 100%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><p>R = np.hypot(nz, b) # b = c·n_r</p>
+<p>valid = R &gt; abs(kappa) * (1.0 + 1e-12) # R ≤ |κ| 면은 근 없음</p>
+<p>s = np.arcsin(kappa / R[idx])</p>
+<p>delta = np.arctan2(nz[idx], b[idx])</p>
+<p>for base in (s - delta, math.pi - s - delta): # 첫 근, 둘째 근</p>
+<p>...</p>
+<p>gp = -nz[f] * np.sin(r) + b[f] * np.cos(r) # g'(근) &gt; 0 → 면이
+고쳐짐</p>
+<p><em>conical/exact_angle.py · face_roots</em></p></td>
+</tr>
+</tbody>
+</table>
+
+검산(33개 모델, 사전 기준 전부 통과): 0.001° 미세 격자 88,002점 중
+정확해를 넘는 점 0, 반환 각도에서 해석식 재측정 차 2.8×10⁻¹³%. 2° 격자
+대비 J 상승 32/33(torus +2.27: 최적 계단 폭 0.27° 를 격자가 밟지 못함),
+계산 시간 1~4ms 대 3~78ms(합 0.09s 대 1.69s).
+
+<img src="media/c96864e09be29bac7ddd96e5e2188ec96d64bf23.png"
+style="width:5.90625in;height:2.29167in" />
+
+**\[Fig. 4\] (a) Step-shaped support area S(θ) and the roots where faces
+become supported; (b) J(θ) with the exact and 2° grid optima (waist r =
+2 mm)**
+
+<img src="media/61c6274a87b69075759e21e6a0bee03f5181b363.png"
+style="width:5.90625in;height:2.29167in" />
+
+**\[Fig. 5\] (a) Selected uniform angle vs. XY scale λ for 2° grid and
+exact search; (b) J gain of the exact search**
 
 **3. 가변 원뿔각과 층간격**
 
 층 k 를 z_k(r) = Z′\_k − c·r·tanθ_k 로 두면 같은 반경에서 이웃 층 간격은
 
-Δz(r) = h − c·r·(tanθ\_{k+1} − tanθ_k), m = Δz / h (4)
+Δz(r) = h − c·r·(tanθ\_{k+1} − tanθ_k), m = Δz / h (5)
 
 > • 층 교차 없음: 모든 r ≤ r_max 에서 Δz \> 0
 >
@@ -266,18 +311,22 @@ wall)**
 <td><p>def spacing_factor(self, zw, r, direction="outward"):</p>
 <p>c = 1.0 if direction == "outward" else -1.0</p>
 <p>return 1.0 - c * np.asarray(r, dtype=float) * self.slope_at(zw) # 식
-(4)</p>
+(5)</p>
 <p><em>conical/profile.py · AngleProfile</em></p></td>
 </tr>
 </tbody>
 </table>
 
 검산: 17개 모델의 블렌드 실제 최대 m = 1.47~1.50(한계 1.5 위반 0/17).
+생성 G-code 에서 같은 반경의 이웃 층 간격을 직접 재면 측정/예측 비가
+블렌드 안 11,764쌍에서 중앙값 1.0000, 95% 구간 \[0.9969, 1.0030\]
+이었다(예측 간격이 h 의 0.68~1.46배로 변하는 구간 포함, 상수각 대조군
+16,533쌍 \[0.9974, 1.0026\]).
 
 | **<span class="mark">【그림 대기: spacing_heatmap.png】</span>** |
 |------------------------------------------------------------------|
 
-**\[Fig. 4\] Layer-spacing factor m(r, z) of a two-band profile with the
+**\[Fig. 6\] Layer-spacing factor m(r, z) of a two-band profile with the
 limits 1/1.5 and 1.5**
 
 <table>
@@ -294,36 +343,36 @@ limits 1/1.5 and 1.5**
 </tbody>
 </table>
 
-**\[Fig. 5\] (a) Measured vs. predicted layer spacing from generated
+**\[Fig. 7\] (a) Measured vs. predicted layer spacing from generated
 G-code; (b) ratio distribution**
 
 **4. 압출량 보정**
 
-dV / dV′ = cos²θ · m (5)
+dV / dV′ = cos²θ · m (6)
 
-역변환 시 압출량에 식 (5) 를 곱한다. 단독 벽에서는 1mm 당 압출비가 cosθ
+역변환 시 압출량에 식 (6) 을 곱한다. 단독 벽에서는 1mm 당 압출비가 cosθ
 가 되며, 22° 에서 생성 G-code 의 측정값 0.9271 대 cos22° = 0.9272
-이다(Fig. 6). 실물 모형 판정은 L4 출력으로 한다.
+이다(Fig. 8). 실물 모형 판정은 L4 출력으로 한다.
 
 | **<span class="mark">【그림 대기: extrusion_ratio.png】</span>** |
 |------------------------------------------------------------------|
 
-**\[Fig. 6\] Extrusion per mm of a single wall vs. cone angle: measured
+**\[Fig. 8\] Extrusion per mm of a single wall vs. cone angle: measured
 from generated G-code and cosθ**
 
 **Ⅲ. 연구 방법 및 절차**
 
 **1. 알고리즘**
 
-θ̂ = argmax_θ J(θ), J(θ) = ΔS(θ) − k·\|θ\| (k = 0.2 %p/°) (6)
+θ̂ = argmax_θ J(θ), J(θ) = ΔS(θ) − k·\|θ\| (k = 0.2 %p/°) (7)
 
-> ① STL 축 정렬 → ② 면별 g(θ) → ③ 균일각: 식 (6), 방향은 outward/inward
+> ① STL 축 정렬 → ② 면별 g(θ) → ③ 균일각: 식 (7), 방향은 outward/inward
 > 중 큰 J
 >
-> ④ 밴드: 높이 N 구간마다 θ, 블렌드는 식 (4) 의 최소 폭, J 에서 블렌드
+> ④ 밴드: 높이 N 구간마다 θ, 블렌드는 식 (5) 의 최소 폭, J 에서 블렌드
 > 면적 비용 차감
 >
-> ⑤ 변환 → 평면 슬라이서 → 역변환(식 (5) 압출 보정, 경로 오차 ≤ 0.05mm)
+> ⑤ 변환 → 평면 슬라이서 → 역변환(식 (6) 압출 보정, 경로 오차 ≤ 0.05mm)
 >
 > ⑥ 5축: B = θ(Z′), C = 방위각, 회전 속도 상한, 베드 안전각 22.8° → ⑦
 > 사전 검사 통과 시 출력
@@ -331,14 +380,14 @@ from generated G-code and cosθ**
 | **<span class="mark">【그림 대기: support_vs_angle.png】</span>** |
 |-------------------------------------------------------------------|
 
-**\[Fig. 7\] Support area S(θ) and objective J(θ) for demo models;
+**\[Fig. 9\] Support area S(θ) and objective J(θ) for demo models;
 markers are the selected angles**
 
 | **<span class="mark">【그림 대기: toolpath_3d.png】</span>** |
 |--------------------------------------------------------------|
 
-**\[Fig. 8\] Generated 5-axis toolpath colored by head tilt B, and B per
-layer**
+**\[Fig. 10\] Generated 5-axis toolpath colored by head tilt B, and B
+per layer**
 
 **2. 검증 계층과 실험 조건**
 
@@ -367,8 +416,8 @@ layer**
 
 **1. 원뿔각 자동 결정 (RQ1)**
 
-funnel 에서 고른 각도는 outward 26° = 식 (3) 의 θ\* = 25.3° 를 2°
-격자에서 처음 넘는 값이며, 서포트 51.5% → 0% 였다(구 14.7% → 0%).
+funnel 에서 고른 각도는 2° 격자 26°, 정확 탐색 25.26° 로 식 (3) 의 θ\* =
+25.3° 와 일치하며, 서포트 51.5% → 0% 였다(구 14.7% → 0%).
 
 **Table 4. Band2 vs. uniform baselines, 17 models (band2 wins · uniform
 wins · ties, unsupported length)**
@@ -391,13 +440,13 @@ wins · ties, unsupported length)**
 | **<span class="mark">【그림 대기: baseline_bars.png】</span>** |
 |----------------------------------------------------------------|
 
-**\[Fig. 9\] Unsupported length of 17 models: uniform (J), band2 and
+**\[Fig. 11\] Unsupported length of 17 models: uniform (J), band2 and
 uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers**
 
 | **<span class="mark">【그림 대기: tilt_reduction.png】</span>** |
 |-----------------------------------------------------------------|
 
-**\[Fig. 10\] Mean \|θ\| of uniform (J) and band2 per model**
+**\[Fig. 12\] Mean \|θ\| of uniform (J) and band2 per model**
 
 <table>
 <colgroup>
@@ -413,12 +462,12 @@ uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers**
 </tbody>
 </table>
 
-**\[Fig. 11\] Regret of fixed conventional angles (15·20·25·45°) and
+**\[Fig. 13\] Regret of fixed conventional angles (15·20·25·45°) and
 automatic selection against the per-model optimum**
 
 **2. 구간(밴드) 개수 (RQ3)**
 
-𝒫_N ⊂ 𝒫\_{N+1} ⇒ S\*\_{N+1} ≤ S\*\_N, S\*\_N → S\*\_∞ (N → ∞) (7)
+𝒫_N ⊂ 𝒫\_{N+1} ⇒ S\*\_{N+1} ≤ S\*\_N, S\*\_N → S\*\_∞ (N → ∞) (8)
 
 N 구간 프로필은 한 구간을 같은 각도로 둘로 나누어 N+1 구간으로도
 표현되므로 최선해 S\*\_N 은 단조 감소·수렴한다. 측정:
@@ -446,16 +495,18 @@ t3_band_curve.png】</mark></strong></p>
 </tbody>
 </table>
 
-**\[Fig. 12\] Best-achievable unsupported length and mean \|θ\| vs.
+**\[Fig. 14\] Best-achievable unsupported length and mean \|θ\| vs.
 number of bands N**
 
 **가정.** 축대칭 곡면 층 z = Z′ − f(r) 의 1차 근사가 원뿔이며 오차는
 
-\|f(r) − f(r₀) − f′(r₀)(r − r₀)\| ≈ ½·\|f″\|·(r − r₀)² (8)
+\|f(r) − f(r₀) − f′(r₀)(r − r₀)\| ≈ ½·\|f″\|·(r − r₀)² (9)
 
 이므로 층의 경선 곡률 f″ 가 작으면 원뿔족 극한(N → ∞)이 곡면 슬라이싱에
-가깝다. 방사 대칭 모델은 밴드가 원뿔족 천장에 도달했고, 수평 아래면을
-가진 mushroom 은 모든 칸이 28.3% 로 원뿔족이 풀 수 없다(Table 5).
+가깝다. 수치 확인: 2차 층에서 로그-로그 기울기 2.00000, 오차가 층고
+0.3mm 를 넘는 거리는 b = 0.01/mm 에서 약 5.5mm, 0.05/mm 에서 약 2.4mm.
+방사 대칭 모델은 밴드가 원뿔족 천장에 도달했고, 수평 아래면을 가진
+mushroom 은 모든 칸이 28.3% 로 원뿔족이 풀 수 없다(Table 5).
 
 **Table 5. Support area (%) along the degree-of-freedom ladder
 (analytic)**
@@ -481,7 +532,7 @@ number of bands N**
 </tbody>
 </table>
 
-**\[Fig. 13\] Support area from planar to the cone-family ceiling (and
+**\[Fig. 15\] Support area from planar to the cone-family ceiling (and
 curved slicing, S4)**
 
 <table>
@@ -499,7 +550,7 @@ t6_cone_approx.png】</mark></strong></p>
 </tbody>
 </table>
 
-**\[Fig. 14\] (a) Curved layer and its tangent cone; (b) height error
+**\[Fig. 16\] (a) Curved layer and its tangent cone; (b) height error
 vs. r on log–log axes (slope 2)**
 
 **3. 결정의 신뢰성 (RQ2)**
@@ -519,7 +570,7 @@ vs. r on log–log axes (slope 2)**
 | **<span class="mark">【그림 대기: iou_angle.png】</span>** |
 |------------------------------------------------------------|
 
-**\[Fig. 15\] Deposition-reconstruction IoU over 46 cone-angle
+**\[Fig. 17\] Deposition-reconstruction IoU over 46 cone-angle
 candidates (mushroom_03) with three re-runs**
 
 <table>
@@ -537,25 +588,8 @@ t5_pred_vs_meas.png】</mark></strong></p>
 </tbody>
 </table>
 
-**\[Fig. 16\] Analytic prediction vs. toolpath measurement with
+**\[Fig. 18\] Analytic prediction vs. toolpath measurement with
 per-model Spearman ρ**
-
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><p><strong><mark>【그림 대기: exact_step.png】</mark></strong></p>
-<p>정확 선택 세션</p></th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
-
-**\[Fig. 17\] Step-shaped S(θ), objective J(θ), candidate angles {θ\*},
-exact vs. 2° grid optimum**
 
 **4. 실물 출력**
 
@@ -564,7 +598,7 @@ exact vs. 2° grid optimum**
 | **단계** | **출력물**                     | **예측**                   | **실측**                               |
 |----------|--------------------------------|----------------------------|----------------------------------------|
 | L1       | 원기둥 r10 × 8, B = 0          | 지름 20.0mm                | **<span class="mark">【보류】</span>** |
-| L4a/b    | 단벽 원기둥 B = 0 / 22°        | 벽 두께비 0.927 (식 5)     | **<span class="mark">【보류】</span>** |
+| L4a/b    | 단벽 원기둥 B = 0 / 22°        | 벽 두께비 0.927 (식 6)     | **<span class="mark">【보류】</span>** |
 | L5       | 오버행 계단 40~65°, 평면       | 50° 단부터 처짐(식 2)      | **<span class="mark">【보류】</span>** |
 | L2p/L2   | 벽 60° 원뿔대: 평면 / 균일 15° | 49.87%p / 0.00%p           | **<span class="mark">【보류】</span>** |
 | L3a/b    | 램프: 균일 22° / 밴드 22°→0°   | 0.53 / 0.58%p (구별 안 됨) | **<span class="mark">【보류】</span>** |
@@ -572,17 +606,18 @@ exact vs. 2° grid optimum**
 | **<span class="mark">【사진 대기: 개조한 REP5X 프린터 전경 · 헤드(B/C축) 근접】</span>** |
 |------------------------------------------------------------------------------------------|
 
-**\[Fig. 18\] The modified 5-axis printer (REP5X on Ender-3 V3 SE)**
+**\[Fig. 19\] The modified 5-axis printer (REP5X on Ender-3 V3 SE)**
 
 | **<span class="mark">【사진 대기: L1~L5 출력물 — 같은 조명·배경·스케일, 4방향 + 위】</span>** |
 |-----------------------------------------------------------------------------------------------|
 
-**\[Fig. 19\] Printed test ladder L1–L5**
+**\[Fig. 20\] Printed test ladder L1–L5**
 
 **5. 계산 비용**
 
-데모 모델당 균일각 결정 2~32ms, 밴드 계획 3~45ms (해석식).
-**<span class="mark">【보류: 메시 크기별 — T7, S4 비교】</span>**
+균일각 결정: 정확 탐색 1~4ms(33개 모델 합 0.09s), 2° 격자 3~78ms. 밴드
+계획 3~45ms(데모). **<span class="mark">【보류: 메시 크기별 — T7, S4
+비교】</span>**
 
 <table>
 <colgroup>
@@ -598,7 +633,7 @@ exact vs. 2° grid optimum**
 </tbody>
 </table>
 
-**\[Fig. 20\] Run time vs. number of faces (log–log) for uniform and
+**\[Fig. 21\] Run time vs. number of faces (log–log) for uniform and
 band selection**
 
 <table>
@@ -615,7 +650,7 @@ band selection**
 </tbody>
 </table>
 
-**\[Fig. 21\] Run time: cone-angle selection vs. curved slicing (S4)
+**\[Fig. 22\] Run time: cone-angle selection vs. curved slicing (S4)
 stages**
 
 **Ⅴ. 고찰**
@@ -626,7 +661,7 @@ stages**
 > **<span class="mark">【보류: 베드 램프 결과 포함 여부】</span>**
 >
 > • **적용 범위**: 방사 대칭(구·funnel·torus)은 밴드 = 원뿔족 천장, 수평
-> 아래면(mushroom)은 28.3% 불변 → 식 (8) 의 f″ 가 큰 형상은 곡면
+> 아래면(mushroom)은 28.3% 불변 → 식 (9) 의 f″ 가 큰 형상은 곡면
 > 슬라이싱의 영역
 >
 > • **한계**: 축대칭 표본 17개, 45° 문턱 기하 판정(중력·냉각 없음),
