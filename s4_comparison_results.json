@@ -580,5 +580,490 @@
   },
   "ok": true,
   "wall_s": 65.64501561200001
+ },
+ {
+  "model": "funnel",
+  "res": "R1",
+  "params": "P1",
+  "param_values": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 30,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "ITERATIONS": 100,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "n_input_faces": 256,
+  "input_volume": 1019.6720830709637,
+  "cone_on_input_mesh": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "times_s": {
+   "tetgen": 0.025814533233642578,
+   "tet_and_attributes": 4.481625753000003,
+   "rotation_field": 2.947026670000014,
+   "deformation": 9.836837972000012
+  },
+  "opt_rotation": {
+   "status": 1,
+   "cost": 4.9133162240116264e-08,
+   "nfev": 22,
+   "message": "`gtol` termination condition is satisfied."
+  },
+  "opt_deformation": {
+   "status": 0,
+   "cost": 1870.8862981707896,
+   "nfev": 1000,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "n_tets": 2763,
+  "n_points": 950,
+  "rotation_field_deg": {
+   "min": -58.65226882185047,
+   "max": -57.88549369068614
+  },
+  "n_inverted": 64,
+  "det_min": -1.3722936415559894,
+  "tet_volume": 1019.6720830709637,
+  "n_surface_faces": 1896,
+  "s4": 0.0,
+  "s4_nobed": 0.0,
+  "consistency_max_abs_diff": 0.0,
+  "cone": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "t_uniform_s": 0.014259837999986757,
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "t_banded_s": 0.019051902000001064,
+   "ceiling": 0.0,
+   "t_ceiling_s": 0.016249539999989793
+  },
+  "cone_nobed": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "curvature": {
+   "r_max": 13.744881263955314,
+   "kappa_m_r_median": 0.06960409437553772,
+   "kappa_m_r_p90": 0.16962631762683425,
+   "theta_layer_sd_deg": 1.0229795907839303,
+   "theta_deg_p05": 55.86322072750317,
+   "theta_deg_p95": 61.0552574347716,
+   "tangential_mean": 0.028818892778838104
+  },
+  "ok": true,
+  "wall_s": 17.39548431700001
+ },
+ {
+  "model": "funnel",
+  "res": "R1",
+  "params": "P2",
+  "param_values": {
+   "NEIGHBOUR_LOSS_WEIGHT": 10,
+   "MAX_OVERHANG": 30,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "ITERATIONS": 100,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "n_input_faces": 256,
+  "input_volume": 1019.6720830709637,
+  "cone_on_input_mesh": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "times_s": {
+   "tetgen": 0.02747511863708496,
+   "tet_and_attributes": 4.195064232999982,
+   "rotation_field": 2.7170918609999717,
+   "deformation": 9.253961404999984
+  },
+  "opt_rotation": {
+   "status": 1,
+   "cost": 2.635920120790295e-08,
+   "nfev": 20,
+   "message": "`gtol` termination condition is satisfied."
+  },
+  "opt_deformation": {
+   "status": 0,
+   "cost": 1875.6226165821822,
+   "nfev": 1000,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "n_tets": 2763,
+  "n_points": 950,
+  "rotation_field_deg": {
+   "min": -58.74784131263226,
+   "max": -57.818202423336786
+  },
+  "n_inverted": 64,
+  "det_min": -1.3735348668435883,
+  "tet_volume": 1019.6720830709637,
+  "n_surface_faces": 1896,
+  "s4": 0.0,
+  "s4_nobed": 0.0,
+  "consistency_max_abs_diff": 0.0,
+  "cone": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "t_uniform_s": 0.010835487999997895,
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "t_banded_s": 0.01382731500001455,
+   "ceiling": 0.0,
+   "t_ceiling_s": 0.012040400999978829
+  },
+  "cone_nobed": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "curvature": {
+   "r_max": 13.744881263955314,
+   "kappa_m_r_median": 0.06928512882906492,
+   "kappa_m_r_p90": 0.16951795459100288,
+   "theta_layer_sd_deg": 1.0239639376050653,
+   "theta_deg_p05": 55.893612133779456,
+   "theta_deg_p95": 61.09224197604268,
+   "tangential_mean": 0.028836818648409646
+  },
+  "ok": true,
+  "wall_s": 16.262621109999998
+ },
+ {
+  "model": "funnel",
+  "res": "R1",
+  "params": "P3",
+  "param_values": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 45,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "ITERATIONS": 100,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "n_input_faces": 256,
+  "input_volume": 1019.6720830709637,
+  "cone_on_input_mesh": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "times_s": {
+   "tetgen": 0.022319316864013672,
+   "tet_and_attributes": 4.042293184000016,
+   "rotation_field": 2.4209794310000348,
+   "deformation": 9.651602507999996
+  },
+  "opt_rotation": {
+   "status": 1,
+   "cost": 7.614286580227268e-09,
+   "nfev": 19,
+   "message": "`gtol` termination condition is satisfied."
+  },
+  "opt_deformation": {
+   "status": 0,
+   "cost": 286.1406440642918,
+   "nfev": 1000,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "n_tets": 2763,
+  "n_points": 950,
+  "rotation_field_deg": {
+   "min": -36.79942438155256,
+   "max": -36.31751428326019
+  },
+  "n_inverted": 2,
+  "det_min": -0.18915766726842764,
+  "tet_volume": 1019.6720830709637,
+  "n_surface_faces": 1896,
+  "s4": 0.0,
+  "s4_nobed": 0.0,
+  "consistency_max_abs_diff": 0.0,
+  "cone": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "t_uniform_s": 0.013849071999970874,
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "t_banded_s": 0.018913744000030874,
+   "ceiling": 0.0,
+   "t_ceiling_s": 0.016443825999999717
+  },
+  "cone_nobed": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "curvature": {
+   "r_max": 13.744881263955314,
+   "kappa_m_r_median": 0.04150398937381915,
+   "kappa_m_r_p90": 0.11580709974548235,
+   "theta_layer_sd_deg": 0.7911230011075855,
+   "theta_deg_p05": 34.97944826091673,
+   "theta_deg_p95": 38.37468925229258,
+   "tangential_mean": 0.02035813998019988
+  },
+  "ok": true,
+  "wall_s": 16.23928258899997
+ },
+ {
+  "model": "funnel",
+  "res": "R2",
+  "params": "P1",
+  "param_values": {
+   "NEIGHBOUR_LOSS_WEIGHT": 20,
+   "MAX_OVERHANG": 30,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "ITERATIONS": 100,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "n_input_faces": 1024,
+  "input_volume": 1019.6720830709637,
+  "cone_on_input_mesh": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "times_s": {
+   "tetgen": 0.1509096622467041,
+   "tet_and_attributes": 20.445684144999973,
+   "rotation_field": 14.382795233000024,
+   "deformation": 51.45531310900003
+  },
+  "opt_rotation": {
+   "status": 1,
+   "cost": 2.8921896840236183e-07,
+   "nfev": 27,
+   "message": "`gtol` termination condition is satisfied."
+  },
+  "opt_deformation": {
+   "status": 0,
+   "cost": 558.3840036465663,
+   "nfev": 1000,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "n_tets": 11944,
+  "n_points": 3711,
+  "rotation_field_deg": {
+   "min": -58.89101908549261,
+   "max": -57.330191208854544
+  },
+  "n_inverted": 60,
+  "det_min": -3.4390645979883185,
+  "tet_volume": 1019.6720830709637,
+  "n_surface_faces": 6992,
+  "s4": 0.552929153570797,
+  "s4_nobed": 0.552929153570797,
+  "consistency_max_abs_diff": 0.0,
+  "cone": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "t_uniform_s": 0.05221966099998099,
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "t_banded_s": 0.06966396299998223,
+   "ceiling": 0.0,
+   "t_ceiling_s": 0.06437567799997623
+  },
+  "cone_nobed": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "curvature": {
+   "r_max": 13.887125657913645,
+   "kappa_m_r_median": 0.06824384932636042,
+   "kappa_m_r_p90": 0.3439730804291019,
+   "theta_layer_sd_deg": 2.6136303693713665,
+   "theta_deg_p05": 54.40826917174268,
+   "theta_deg_p95": 60.63059901052728,
+   "tangential_mean": 0.03291460634058626
+  },
+  "ok": true,
+  "wall_s": 86.77084335799998
+ },
+ {
+  "model": "funnel",
+  "res": "R2",
+  "params": "P2",
+  "param_values": {
+   "NEIGHBOUR_LOSS_WEIGHT": 10,
+   "MAX_OVERHANG": 30,
+   "ROTATION_MULTIPLIER": 2,
+   "SET_INITIAL_ROTATION_TO_ZERO": false,
+   "INITIAL_ROTATION_FIELD_SMOOTHING": 30,
+   "ITERATIONS": 100,
+   "STEEP_OVERHANG_COMPENSATION": true
+  },
+  "n_input_faces": 1024,
+  "input_volume": 1019.6720830709637,
+  "cone_on_input_mesh": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "times_s": {
+   "tetgen": 0.14588308334350586,
+   "tet_and_attributes": 20.391066249000005,
+   "rotation_field": 14.84227610900001,
+   "deformation": 52.330403735999994
+  },
+  "opt_rotation": {
+   "status": 1,
+   "cost": 1.3185565100017636e-07,
+   "nfev": 30,
+   "message": "`gtol` termination condition is satisfied."
+  },
+  "opt_deformation": {
+   "status": 0,
+   "cost": 558.6625829031591,
+   "nfev": 1000,
+   "message": "The maximum number of function evaluations is exceeded."
+  },
+  "n_tets": 11944,
+  "n_points": 3711,
+  "rotation_field_deg": {
+   "min": -58.95771884042175,
+   "max": -57.23040922491612
+  },
+  "n_inverted": 61,
+  "det_min": -3.4425444148029385,
+  "tet_volume": 1019.6720830709637,
+  "n_surface_faces": 6992,
+  "s4": 0.552929153570797,
+  "s4_nobed": 0.552929153570797,
+  "consistency_max_abs_diff": 0.0,
+  "cone": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "t_uniform_s": 0.037851682999985314,
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "t_banded_s": 0.04803177099995537,
+   "ceiling": 0.0,
+   "t_ceiling_s": 0.04304215299998759
+  },
+  "cone_nobed": {
+   "planar": 51.51384702600353,
+   "uniform": 0.0,
+   "uniform_angle": 26.0,
+   "uniform_dir": "outward",
+   "banded": 0.0,
+   "n_bands": 1,
+   "band_profile": [
+    "26out"
+   ],
+   "ceiling": 0.0
+  },
+  "curvature": {
+   "r_max": 13.887125657913645,
+   "kappa_m_r_median": 0.06843901172059692,
+   "kappa_m_r_p90": 0.34386425534434545,
+   "theta_layer_sd_deg": 2.613551085447543,
+   "theta_deg_p05": 54.43022599462813,
+   "theta_deg_p95": 60.67560305711407,
+   "tangential_mean": 0.03292708254031361
+  },
+  "ok": true,
+  "wall_s": 87.93157488399999
  }
 ]
