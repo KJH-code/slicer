@@ -96,6 +96,28 @@ function FIG(slug, caption, widthCm = 15, note = "") {
   out.push(FIGCAP(`[Fig. ${figNo}] ${caption}`));
   return out;
 }
+
+// 반폭 그림 두 개를 나란히 (각자 캡션)
+function PAIR(a, b, widthCm = 8) {
+  const colW = Math.round(W / 2);
+  const one = (slug, cap) => {
+    figNo += 1;
+    const f = path.join(FIG_DIR, `${slug}.png`);
+    const kids = [];
+    if (fs.existsSync(f)) {
+      const buf = fs.readFileSync(f); const { w, h } = pngSize(buf);
+      const px = Math.round(widthCm / 2.54 * 96);
+      kids.push(new Paragraph({ children: [new ImageRun({ type: "png", data: buf, transformation: { width: px, height: Math.round(px * h / w) } })], alignment: AlignmentType.CENTER }));
+    } else {
+      kids.push(new Paragraph({ children: runs(`【그림 대기: ${slug}.png】`, { size: 16 }), alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }));
+    }
+    kids.push(new Paragraph({ children: runs(`[Fig. ${figNo}] ${cap}`, { bold: true, size: 16 }), alignment: AlignmentType.CENTER, spacing: { before: 30, after: 60 } }));
+    const none = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+    return new TableCell({ children: kids, width: { size: colW, type: WidthType.DXA }, borders: { top: none, bottom: none, left: none, right: none } });
+  };
+  return new Table({ width: { size: colW * 2, type: WidthType.DXA }, columnWidths: [colW, colW], alignment: AlignmentType.CENTER,
+    rows: [new TableRow({ children: [one(a[0], a[1]), one(b[0], b[1])] })] });
+}
 let tabNo = 0;
 const TAB = (caption) => { tabNo += 1; return CAPTION(`Table ${tabNo}. ${caption}`); };
 
@@ -107,7 +129,7 @@ C.push(BANNER("1. 연구결과 요약문"));
 C.push(table([1900, W - 1900], [
   ["과 제 명", "형상 적응형 원뿔 슬라이싱: 원뿔각 자동 결정 알고리즘과 그 신뢰성 검증"],
   ["연구 필요성\n및 목적", "원뿔 슬라이싱은 층을 원뿔면으로 쌓아 서포트 없이 오버행을 출력하는 다축 3D 프린팅 기법이다. 위치마다 출력 방향을 최적화하는 곡면 슬라이싱보다 설계변수가 훨씬 적어 계산이 가볍고 방사 대칭 형상에 효과적이다. 그러나 원뿔각은 지금까지 사용자가 정해 왔고, 형상에서 원뿔각을 자동으로 정하는 알고리즘은 조사 범위 내에서 확인되지 않았다. 본 연구는 STL 에서 원뿔각과 높이 구간별 각도를 자동 결정하는 알고리즘을 만들고, 그 결정의 신뢰성과 구간 개수에 따른 거동을 검증한다."],
-  ["연구내용\n및\n결과", "① 원본 면 법선으로 서포트를 판정하는 해석식(유효 오버행 = 원래 오버행 − θ)과 면별 임계각 θ* = α − 45° 유도 ② 가변각의 층간격 Δz = h − r·Δtanθ 로 층 교차 방지 조건·블렌드 최소 폭 유도 ③ 축대칭 17개 모델에서 두 균일 원뿔 기준선과 비교 【보류: 대표 결과】 ④ 구간 수 최선해는 단조 감소, 구간 분할의 고유 효과는 같은 서포트에서 평균 기울기 중앙 8.4° 감소 ⑤ 판정식 독립 구현 대조 최대 차 1.42×10⁻¹⁴°, 퇴적 복원 IoU 3회 재실행 해시 일치"],
+  ["연구내용\n및\n결과", "① 원본 면 법선으로 서포트를 판정하는 해석식(유효 오버행 = 원래 오버행 − θ)과 면별 임계각 θ* = α − 45° 유도 ② 가변각의 층간격 Δz = h − r·Δtanθ 로 층 교차 방지 조건·블렌드 최소 폭 유도 ③ 축대칭 17개 모델에서 두 균일 원뿔 기준선과 비교 【보류: 대표 결과】 ④ 구간 수 최선해는 단조 감소, 구간 분할의 고유 효과는 같은 서포트에서 평균 기울기 중앙 8.4° 감소 ⑤ 판정식 독립 구현 대조 최대 차 1.42×10⁻¹⁴°, 퇴적 복원 IoU 3회 재실행 해시 일치 ⑥ 같은 판정식에서 곡면 슬라이서(S4)와 비교해 축대칭 모델의 서포트가 같거나 낮았고(구 0.0 대 0.1%, torus 10.6 대 13.1%) 계산은 약 450~1,200배 빨랐다"],
   ["향후\n연구계획\n(요약)", "제작한 5축 프린터(REP5X)로 사전 등록한 시험 출력(L0~L5)을 수행해 판정 기준과 압출 모형을 실물로 확인하고, 곡면 슬라이싱과의 정량 비교와 비축대칭 형상으로 범위를 넓힌다."],
   ["Keyword\n(5개 이내)", "원뿔 슬라이싱, 원뿔각 자동 결정, 가변 원뿔각, 서포트 저감, 다축 3D 프린팅"],
 ], { header: false, firstColBold: true, firstColFill: true, size: 18 }));
@@ -117,7 +139,7 @@ C.push(BR());
 C.push(BANNER("2. 과제 수행 과정"));
 C.push(NOTE("※ 외부 전문가 피드백, 생성형 AI 활용 표, 팀원 역할·기여도 칸은 팀이 직접 작성한다(이 초안에서 제외)."));
 C.push(table([1900, W - 1900], [
-  ["문제해결\n과정", "① 판정 기준 선택 — 원뿔 변환은 XY 를 1/cosθ 배로 늘리는 비등각 사상이라 변환 공간의 각도는 실제 각도가 아니다(funnel: 실제 26° 에서 해결되는 벽이 변환 공간에서는 53° 필요). 원본 법선에서 층 방향을 직접 계산하는 해석식 하나를 판정 기준으로 정하고, 세 번 재유도와 팀원 독립 구현(약 22,000면)으로 대조하였다.\n② 가변각 안전 조건 — 이웃 두 원뿔 층의 높이 차로 층 교차 방지 조건과 블렌드 최소 폭을 닫힌 식으로 얻고, 실제 G-code 의 층간격으로 확인하였다.\n③ 해석의 공정성 — 평면이 아닌 균일 원뿔과 비교하고 기준선을 둘로 나누어 이득의 원천을 분리하였다. 판정 기준은 결과 전에 문서로 고정하였다.\n④ 기계 안전 — 출력용 G-code 는 자체 사전 검사기와 팀원의 가상 프린터(독립 역기구학)를 모두 통과해야 출력하도록 하였다."],
+  ["문제해결\n과정", "① 판정 기준 선택 — 원뿔 변환은 XY 를 1/cosθ 배로 늘리는 비등각 사상이라 변환 공간의 각도는 실제 각도가 아니다(funnel: 실제 26° 에서 해결되는 벽이 변환 공간에서는 50.7° 필요). 원본 법선에서 층 방향을 직접 계산하는 해석식 하나를 판정 기준으로 정하고, 세 번 재유도와 팀원 독립 구현(약 22,000면)으로 대조하였다.\n② 가변각 안전 조건 — 이웃 두 원뿔 층의 높이 차로 층 교차 방지 조건과 블렌드 최소 폭을 닫힌 식으로 얻고, 실제 G-code 의 층간격으로 확인하였다.\n③ 해석의 공정성 — 평면이 아닌 균일 원뿔과 비교하고 기준선을 둘로 나누어 이득의 원천을 분리하였다. 판정 기준은 결과 전에 문서로 고정하였다.\n④ 기계 안전 — 출력용 G-code 는 자체 사전 검사기와 팀원의 가상 프린터(독립 역기구학)를 모두 통과해야 출력하도록 하였다."],
   ["과제 수행\n과정에서의 학습", "좌표 변환과 역변환, 벡터 내적과 삼각함수 합성, 다중적분의 변수변환(야코비안), 5축 기구학(공구 중심점 제어, 역기구학)을 연구에 직접 적용하며 배웠다. G-code 와 Marlin 펌웨어 구조, PrusaSlicer 명령행, 단위·회귀 테스트로 코드를 검증하는 방법을 익혔다. 예측을 먼저 적고 계산·실물로 확인하는 절차가 결론의 신뢰도를 어떻게 바꾸는지 경험하였다. 【팀 자체 평가 추가】"],
 ], { header: false, firstColBold: true, firstColFill: true, size: 18 }));
 C.push(BR());
@@ -146,14 +168,14 @@ C.push(H1("Ⅱ. 이론적 배경"));
 C.push(H2("1. 원뿔 변환[1]"));
 C.push(EQ("R = r / cosθ,   φ′ = φ,   Z′ = z + c·r·tanθ      (c = +1 outward, −1 inward)", "1"));
 C.push(P("변환한 모델을 평면 슬라이서가 Z′ = 상수로 자르고 되돌리면 층은 z = Z′ − c·r·tanθ 인 원뿔면이 된다(Fig. 1).", { noIndent: true }));
-C.push(...FIG("conical_layers_lamp", "Actual layers of generated G-code on the r–z section: (a) uniform 22°, (b) band 22°→0°", 15, "L3a/L3b G-code 의 층을 r–z 단면에"));
+C.push(...FIG("conical_layers_lamp", "Actual layers of generated G-code on the r–z section: (a) uniform 22°, (b) band 22°→0°", 12.5, "L3a/L3b G-code 의 층을 r–z 단면에"));
 
 C.push(H2("2. 서포트 판정식"));
 C.push(P("축을 지나는 단면에서 원뿔 층의 위쪽 단위 방향 b = (c·sinθ, cosθ) 와 면 법선 n 의 내적:", { noIndent: true }));
 C.push(EQ("g(θ) = n_z·cosθ + c·n_r·sinθ,   서포트 필요 ⇔ g(θ) < κ = −sin45°", "2"));
 C.push(P("오버행 각 α 인 면은 n = (cosα, −sinα) 이므로", { noIndent: true }));
 C.push(EQ("g(θ) = −sin(α − c·θ)  ⇒  유효 오버행 = α − θ,   θ* = α − 45°", "3"));
-C.push(P("funnel 벽(α = 70.3°)은 θ = 26° 에서 44.3° 로 통과한다. 변환 공간에서 재면 같은 벽이 θ = 53° 에서야 통과한다(Fig. 2b) — 판정을 식 (2) 하나로 통일한 이유이다. 구현은 식 (2) 를 그대로 옮긴 세 줄이다.", { noIndent: true }));
+C.push(P("funnel 벽(α = 70.3°)은 θ = 26° 에서 44.3° 로 통과한다. 변환 공간에서 재면 같은 벽이 θ = 50.7° 에서야 통과한다(Fig. 2b) — 판정을 식 (2) 하나로 통일한 이유이다. 구현은 식 (2) 를 그대로 옮긴 세 줄이다.", { noIndent: true }));
 C.push(CODE([
   "def overhang_score(mesh, angle_deg, direction, radial=None):",
   "    nz = mesh.face_normals[:, 2]",
@@ -162,13 +184,12 @@ C.push(CODE([
   "    a = np.radians(angle_deg)",
   "    return nz * np.cos(a) + d * nr * np.sin(a)        # 식 (2)",
 ], "conical/analytic.py"));
-C.push(...FIG("g_theta_funnel", "(a) g(θ) for overhang faces and the threshold −sin45°; (b) effective overhang vs. overhang measured in the warped space (funnel wall)", 15));
-C.push(...FIG("theta_star_check", "Closed-form critical angle θ* vs. exhaustive search (independent numpy implementation)", 15));
+C.push(...FIG("g_theta_funnel", "(a) g(θ) for overhang faces and the threshold −sin45°; (b) effective overhang vs. overhang measured in the warped space (funnel wall)", 12.5));
 C.push(P("검산: 닫힌 식 θ* 와 0~90° 전수 탐색이 무작위 면 423개에서 불일치 0, 팀원 독립 구현과 약 22,000면에서 최대 차 1.42×10⁻¹⁴°, 실제 원뿔 층 법선으로 잰 유효 오버행과 α − θ 의 차는 40,000점에서 최대 1.2×10⁻⁷° 였다.", { noIndent: true }));
-C.push(...FIG("t6_effective_overhang", "(a) Effective overhang measured from actual cone-layer normals vs. α − θ; (b) difference (×10⁻⁷°)", 15));
+C.push(...FIG("t6_effective_overhang", "(a) Effective overhang measured from actual cone-layer normals vs. α − θ; (b) difference (×10⁻⁷°)", 12.5));
 C.push(P("**정확한 최적 각도.** 면마다 g 는 θ 의 연속함수이므로 서포트 면적 S(θ) 는 g = κ 가 되는 근에서만 바뀌는 계단함수이다. 근 사이에서 J = S(0) − S(θ) − k·θ 는 −k·θ 로 감소하므로", { noIndent: true }));
 C.push(EQ("θ̂ ∈ {0°} ∪ {면이 고쳐지는 근 θ* = asin(κ/R) − atan2(n_z, c·n_r)}", "4"));
-C.push(P("이다. 격자 없이 이 후보만 평가하면 최적이 정확히 나온다(Fig. 5, 6).", { noIndent: true }));
+C.push(P("이다. 격자 없이 이 후보만 평가하면 최적이 정확히 나온다(Fig. 4).", { noIndent: true }));
 C.push(CODE([
   "R = np.hypot(nz, b)                       # b = c·n_r",
   "valid = R > abs(kappa) * (1.0 + 1e-12)    # R ≤ |κ| 면은 근 없음",
@@ -179,8 +200,7 @@ C.push(CODE([
   "gp = -nz[f] * np.sin(r) + b[f] * np.cos(r)      # g'(근) > 0 → 면이 고쳐짐",
 ], "conical/exact_angle.py · face_roots"));
 C.push(P("검산(33개 모델, 사전 기준 전부 통과): 0.001° 미세 격자 88,002점 중 정확해를 넘는 점 0, 반환 각도에서 해석식 재측정 차 2.8×10⁻¹³%. 2° 격자 대비 J 상승 32/33(torus +2.27: 최적 계단 폭 0.27° 를 격자가 밟지 못함), 계산 시간 1~4ms 대 3~78ms(합 0.09s 대 1.69s).", { noIndent: true }));
-C.push(...FIG("exact_step", "(a) Step-shaped support area S(θ) and the roots where faces become supported; (b) J(θ) with the exact and 2° grid optima (waist r = 2 mm)", 15));
-C.push(...FIG("exact_lambda", "(a) Selected uniform angle vs. XY scale λ for 2° grid and exact search; (b) J gain of the exact search", 15));
+C.push(...FIG("exact_step", "(a) Step-shaped support area S(θ) and the roots where faces become supported; (b) J(θ) with the exact and 2° grid optima (waist r = 2 mm)", 12.5));
 
 C.push(H2("3. 가변 원뿔각과 층간격"));
 C.push(P("층 k 를 z_k(r) = Z′_k − c·r·tanθ_k 로 두면 같은 반경에서 이웃 층 간격은", { noIndent: true }));
@@ -195,13 +215,14 @@ C.push(CODE([
   "    return 1.0 - c * np.asarray(r, dtype=float) * self.slope_at(zw)   # 식 (5)",
 ], "conical/profile.py · AngleProfile"));
 C.push(P("검산: 17개 모델의 블렌드 실제 최대 m = 1.47~1.50(한계 1.5 위반 0/17). 생성 G-code 에서 같은 반경의 이웃 층 간격을 직접 재면 측정/예측 비가 블렌드 안 11,764쌍에서 중앙값 1.0000, 95% 구간 [0.9969, 1.0030] 이었다(예측 간격이 h 의 0.68~1.46배로 변하는 구간 포함, 상수각 대조군 16,533쌍 [0.9974, 1.0026]).", { noIndent: true }));
-C.push(...FIG("spacing_heatmap", "Layer-spacing factor m(r, z) of a two-band profile with the limits 1/1.5 and 1.5", 15));
-C.push(...FIG("t2_spacing", "(a) Measured vs. predicted layer spacing from generated G-code; (b) ratio distribution", 15, "T2 세션"));
+C.push(P("밴드2(22°→0°) 의 블렌드 기울기 s = −0.378/mm 에서 m = 1.5 가 되는 반경은 1.32mm 이고, 실제 G-code 압출점의 m 최대는 1.379 였다(Fig. 5).", { noIndent: true }));
+C.push(...FIG("spacing_heatmap", "Layer-spacing factor m(r, z) of a two-band profile with the limits 1/1.5 and 1.5", 12.5));
+C.push(...FIG("t2_spacing", "(a) Measured vs. predicted layer spacing from generated G-code; (b) ratio distribution", 12.5, "T2 세션"));
 
 C.push(H2("4. 압출량 보정"));
 C.push(EQ("dV / dV′ = cos²θ · m", "6"));
-C.push(P("역변환 시 압출량에 식 (6) 을 곱한다. 단독 벽에서는 1mm 당 압출비가 cosθ 가 되며, 22° 에서 생성 G-code 의 측정값 0.9271 대 cos22° = 0.9272 이다(Fig. 9). 실물 모형 판정은 L4 출력으로 한다.", { noIndent: true }));
-C.push(...FIG("extrusion_ratio", "Extrusion per mm of a single wall vs. cone angle: measured from generated G-code and cosθ", 11));
+C.push(P("역변환 시 압출량에 식 (6) 을 곱한다. 단독 벽에서는 1mm 당 압출비가 cosθ 가 되며, 생성 G-code 의 측정값은 22° 에서 0.9272 = cos22° 이고, 0~30° 전 구간에서 cosθ 와의 차가 1.5×10⁻⁵ 이하이다(Fig. 7). 실물 모형 판정은 L4 출력으로 한다.", { noIndent: true }));
+C.push(...FIG("extrusion_ratio", "Extrusion per mm of a single wall vs. cone angle: measured from generated G-code and cosθ", 9));
 
 // Ⅲ. 연구 방법
 C.push(H1("Ⅲ. 연구 방법 및 절차"));
@@ -211,8 +232,8 @@ C.push(BUL("① STL 축 정렬 → ② 면별 g(θ) → ③ 균일각: 식 (7), 
 C.push(BUL("④ 밴드: 높이 N 구간마다 θ, 블렌드는 식 (5) 의 최소 폭, J 에서 블렌드 면적 비용 차감"));
 C.push(BUL("⑤ 변환 → 평면 슬라이서 → 역변환(식 (6) 압출 보정, 경로 오차 ≤ 0.05mm)"));
 C.push(BUL("⑥ 5축: B = θ(Z′), C = 방위각, 회전 속도 상한, 베드 안전각 22.8° → ⑦ 사전 검사 통과 시 출력"));
-C.push(...FIG("support_vs_angle", "Support area S(θ) and objective J(θ) for demo models; markers are the selected angles", 15));
-C.push(...FIG("toolpath_3d", "Generated 5-axis toolpath colored by head tilt B, and B per layer", 15));
+C.push(...FIG("support_vs_angle", "Support area S(θ) and objective J(θ) for demo models; markers are the selected angles", 12.5));
+C.push(...FIG("toolpath_3d", "Generated 5-axis toolpath colored by head tilt B, and B per layer", 12.5));
 
 C.push(H2("2. 검증 계층과 실험 조건"));
 C.push(TAB("Verification layers"));
@@ -246,12 +267,11 @@ C.push(table([3238, 2000, 2000, 2400], [
   ["(b) 아래 구간 각도와 같은 균일", "0 · 2 · 15", "0 · 0 · 17", "0 · 1 · 16 / 0 · 0 · 17"],
 ], { center: true }));
 C.push(BUL("• (a) 의 우세 5개 = 모두 밴드 아래 구간 각도 > 균일각인 모델 (26 대 16°, 28 대 20°, 30 대 24°, 24 대 22°, 26 대 20°)"));
-C.push(BUL("• 같은 미지지에서 평균 |θ| 감소: 중앙 8.4° (1.0~11.1°)"));
+C.push(BUL("• 평균 |θ| 감소: 기준선 (b) 대비 중앙 8.4° (1.0~11.1°, 17/17), (a) 대비 중앙 7.9° (1.0~9.4°, 12/17)"));
 C.push(BUL("• 램프(층고 0.3): 균일(J) 24° 17.8mm / 밴드 [30°, 0°] 0.0mm / 균일 30° 0.0mm"));
 C.push(P("【보류: 결과 문장의 기준선】", { noIndent: true }));
-C.push(...FIG("baseline_bars", "Unsupported length of 17 models: uniform (J), band2 and uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers", 16));
-C.push(...FIG("tilt_reduction", "Mean |θ| of uniform (J) and band2 per model", 11));
-C.push(...FIG("t1_regret", "Regret of fixed conventional angles (15·20·25·45°) and automatic selection against the per-model optimum", 15, "T1 세션"));
+C.push(...FIG("baseline_bars", "Unsupported length of 17 models: uniform (J), band2 and uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers", 12.5));
+C.push(PAIR(["tilt_reduction", "Mean |θ| of uniform and band2 per model"], ["t1_regret", "Regret of fixed conventional angles and automatic selection"]));
 
 C.push(H2("2. 구간(밴드) 개수 (RQ3)"));
 C.push(EQ("𝒫_N ⊂ 𝒫_{N+1}  ⇒  S*_{N+1} ≤ S*_N,   S*_N → S*_∞ (N → ∞)", "8"));
@@ -259,20 +279,22 @@ C.push(P("N 구간 프로필은 한 구간을 같은 각도로 둘로 나누어 
 C.push(BUL("• 각도 비용 k = 0 이면 밴드의 해석식 서포트 이득 = 0 (17/17) → 구간 분할의 값은 기울기 감소"));
 C.push(BUL("• N 을 J 로 고르면 오버행이 달성 가능한 최소보다 나쁨 (7/7) → N 은 최선해 곡선으로 정한다"));
 C.push(P("【보류: 최선해 곡선·포화 N* — T3】", { noIndent: true }));
-C.push(...FIG("t3_band_curve", "Best-achievable unsupported length and mean |θ| vs. number of bands N", 15, "T3 세션"));
+C.push(...FIG("t3_band_curve", "Best-achievable unsupported length and mean |θ| vs. number of bands N", 12.5, "T3 세션"));
 C.push(P("**가정.** 축대칭 곡면 층 z = Z′ − f(r) 의 1차 근사가 원뿔이며 오차는", { noIndent: true }));
 C.push(EQ("|f(r) − f(r₀) − f′(r₀)(r − r₀)| ≈ ½·|f″|·(r − r₀)²", "9"));
-C.push(P("이므로 층의 경선 곡률 f″ 가 작으면 원뿔족 극한(N → ∞)이 곡면 슬라이싱에 가깝다. 수치 확인: 2차 층에서 로그-로그 기울기 2.00000, 오차가 층고 0.3mm 를 넘는 거리는 b = 0.01/mm 에서 약 5.5mm, 0.05/mm 에서 약 2.4mm. 방사 대칭 모델은 밴드가 원뿔족 천장에 도달했고, 수평 아래면을 가진 mushroom 은 모든 칸이 28.3% 로 원뿔족이 풀 수 없다(Table 5).", { noIndent: true }));
-C.push(TAB("Support area (%) along the degree-of-freedom ladder (analytic)"));
+C.push(P("이므로 층의 경선 곡률 f″ 가 작으면 원뿔족 극한(N → ∞)이 곡면 슬라이싱에 가깝다. 수치 확인: 2차 층에서 로그-로그 기울기 2.00000, 오차가 층고 0.3mm 를 넘는 거리는 b = 0.01/mm 에서 약 5.5mm, 0.05/mm 에서 약 2.4mm. 곡면 슬라이서 S4 를 같은 판정식으로 재면(Table 5): 구는 균일 원뿔 0.0% 대 S4 0.1%, torus 는 밴드 10.6% 대 S4 13.1% 로 원뿔족이 같거나 나았다. S4 층의 경선 곡률(κ·r 중앙)은 구 0.086, torus 0.59 로, 곡률이 작은 구에서 S4 ≈ 천장(+0.1%p)이었고 곡률이 큰 torus 에서도 곡면의 추가 자유도가 서포트 감소로 이어지지 않았다(+2.5%p). funnel(54~61° 요구)과 mushroom(65~88° 요구)은 S4 변형에서 사면체가 뒤집혀(60여 개, 17%) 결과가 무효였다. mushroom 의 수평 아래면은 g = −cosθ 라 θ ≥ 45° 가 필요하여 원뿔 허용 범위(≤ 44°, 베드 안전각 22.8°) 밖이다.", { noIndent: true }));
+C.push(TAB("Support area (%) along the degree-of-freedom ladder (same criterion, eq. 2)"));
 C.push(table([1800, 1400, 1400, 1400, 1800, 1838], [
   ["모델", "평면", "균일", "밴드", "원뿔족 천장", "곡면(S4)"],
-  ["sphere", "14.7", "0.0", "0.0", "0.0", "【보류】"],
-  ["funnel", "51.5", "0.0", "0.0", "0.0", "【보류】"],
-  ["torus", "25.0", "18.6", "10.6", "10.6", "【보류】"],
-  ["mushroom", "28.3", "28.3", "28.3", "28.3", "【보류】"],
+  ["sphere", "14.7", "0.0", "0.0", "0.0", "0.1 (0.0~0.4)"],
+  ["funnel", "51.5", "0.0", "0.0", "0.0", "무효*"],
+  ["torus", "25.0", "18.6", "10.6", "10.6", "13.1 (12.5~16.3)"],
+  ["mushroom", "27.5", "27.5", "27.5", "27.5", "무효*"],
 ], { center: true }));
-C.push(...FIG("dof_ladder", "Support area from planar to the cone-family ceiling (and curved slicing, S4)", 15, "S4 세션 결과 오면 s4_dof_ladder 로 교체"));
-C.push(...FIG("t6_cone_approx", "(a) Curved layer and its tangent cone; (b) height error vs. r on log–log axes (slope 2)", 15, "T6 세션"));
+C.push(NOTE("S4 범위 = 해상도 2 × 파라미터 2 실행. * 변형 미수렴·사면체 뒤집힘(funnel 60여 개, mushroom 17%). mushroom 은 회전체 합집합 메시."));
+C.push(...FIG("s4_dof_ladder", "Support area from planar to the cone-family ceiling and curved slicing (S4); (a) all faces, (b) excluding bed-contact faces; × marks invalid S4 runs", 12.5));
+C.push(...FIG("s4_layers", "Curved (S4) layers vs. cone-family layers on the r–z section", 12.5));
+C.push(...FIG("t6_cone_approx", "(a) Curved layer and its tangent cone; (b) height error vs. r on log–log axes (slope 2)", 12.5, "T6 세션"));
 
 C.push(H2("3. 결정의 신뢰성 (RQ2)"));
 C.push(P("퇴적 복원 IoU = 평균 교집합 / 평균 합집합(복셀당 측정점 4개, 복셀 0.3mm). mushroom_03, 46개 각도 후보:", { noIndent: true }));
@@ -284,8 +306,8 @@ C.push(table([2400, 2400, 2400, 2438], [
   ["12°", "0.9267", "해시·IoU 일치", ""],
   ["이웃 각도 차", "평균 0.57%p", "—", "0~12° 순위는 해상도로 못 가림"],
 ], { center: true, size: 17 }));
-C.push(...FIG("iou_angle", "Deposition-reconstruction IoU over 46 cone-angle candidates (mushroom_03) with three re-runs", 15));
-C.push(...FIG("t5_pred_vs_meas", "Analytic prediction vs. toolpath measurement with per-model Spearman ρ", 15, "T5 세션"));
+C.push(...FIG("iou_angle", "Deposition-reconstruction IoU over 46 cone-angle candidates (mushroom_03) with three re-runs", 12.5));
+C.push(...FIG("t5_pred_vs_meas", "Analytic prediction vs. toolpath measurement with per-model Spearman ρ", 12.5, "T5 세션"));
 
 C.push(H2("4. 실물 출력"));
 C.push(TAB("Pre-registered predictions for the test ladder"));
@@ -303,19 +325,19 @@ C.push(table([W], [["【사진 대기: L1~L5 출력물 — 같은 조명·배경
 C.push(FIGCAP(`[Fig. ${++figNo}] Printed test ladder L1–L5`));
 
 C.push(H2("5. 계산 비용"));
-C.push(P("균일각 결정: 정확 탐색 1~4ms(33개 모델 합 0.09s), 2° 격자 3~78ms. 밴드 계획 3~45ms(데모). 【보류: 메시 크기별 — T7, S4 비교】", { noIndent: true }));
-C.push(...FIG("t7_scaling", "Run time vs. number of faces (log–log) for uniform and band selection", 11, "T7 세션"));
-C.push(...FIG("s4_runtime", "Run time: cone-angle selection vs. curved slicing (S4) stages", 11, "S4 세션"));
+C.push(P("균일각 결정: 정확 탐색 1~4ms(33개 모델 합 0.09s), 2° 격자 3~78ms. 같은 사면체 메시(1.2~4.0만 개)에서 원뿔 각도 결정(균일+밴드+천장) 0.12~0.27s 대 S4 68~334s(변형 단계가 절반 이상) — 약 450~1,200배. 【보류: 메시 크기별 — T7】", { noIndent: true }));
+C.push(PAIR(["t7_scaling", "Run time vs. number of faces (log–log)"], ["s4_runtime", "Run time: cone-angle selection vs. S4 stages"]));
 
 // Ⅴ. 고찰
 C.push(H1("Ⅴ. 고찰"));
 C.push(BUL("• **이득의 원천**: (a) 대비 우세 5/17 은 전부 아래 구간 각도 차이, (b) 대비 0/17 → 자동 결정의 이득 = 형상에 맞는 아래 구간 각도 선택. 구간 분할의 고유 효과 = 평균 |θ| 중앙 8.4° 감소(실물 가치는 L3 로 판정). 【보류: 베드 램프 결과 포함 여부】"));
-C.push(BUL("• **적용 범위**: 방사 대칭(구·funnel·torus)은 밴드 = 원뿔족 천장, 수평 아래면(mushroom)은 28.3% 불변 → 식 (9) 의 f″ 가 큰 형상은 곡면 슬라이싱의 영역"));
+C.push(BUL("• **자유도를 줄인 대가**: 같은 판정식에서 S4 대비 구 −0.1%p, torus −2.5%p(원뿔족이 나음), 계산 450~1,200배 빠름. S4 층도 사실상 축대칭(접선 성분 평균 ≤ 0.051)이어서 이 표본에서는 곡면도 경선 곡선 하나를 고르는 문제였다. 단 S4 결과는 사전 기준을 모두 통과한 조건이 없고(구가 1만 3천 개 중 사면체 1개로 가장 근접) 표본 2개라 경향으로만 쓴다"));
+C.push(BUL("• **적용 범위**: 수평 아래면(mushroom)은 θ ≥ 45° 가 필요해 허용 범위 밖 — 원뿔족이 풀 수 없고 S4 도 유효한 해를 내지 못했다"));
 C.push(BUL("• **한계**: 축대칭 표본 17개, 45° 문턱 기하 판정(중력·냉각 없음), 핫엔드 치수·베드 안전각 22.8° 는 공개 자료 기반 추정, 실물 결과 【보류】"));
 
 // Ⅵ. 결론 (산문)
 C.push(H1("Ⅵ. 결론"));
-C.push(P("본 연구는 원뿔 슬라이싱의 원뿔각을 STL 에서 자동으로 결정하는 알고리즘을 만들었다. RQ1: 원본 면 법선만으로 서포트를 판정하는 해석식을 유도하고, 원뿔각과 방향, 구간별 각도를 자동으로 결정하였다. 【보류: 대표 결과 한 문장】 RQ2: 판정식은 독립 구현과 일치했고, 선택한 각도의 G-code 는 퇴적 복원에서 재현되었다. RQ3: 구간 수를 늘린 최선해는 단조 감소하며 구간 분할의 고유 효과는 기울기 감소이므로, 구간 수는 J 가 아니라 최선해 곡선으로 정해야 한다. 향후 제작한 5축 프린터로 사전 등록한 시험 출력을 수행하고, 곡면 슬라이싱과의 정량 비교와 비축대칭 형상으로 연구를 넓힐 것이다."));
+C.push(P("본 연구는 원뿔 슬라이싱의 원뿔각을 STL 에서 자동으로 결정하는 알고리즘을 만들었다. RQ1: 원본 면 법선만으로 서포트를 판정하는 해석식을 유도하고, 원뿔각과 방향, 구간별 각도를 자동으로 결정하였다. 【보류: 대표 결과 한 문장】 RQ2: 판정식은 독립 구현과 일치했고, 선택한 각도의 G-code 는 퇴적 복원에서 재현되었다. RQ3: 구간 수를 늘린 최선해는 단조 감소하며 구간 분할의 고유 효과는 기울기 감소이므로, 구간 수는 J 가 아니라 최선해 곡선으로 정해야 한다. 또한 곡면 슬라이서와 같은 판정식으로 비교했을 때 축대칭 모델에서 원뿔족은 서포트에서 뒤지지 않으면서 계산이 수백 배 가벼워, 자유도를 줄인 선택의 근거가 되었다. 향후 제작한 5축 프린터로 사전 등록한 시험 출력을 수행하고, 곡면 슬라이싱과의 정량 비교와 비축대칭 형상으로 연구를 넓힐 것이다."));
 C.push(H2("연구 신뢰성 정리"));
 C.push(TAB("Summary of reliability evidence"));
 C.push(table([2500, 4500, 2638], [
