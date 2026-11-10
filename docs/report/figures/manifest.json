@@ -236,6 +236,49 @@
   }
  },
  {
+  "slug": "k_estimate",
+  "png": "docs/report/figures/k_estimate.png",
+  "script": "tools/report_figs/k_estimate.py",
+  "data_sources": [
+   "k_estimate_results.json",
+   "docs/test_k_estimate.md"
+  ],
+  "description": "k 추정: 셀별 후회 곡선과 k̂(1-SE) 95% 구간, 부트스트랩 분포(전체/층고별), 가족 제외 교차검증 후회, 각도 비용 λ 에 따른 추정 k",
+  "key_numbers": {
+   "k_1se": 0.06,
+   "ci95_model": [
+    0.055,
+    0.08
+   ],
+   "k_1se_0.3": 0.115,
+   "ci95_0.3": [
+    0.085,
+    0.16
+   ],
+   "k_1se_0.4": 0.06,
+   "ci95_0.4": [
+    0.055,
+    0.08
+   ],
+   "lofo_k": [
+    0.06,
+    0.07,
+    0.075,
+    0.075,
+    0.06
+   ],
+   "reliable": false,
+   "k_by_lambda": {
+    "0": 0.055,
+    "1": 0.07,
+    "2": 0.14,
+    "5": 0.365,
+    "10": 0.5,
+    "20": 0.5
+   }
+  }
+ },
+ {
   "slug": "k_pareto",
   "png": "docs/report/figures/k_pareto.png",
   "script": "tools/report_figs/k_pareto.py",
