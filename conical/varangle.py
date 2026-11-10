@@ -54,6 +54,7 @@ from .config import (
     MAX_SPACING_FACTOR,
     THRESHOLD_DEG,
 )
+from .exact_angle import select_uniform_exact
 from .profile import AngleProfile
 
 
@@ -86,8 +87,20 @@ def assign_height_bands(mesh, n_bands):
 # ─────────────────────────────────────────────────────────────
 def best_angle_for_mask(mesh, mask, orig_areas, k,
                         max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
-                        threshold_deg=THRESHOLD_DEG):
-    """mask 면들만 놓고 J=(서포트 감소 %) − k×각도 가 최대인 (각도, 방향)."""
+                        threshold_deg=THRESHOLD_DEG, method="grid"):
+    """mask 면들만 놓고 J=(서포트 감소 %) − k×각도 가 최대인 (각도, 방향).
+
+    method="exact" 면 격자 대신 판정이 바뀌는 근들만 후보로 쓴다
+    (`exact_angle.select_uniform_exact`, docs/exact_angle.md). 기본은 격자.
+    ⚠ exact 는 `mesh.area_faces` 로 정규화한다 — `orig_areas` 가 그것과 다르면 쓰지 말 것.
+    """
+    if method == "exact":
+        if not np.array_equal(orig_areas, mesh.area_faces):
+            raise ValueError("method='exact' 는 orig_areas == mesh.area_faces 일 때만")
+        best, _ = select_uniform_exact(mesh, k, max_angle, threshold_deg, mask=mask)
+        return best["angle"], best["direction"]
+    if method != "grid":
+        raise ValueError(f"method 는 'grid' 또는 'exact': {method!r}")
     band_area = orig_areas[mask].sum()
     need0, _ = face_support_and_staircase(mesh, 0, "outward", threshold_deg)
     base_pct = orig_areas[mask & need0].sum() / band_area * 100.0
@@ -134,11 +147,11 @@ def evaluate_assignment(mesh, assignment, threshold_deg=THRESHOLD_DEG):
 # 전략들: 균일 / 구간별 / 세밀(면마다)
 # ─────────────────────────────────────────────────────────────
 def select_uniform(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
-                   threshold_deg=THRESHOLD_DEG):
-    """전역 단일 각도 (RotBot식 균일 원뿔 = 비교 대상)."""
+                   threshold_deg=THRESHOLD_DEG, method="grid"):
+    """전역 단일 각도 (RotBot식 균일 원뿔 = 비교 대상). method: best_angle_for_mask 참고."""
     allmask = np.ones(len(mesh.faces), dtype=bool)
     a, c = best_angle_for_mask(mesh, allmask, mesh.area_faces, k,
-                               max_angle, step, threshold_deg)
+                               max_angle, step, threshold_deg, method)
     m = evaluate_assignment(mesh, [(allmask, a, c)], threshold_deg)
     return {"strategy": "uniform", "n_regions": 1, "profile": [(a, c)], **m}
 

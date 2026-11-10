@@ -26,6 +26,7 @@ k를 어떻게 정하나:
 # 레이어 각)을 쓴다. 시그니처 동일. 근거: docs/warped_threshold_finding.md
 from .analytic import support_fraction
 from .config import ANGLE_STEP, MAX_ANGLE_DEG, THRESHOLD_DEG
+from .exact_angle import select_uniform_exact
 from .varangle import angle_candidates
 
 
@@ -48,21 +49,33 @@ def evaluate_J(support_at_angle, support_baseline, angle_deg, k):
     return gain - cost
 
 
-def select_cone(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP, verbose=True):
-    """모든 (각도, 방향) 후보에 대해 J를 계산하고 최적을 고른다."""
-    baseline = support_fraction(mesh, 0, "outward", THRESHOLD_DEG)  # 각도 0 = 일반 슬라이싱
+def select_cone(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP, verbose=True,
+                method="grid"):
+    """모든 (각도, 방향) 후보에 대해 J를 계산하고 최적을 고른다.
 
-    candidates = []
-    for direction in ["outward", "inward"]:
-        for angle in angle_candidates(max_angle, step):
-            sup = support_fraction(mesh, angle, direction, THRESHOLD_DEG)
-            J = evaluate_J(sup, baseline, angle, k)
-            candidates.append({
-                "angle": angle, "direction": direction,
-                "support": sup, "gain": baseline - sup, "cost": k * angle, "J": J,
-            })
-
-    best = max(candidates, key=lambda c: c["J"])
+    method="grid"  (기본): 0, step, 2·step … max_angle 격자.
+    method="exact"       : 격자 대신 각 면의 판정이 바뀌는 근들만 후보로 쓴다
+                           (`exact_angle.select_uniform_exact`, docs/exact_angle.md).
+                           같은 J 의 참 최댓값을 준다 — 각도가 정수가 아닐 수 있다.
+    """
+    if method == "exact":
+        best, info = select_uniform_exact(mesh, k, max_angle, THRESHOLD_DEG)
+        baseline = info["baseline"]
+        candidates = [best]
+    elif method == "grid":
+        baseline = support_fraction(mesh, 0, "outward", THRESHOLD_DEG)  # 각도 0 = 일반 슬라이싱
+        candidates = []
+        for direction in ["outward", "inward"]:
+            for angle in angle_candidates(max_angle, step):
+                sup = support_fraction(mesh, angle, direction, THRESHOLD_DEG)
+                J = evaluate_J(sup, baseline, angle, k)
+                candidates.append({
+                    "angle": angle, "direction": direction,
+                    "support": sup, "gain": baseline - sup, "cost": k * angle, "J": J,
+                })
+        best = max(candidates, key=lambda c: c["J"])
+    else:
+        raise ValueError(f"method 는 'grid' 또는 'exact': {method!r}")
 
     if verbose:
         print("=" * 62)
