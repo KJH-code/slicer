@@ -30,12 +30,13 @@
 오버행 − θ)과 면별 임계각 θ* = α − 45° 유도 ② 가변각의 층간격 Δz = h −
 r·Δtanθ 로 층 교차 방지 조건·블렌드 최소 폭 유도 ③ 축대칭 17개 모델에서
 두 균일 원뿔 기준선과 비교 <strong><mark>【보류: 대표
-결과】</mark></strong> ④ 구간 수 최선해는 단조 감소, 구간 분할의 고유
-효과는 같은 서포트에서 평균 기울기 중앙 8.4° 감소 ⑤ 판정식 독립 구현
-대조 최대 차 1.42×10⁻¹⁴°, 퇴적 복원 IoU 3회 재실행 해시 일치 ⑥ 같은
-판정식에서 곡면 슬라이서(S4)와 비교해 축대칭 모델의 서포트가 같거나
-낮았고(구 0.0 대 0.1%, torus 10.6 대 12.5~16.3%) 계산은 약 450~1,200배
-빨랐다</th>
+결과】</mark></strong> ④ 구간 수 최선해의 해석식 서포트는 단조 감소(위반
+0/21)하나 N ≥ 3 에서 G-code 미지지가 커져(중앙 0 → 69mm) 밴드 수는
+툴패스 검사로 상한을 둔다. 구간 분할의 고유 효과는 평균 기울기 감소(중앙
+8.4°) ⑤ 판정식 독립 구현 대조 최대 차 1.42×10⁻¹⁴°, 퇴적 복원 IoU 3회
+재실행 해시 일치 ⑥ 같은 판정식에서 곡면 슬라이서(S4)와 비교해 축대칭
+모델의 서포트가 같거나 낮았고(구 0.0 대 0.1%, torus 10.6 대 12.5~16.3%)
+계산은 약 450~1,200배 빨랐다</th>
 </tr>
 <tr class="odd">
 <th><p><strong>향후</strong></p>
@@ -130,10 +131,10 @@ Algorithm and Its Verification</p>
 바탕으로 원뿔각과 높이 구간별 각도를 자동 결정하는 알고리즘을 제안한다.
 각도를 높이에 따라 바꿀 때 층이 교차하거나 벌어지지 않는 조건을 유도해
 알고리즘에 넣었다. 축대칭 17개 모델에서 **<span class="mark">【보류:
-대표 결과】</span>**. 구간 수를 늘린 최선해는 단조 감소하였고, 구간
-분할의 고유 효과는 같은 서포트에서 평균 기울기를 줄이는 것이었다.
-판정식은 독립 구현과 10⁻¹⁴° 수준에서 일치했고, 퇴적 복원 IoU 는 반복
-실행에서 재현되었다.
+대표 결과】</span>**. 구간 수를 늘린 최선해의 해석식 서포트는 단조
+감소했지만 세 구간 이상에서는 실제 G-code 의 미지지가 커졌고, 구간
+분할의 고유 효과는 평균 기울기를 줄이는 것이었다. 판정식은 독립 구현과
+10⁻¹⁴° 수준에서 일치했고, 퇴적 복원 IoU 는 반복 실행에서 재현되었다.
 
 주제어: 원뿔 슬라이싱, 원뿔각 자동 결정, 가변 원뿔각, 서포트 저감, 다축
 3D 프린팅
@@ -355,16 +356,10 @@ from generated G-code and cosθ**
 > ⑥ 5축: B = θ(Z′), C = 방위각, 회전 속도 상한, 베드 안전각 22.8° → ⑦
 > 사전 검사 통과 시 출력
 
-<img src="media/3a0a466e805993689bc36d6d55f7211fa98ccbe3.png"
-style="width:4.91667in;height:2.76042in" />
-
-**\[Fig. 8\] Support area S(θ) and objective J(θ) for demo models;
-markers are the selected angles**
-
 <img src="media/9a2aa3f47ec14acea2c0c42a9629368fd96f7373.png"
 style="width:4.91667in;height:2.61458in" />
 
-**\[Fig. 9\] Generated 5-axis toolpath colored by head tilt B, and B per
+**\[Fig. 8\] Generated 5-axis toolpath colored by head tilt B, and B per
 layer**
 
 **2. 검증 계층과 실험 조건**
@@ -419,7 +414,7 @@ wins · ties, unsupported length)**
 <img src="media/76e762f02ccc153a207a0e5d3e6a1ce4ce4c6c44.png"
 style="width:4.91667in;height:4in" />
 
-**\[Fig. 10\] Unsupported length of 17 models: uniform (J), band2 and
+**\[Fig. 9\] Unsupported length of 17 models: uniform (J), band2 and
 uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers**
 
 <table>
@@ -431,10 +426,10 @@ uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers**
 <tr class="odd">
 <td><p><img src="media/be89a372d5c139717c2617e0c8c864dc111a1249.png"
 style="width:3.14583in;height:2.26042in" /></p>
-<p><strong>[Fig. 11] Mean |θ| of uniform and band2 per
+<p><strong>[Fig. 10] Mean |θ| of uniform and band2 per
 model</strong></p></td>
 <td><p><strong><mark>【그림 대기: t1_regret.png】</mark></strong></p>
-<p><strong>[Fig. 12] Regret of fixed conventional angles and automatic
+<p><strong>[Fig. 11] Regret of fixed conventional angles and automatic
 selection</strong></p></td>
 </tr>
 </tbody>
@@ -450,28 +445,35 @@ N 구간 프로필은 한 구간을 같은 각도로 둘로 나누어 N+1 구간
 > • 각도 비용 k = 0 이면 밴드의 해석식 서포트 이득 = 0 (17/17) → 구간
 > 분할의 값은 기울기 감소
 >
-> • N 을 J 로 고르면 오버행이 달성 가능한 최소보다 나쁨 (7/7) → N 은
-> 최선해 곡선으로 정한다
+> • N 을 J 로 고르면 오버행이 달성 가능한 최소보다 나쁨 (7/7)
+>
+> • 전수 최선해(21 모델, N = 1~4, N=3 에서 모델당 약 11만 후보): 식 (8)
+> 위반 0/21. 평균 \|θ\| 중앙 44.0 → 16.8 → 10.8 → 9.7°
+>
+> • 같은 최선해의 G-code 미지지 중앙(층고 0.4): N = 1, 2, 3 에서 0.0 →
+> 1.3 → 68.9mm. N ≥ 3 의 블렌드가 바닥 오버행 위에 놓여 층간격 팽창(m ≤
+> 1.5)이 미지지를 만든다 — 식 (2) 에는 m 이 없다
 
-**<span class="mark">【보류: 최선해 곡선·포화 N\* — T3】</span>**
+**Table 5. Saturation band count N\* of the analytic optimum (21 models,
+layer 0.3 mm)**
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><p><strong><mark>【그림 대기:
-t3_band_curve.png】</mark></strong></p>
-<p>T3 세션</p></th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+| **목적**                     | **N\* = 1** | **N\* = 2** | **N\* = 3** | **N\* ≥ 4** |
+|------------------------------|-------------|-------------|-------------|-------------|
+| ① 서포트 최소                | 1           | 1           | 2           | 17          |
+| ② 같은 서포트에서 \|θ\| 최소 | 1           | 9           | 7           | 4           |
 
-**\[Fig. 13\] Best-achievable unsupported length and mean \|θ\| vs.
-number of bands N**
+N\* = N → N+1 에서 미지지 감소 \< 0.5mm 이고 평균 \|θ\| 감소 \< 1° 인 첫
+N. N\* = 1 은 mushroom.
+
+→ 해석식 최선해는 기울기를 계속 줄이므로 포화하지 않지만(17/21 이 N\* ≥
+4) 그 이득은 G-code 미지지로 되돌아온다. 밴드 수는 해석식이 아니라
+툴패스 검사로 상한을 둔다(이 표본에서 N ≤ 2).
+
+<img src="media/c45df8aadf8312f6ab69dbe31d5edc758edcd346.png"
+style="width:4.91667in;height:2.15625in" />
+
+**\[Fig. 12\] (a) Toolpath unsupported length and (b) area-weighted mean
+\|θ\| of the analytic optimum vs. number of bands N; stars mark N\***
 
 **가정.** 축대칭 곡면 층 z = Z′ − f(r) 의 1차 근사가 원뿔이며 오차는
 
@@ -490,7 +492,7 @@ mushroom(65~88° 요구)은 S4 변형에서 사면체가 뒤집혀(60여 개, 17
 무효였다. mushroom 의 수평 아래면은 g = −cosθ 라 θ ≥ 45° 가 필요하여
 원뿔 허용 범위(≤ 44°, 베드 안전각 22.8°) 밖이다.
 
-**Table 5. Support area (%) along the degree-of-freedom ladder (same
+**Table 6. Support area (%) along the degree-of-freedom ladder (same
 criterion, eq. 2)**
 
 | **모델** | **평면** | **균일** | **밴드** | **원뿔족 천장** | **곡면(S4)**      |
@@ -507,20 +509,20 @@ S4 범위 = 해상도 2 × 파라미터 2 실행. † 변형 4,000회로 수렴�
 <img src="media/2f303ea6cf5b2e8843351c642cef2a40d47b1358.png"
 style="width:4.91667in;height:2.14583in" />
 
-**\[Fig. 14\] Support area from planar to the cone-family ceiling and
+**\[Fig. 13\] Support area from planar to the cone-family ceiling and
 curved slicing (S4); (a) all faces, (b) excluding bed-contact faces; ×
 marks invalid S4 runs**
 
 <img src="media/6361cfcee3b0894652abff5e48a46c523cce5ea3.png"
-style="width:4.91667in;height:3.32292in" />
+style="width:4.13542in;height:2.79167in" />
 
-**\[Fig. 15\] Curved (S4) layers vs. cone-family layers on the r–z
+**\[Fig. 14\] Curved (S4) layers vs. cone-family layers on the r–z
 section**
 
 <img src="media/96123937e50082e1fb99606c901454ad63c822ec.png"
 style="width:4.91667in;height:2.14583in" />
 
-**\[Fig. 16\] (a) Curved layer and its tangent cone; (b) height error
+**\[Fig. 15\] (a) Curved layer and its tangent cone; (b) height error
 vs. r on log–log axes (slope 2)**
 
 **3. 결정의 신뢰성 (RQ2)**
@@ -528,7 +530,7 @@ vs. r on log–log axes (slope 2)**
 퇴적 복원 IoU = 평균 교집합 / 평균 합집합(복셀당 측정점 4개, 복셀
 0.3mm). mushroom_03, 46개 각도 후보:
 
-**Table 6. Deposition-reconstruction IoU (mushroom_03)**
+**Table 7. Deposition-reconstruction IoU (mushroom_03)**
 
 | **각도**     | **IoU**     | **3회 재실행** | **비고**                      |
 |--------------|-------------|----------------|-------------------------------|
@@ -540,30 +542,24 @@ vs. r on log–log axes (slope 2)**
 <img src="media/fff59045ff311ee4758d92ffc2aefd9f14003b8b.png"
 style="width:4.91667in;height:2.09375in" />
 
-**\[Fig. 17\] Deposition-reconstruction IoU over 46 cone-angle
+**\[Fig. 16\] Deposition-reconstruction IoU over 46 cone-angle
 candidates (mushroom_03) with three re-runs**
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><p><strong><mark>【그림 대기:
-t5_pred_vs_meas.png】</mark></strong></p>
-<p>T5 세션</p></th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+메시 예측 대 G-code 측정: 균일 0~44°(12각)의 해석식 서포트 순위와 툴패스
+미지지 순위의 모델별 스피어만 ρ 중앙값 0.956(층고 0.3), 0.998(0.4),
+20모델. 0.8 미만은 안·바깥 두 방향 오버행을 가진 torus 하나(−0.73 /
+0.01), mushroom 은 해석식이 모든 각에서 28.27% 로 상수라 ρ 가 정의되지
+않는다.
 
-**\[Fig. 18\] Analytic prediction vs. toolpath measurement with
+<img src="media/f8d24f2e83c3c3b0de986ce07936489b504fa10c.png"
+style="width:4.91667in;height:2.16667in" />
+
+**\[Fig. 17\] Analytic prediction vs. toolpath measurement with
 per-model Spearman ρ**
 
 **4. 실물 출력**
 
-**Table 7. Pre-registered predictions for the test ladder**
+**Table 8. Pre-registered predictions for the test ladder**
 
 | **단계** | **출력물**                     | **예측**                   | **실측**                               |
 |----------|--------------------------------|----------------------------|----------------------------------------|
@@ -576,12 +572,12 @@ per-model Spearman ρ**
 | **<span class="mark">【사진 대기: 개조한 REP5X 프린터 전경 · 헤드(B/C축) 근접】</span>** |
 |------------------------------------------------------------------------------------------|
 
-**\[Fig. 19\] The modified 5-axis printer (REP5X on Ender-3 V3 SE)**
+**\[Fig. 18\] The modified 5-axis printer (REP5X on Ender-3 V3 SE)**
 
 | **<span class="mark">【사진 대기: L1~L5 출력물 — 같은 조명·배경·스케일, 4방향 + 위】</span>** |
 |-----------------------------------------------------------------------------------------------|
 
-**\[Fig. 20\] Printed test ladder L1–L5**
+**\[Fig. 19\] Printed test ladder L1–L5**
 
 **5. 계산 비용**
 
@@ -598,11 +594,11 @@ per-model Spearman ρ**
 <tbody>
 <tr class="odd">
 <td><p><strong><mark>【그림 대기: t7_scaling.png】</mark></strong></p>
-<p><strong>[Fig. 21] Run time vs. number of faces
+<p><strong>[Fig. 20] Run time vs. number of faces
 (log–log)</strong></p></td>
 <td><p><img src="media/61b7ce565629644311225a4ced387e9caf590540.png"
 style="width:3.14583in;height:1.375in" /></p>
-<p><strong>[Fig. 22] Run time: cone-angle selection vs. S4
+<p><strong>[Fig. 21] Run time: cone-angle selection vs. S4
 stages</strong></p></td>
 </tr>
 </tbody>
@@ -614,6 +610,11 @@ stages</strong></p></td>
 > 대비 0/17 → 자동 결정의 이득 = 형상에 맞는 아래 구간 각도 선택. 구간
 > 분할의 고유 효과 = 평균 \|θ\| 중앙 8.4° 감소(실물 가치는 L3 로 판정).
 > **<span class="mark">【보류: 베드 램프 결과 포함 여부】</span>**
+>
+> • **기울기 감소의 한계**: 8.4° 는 J 가 고른 밴드2 에서 잰 값이다.
+> 기울기를 최대로 줄인 최선해(평균 \|θ\| 중앙 4.6°)는 해석식 서포트가
+> 같아도 G-code 에서 16~20/21 모델이 균일에 졌다 — 해석식이 층간격을
+> 모르기 때문이다
 >
 > • **자유도를 줄인 대가**: 같은 판정식에서 S4 대비 구 −0.1%p, torus
 > −1.9~−5.7%p(원뿔족이 나음), 계산 450~1,200배 빠름. S4 층도 사실상
@@ -636,29 +637,31 @@ stages</strong></p></td>
 원뿔각과 방향, 구간별 각도를 자동으로 결정하였다.
 **<span class="mark">【보류: 대표 결과 한 문장】</span>** RQ2: 판정식은
 독립 구현과 일치했고, 선택한 각도의 G-code 는 퇴적 복원에서 재현되었다.
-RQ3: 구간 수를 늘린 최선해는 단조 감소하며 구간 분할의 고유 효과는
-기울기 감소이므로, 구간 수는 J 가 아니라 최선해 곡선으로 정해야 한다.
-또한 곡면 슬라이서와 같은 판정식으로 비교했을 때 축대칭 모델에서
-원뿔족은 서포트에서 뒤지지 않으면서 계산이 수백 배 가벼워, 자유도를 줄인
-선택의 근거가 되었다. 향후 제작한 5축 프린터로 사전 등록한 시험 출력을
-수행하고, 곡면 슬라이싱과의 정량 비교와 비축대칭 형상으로 연구를 넓힐
-것이다.
+RQ3: 구간 수를 늘린 최선해의 해석식 서포트는 단조 감소하지만, 세 구간
+이상에서는 블렌드의 층간격 팽창이 실제 G-code 의 미지지를 키웠다. 따라서
+구간 수는 J 나 해석식이 아니라 툴패스 검사로 상한을 두어야 하며, 이
+표본에서는 두 구간이 한계였다. 또한 곡면 슬라이서와 같은 판정식으로
+비교했을 때 축대칭 모델에서 원뿔족은 서포트에서 뒤지지 않으면서 계산이
+수백 배 가벼워, 자유도를 줄인 선택의 근거가 되었다. 향후 제작한 5축
+프린터로 사전 등록한 시험 출력을 수행하고, 곡면 슬라이싱과의 정량 비교와
+비축대칭 형상으로 연구를 넓힐 것이다.
 
 **연구 신뢰성 정리**
 
-**Table 8. Summary of reliability evidence**
+**Table 9. Summary of reliability evidence**
 
-| **무엇을 믿게 하나** | **근거**                                                                                          | **범위·단서**               |
-|----------------------|---------------------------------------------------------------------------------------------------|-----------------------------|
-| 판정식 구현          | 재유도 3회(최대 차 7.6×10⁻¹⁴°), 팀원 독립 구현 약 22,000면(1.42×10⁻¹⁴°), 전수 탐색 423면 불일치 0 | 45° 문턱 가정은 공유        |
-| 정답을 아는 입력     | 수직 원기둥·직육면체 0%p, 60° 원뿔 판정 일치                                                      |                             |
-| 유도한 식            | 증명 9개 식, 저장소 코드 없이 독립 수치 검산(야코비안 상대오차 1.1×10⁻⁷ 등)                       | 식의 일치, 물리 검증 아님   |
-| 기존 방식과의 일치   | 상수 프로필 = RotBot 고정각(회귀 테스트, 왕복 오차 10⁻¹⁴ 수준)                                    |                             |
-| 코드 전체            | 단위·회귀 테스트 230개 통과, 정적 검사 0건                                                        |                             |
-| 기계 안전            | 자체 사전 검사 + 팀원 가상 프린터(독립 역기구학), 시험 출력 파일 치명 결함 0                      | 핫엔드 치수·축 부호 실측 전 |
-| 재현성               | 같은 입력 → 바이트 단위로 같은 G-code, 퇴적 복원 3회 해시 일치                                    |                             |
-| 해석의 공정성        | 판정 기준 사전 등록                                                                               |                             |
-| 독립성의 한계        | 검증 계층 일부가 같은 AI 도구로 작성됨                                                            | 완전 독립 아님              |
+| **무엇을 믿게 하나**       | **근거**                                                                                          | **범위·단서**                                    |
+|----------------------------|---------------------------------------------------------------------------------------------------|--------------------------------------------------|
+| 판정식 구현                | 재유도 3회(최대 차 7.6×10⁻¹⁴°), 팀원 독립 구현 약 22,000면(1.42×10⁻¹⁴°), 전수 탐색 423면 불일치 0 | 45° 문턱 가정은 공유                             |
+| 정답을 아는 입력           | 수직 원기둥·직육면체 0%p, 60° 원뿔 판정 일치                                                      |                                                  |
+| 예측 단계가 G-code 를 대표 | 해석식 대 툴패스 순위상관 ρ 중앙 0.956(층고 0.3)·0.998(0.4), 20모델                               | 두 방향 오버행(torus)·수평 아래면(mushroom) 제외 |
+| 유도한 식                  | 증명 9개 식, 저장소 코드 없이 독립 수치 검산(야코비안 상대오차 1.1×10⁻⁷ 등)                       | 식의 일치, 물리 검증 아님                        |
+| 기존 방식과의 일치         | 상수 프로필 = RotBot 고정각(회귀 테스트, 왕복 오차 10⁻¹⁴ 수준)                                    |                                                  |
+| 코드 전체                  | 단위·회귀 테스트 230개 통과, 정적 검사 0건                                                        |                                                  |
+| 기계 안전                  | 자체 사전 검사 + 팀원 가상 프린터(독립 역기구학), 시험 출력 파일 치명 결함 0                      | 핫엔드 치수·축 부호 실측 전                      |
+| 재현성                     | 같은 입력 → 바이트 단위로 같은 G-code, 퇴적 복원 3회 해시 일치                                    |                                                  |
+| 해석의 공정성              | 판정 기준 사전 등록                                                                               |                                                  |
+| 독립성의 한계              | 검증 계층 일부가 같은 AI 도구로 작성됨                                                            | 완전 독립 아님                                   |
 
 **■ 참고문헌**
 
