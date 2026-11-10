@@ -1,0 +1,30 @@
+[
+ {
+  "slug": "t4_robustness",
+  "png": "docs/report/figures/t4_robustness.png",
+  "script": "tools/report_figs/t4_robustness.py",
+  "data_sources": [
+   "t4_robustness_results.json",
+   "docs/test_t1_t4.md"
+  ],
+  "description": "T4: 교란 축별 자동 결정 각도 변화(점=모델, 회색 띠=±2° 격자 한 칸, 위 숫자=띠 안 비율)",
+  "key_numbers": {
+   "uniform:subdiv4:frac_le2deg": 1.0,
+   "uniform:simplify0.5:frac_le2deg": 0.905,
+   "uniform:shift0.1:frac_le2deg": 1.0,
+   "uniform:shift0.5:frac_le2deg": 0.952,
+   "uniform:tilt1:frac_le2deg": 0.81,
+   "uniform:tilt3:frac_le2deg": 0.667,
+   "uniform:thr40:frac_le2deg": 0.19,
+   "uniform:thr50:frac_le2deg": 0.381,
+   "band2:subdiv4:frac_le2deg": 0.81,
+   "band2:simplify0.5:frac_le2deg": 0.667,
+   "band2:shift0.1:frac_le2deg": 0.619,
+   "band2:shift0.5:frac_le2deg": 0.714,
+   "band2:tilt1:frac_le2deg": 0.476,
+   "band2:tilt3:frac_le2deg": 0.524,
+   "band2:thr40:frac_le2deg": 0.476,
+   "band2:thr50:frac_le2deg": 0.381
+  }
+ }
+]
