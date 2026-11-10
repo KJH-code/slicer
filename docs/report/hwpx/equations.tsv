@@ -1,0 +1,157 @@
+=\alpha-\theta	= alpha - theta
+\theta^*=\alpha-45^\circ	theta ^{ast} = alpha - 45 ^{circ}
+\Delta z=h-r\,\Delta(\tan\theta)	DELTA z = h - r ` DELTA ( tan theta )
+N\ge3	N geq 3
+1.42\times10^{-14}{}^\circ	1.42 times 10 ^{- 14} {} ^{circ}
+1/\cos\theta	1 / cos theta
+10^{-14}{}^\circ	10 ^{- 14} {} ^{circ}
+\theta	theta
+\theta	theta
+\theta	theta
+N	N
+R=\frac{r}{\cos\theta},\quad \varphi'=\varphi,\quad Z'=z+c\,r\tan\theta\quad(c=+1\ \mathrm{outward},\ -1\ \mathrm{inward})	R = {r} over {cos theta} , ~~ varphi ' = varphi , ~~ Z ' = z + c ` r tan theta ~~ ( c = + 1 ~ "outward" , ~ - 1 ~ "inward" )
+Z'=	Z ' =
+z=Z'-c\,r\tan\theta	z = Z ' - c ` r tan theta
+r	r
+z	z
+b=(c\sin\theta,\ \cos\theta)	b = ( c sin theta , ~ cos theta )
+n	n
+g(\theta)=n_z\cos\theta+c\,n_r\sin\theta,\qquad \mathrm{support}\ \Leftrightarrow\ g(\theta)<\kappa=-\sin45^\circ	g ( theta ) = n _{z} cos theta + c ` n _{r} sin theta , ~~ ~~ "support" ~ LRARROW ~ g ( theta ) < kappa = - sin 45 ^{circ}
+\alpha	alpha
+n=(\cos\alpha,\ -\sin\alpha)	n = ( cos alpha , ~ - sin alpha )
+g(\theta)=-\sin(\alpha-c\,\theta)\ \Rightarrow\ \mathrm{effective\ overhang}=\alpha-\theta,\quad \theta^*=\alpha-45^\circ	g ( theta ) = - sin ( alpha - c ` theta ) ~ Rightarrow ~ "effective" ~ "overhang" = alpha - theta , ~~ theta ^{ast} = alpha - 45 ^{circ}
+\alpha=70.3^\circ	alpha = 70.3 ^{circ}
+\theta=26^\circ	theta = 26 ^{circ}
+\theta=50.7^\circ	theta = 50.7 ^{circ}
+g(\theta)	g ( theta )
+-\sin45^\circ	- sin 45 ^{circ}
+\theta^*	theta ^{ast}
+1.42\times10^{-14}{}^\circ	1.42 times 10 ^{- 14} {} ^{circ}
+\alpha-\theta	alpha - theta
+1.2\times10^{-7}{}^\circ	1.2 times 10 ^{- 7} {} ^{circ}
+\alpha-\theta	alpha - theta
+\times10^{-7}{}^\circ	times 10 ^{- 7} {} ^{circ}
+g	g
+\theta	theta
+S(\theta)	S ( theta )
+g=\kappa	g = kappa
+J=S(0)-S(\theta)-k\theta	J = S ( 0 ) - S ( theta ) - k theta
+-k\theta	- k theta
+\hat{\theta}\in\{0^\circ\}\cup\left\{\theta^*=\arcsin\frac{\kappa}{R}-\mathrm{atan2}(n_z,\ c\,n_r)\right\},\quad R=\sqrt{n_z^2+n_r^2}	hat {theta} in LBRACE 0 ^{circ} RBRACE cup LEFT { theta ^{ast} = arcsin {kappa} over {R} - "atan2" ( n _{z} , ~ c ` n _{r} ) RIGHT } , ~~ R = sqrt {n _{z} ^{2} + n _{r} ^{2}}
+2.8\times10^{-13}\%	2.8 times 10 ^{- 13} %
+J	J
+S(\theta)	S ( theta )
+J(\theta)	J ( theta )
+r=2	r = 2
+k	k
+z_k(r)=Z'_k-c\,r\tan\theta_k	z _{k} ( r ) = Z ' _{k} - c ` r tan theta _{k}
+\Delta z(r)=h-c\,r\left(\tan\theta_{k+1}-\tan\theta_k\right),\qquad m=\frac{\Delta z}{h}	DELTA z ( r ) = h - c ` r LEFT ( tan theta _{k + 1} - tan theta _{k} RIGHT ) , ~~ ~~ m = {DELTA z} over {h}
+r\le r_{\max}	r leq r _{max}
+\Delta z>0	DELTA z > 0
+\tan\theta	tan theta
+Z'	Z '
+w	w
+\Delta T	DELTA T
+m=1-c\,r\,\Delta T/w	m = 1 - c ` r ` DELTA T / w
+\theta	theta
+\tan\theta	tan theta
+1/1.5\le m\le1.5\ \Rightarrow\ w\ge2\,r_b|\Delta T|	1 / 1.5 leq m leq 1.5 ~ Rightarrow ~ w geq 2 ` r _{b} | DELTA T |
+w\ge3\,r_b|\Delta T|	w geq 3 ` r _{b} | DELTA T |
+\Delta T=0	DELTA T = 0
+m\equiv1	m equiv 1
+m=1.47\sim1.50	m = 1.47 sim 1.50
+h	h
+s=-0.378/\mathrm{mm}	s = - 0.378 / "mm"
+m=1.5	m = 1.5
+m	m
+m(r,z)	m ( r , z )
+1/1.5	1 / 1.5
+1.5	1.5
+\frac{dV}{dV'}=\cos^2\theta\cdot m	{dV} over {dV '} = cos ^{2} theta cdot m
+\cos\theta	cos theta
+0.9272=\cos22^\circ	0.9272 = cos 22 ^{circ}
+\cos\theta	cos theta
+1.5\times10^{-5}	1.5 times 10 ^{- 5}
+\cos\theta	cos theta
+\hat{\theta}=\mathrm{argmax}_{\theta}\,J(\theta),\qquad J(\theta)=\Delta S(\theta)-k|\theta|\quad(k=0.2\ \%\mathrm{p}/{}^\circ)	hat {theta} = "argmax" _{theta} ` J ( theta ) , ~~ ~~ J ( theta ) = DELTA S ( theta ) - k | theta | ~~ ( k = 0.2 ~ % "p" / {} ^{circ} )
+g(\theta)	g ( theta )
+J	J
+N	N
+\theta	theta
+J	J
+\le0.05	leq 0.05
+B=\theta(Z')	B = theta ( Z ' )
+C=	C =
+B	B
+B	B
+r=1,2,3,4,5,7	r = 1 , 2 , 3 , 4 , 5 , 7
+\lambda=1.1\sim2	lambda = 1.1 sim 2
+|\theta|	| theta |
+J	J
+\theta^*=25.3^\circ	theta ^{ast} = 25.3 ^{circ}
+J	J
+|\theta|	| theta |
+J	J
+J	J
+|\theta|	| theta |
+P_N\subset P_{N+1}\ \Rightarrow\ S^*_{N+1}\le S^*_N,\qquad S^*_N\to S^*_{\infty}\ (N\to\infty)	P _{N} subset P _{N + 1} ~ Rightarrow ~ S ^{ast} _{N + 1} leq S ^{ast} _{N} , ~~ ~~ S ^{ast} _{N} -> S ^{ast} _{infty} ~ ( N -> infty )
+N	N
+N+1	N + 1
+S^*_N	S ^{ast} _{N}
+k=0	k = 0
+=0	= 0
+N	N
+J	J
+N=1\sim4	N = 1 sim 4
+N=3	N = 3
+|\theta|	| theta |
+N=1,2,3	N = 1 , 2 , 3
+N\ge3	N geq 3
+m\le1.5	m leq 1.5
+m	m
+N^*	N ^{ast}
+N^*=1	N ^{ast} = 1
+N^*=2	N ^{ast} = 2
+N^*=3	N ^{ast} = 3
+N^*\ge4	N ^{ast} geq 4
+|\theta|	| theta |
+N^*	N ^{ast}
+N\to N+1	N -> N + 1
+|\theta|	| theta |
+N	N
+N^*=1	N ^{ast} = 1
+N^*\ge4	N ^{ast} geq 4
+N\le2	N leq 2
+|\theta|	| theta |
+N	N
+N^*	N ^{ast}
+z=Z'-f(r)	z = Z ' - f ( r )
+\left|f(r)-f(r_0)-f'(r_0)(r-r_0)\right|\approx\frac{1}{2}\left|f''\right|(r-r_0)^2	LEFT | f ( r ) - f ( r _{0} ) - f ' ( r _{0} ) ( r - r _{0} ) RIGHT | approx {1} over {2} LEFT | f ' ' RIGHT | ( r - r _{0} ) ^{2}
+f''	f ' '
+N\to\infty	N -> infty
+b=0.01/\mathrm{mm}	b = 0.01 / "mm"
+0.05/\mathrm{mm}	0.05 / "mm"
+\kappa r	kappa r
+g=-\cos\theta	g = - cos theta
+\theta\ge45^\circ	theta geq 45 ^{circ}
+\le44^\circ	leq 44 ^{circ}
+r	r
+z	z
+r	r
+\rho	rho
+\rho	rho
+\rho	rho
+B=0	B = 0
+B=0	B = 0
+\propto	propto
+|\theta|	| theta |
+J	J
+|\theta|	| theta |
+\le0.051	leq 0.051
+\theta\ge45^\circ	theta geq 45 ^{circ}
+J	J
+7.6\times10^{-14}{}^\circ	7.6 times 10 ^{- 14} {} ^{circ}
+1.42\times10^{-14}{}^\circ	1.42 times 10 ^{- 14} {} ^{circ}
+\rho	rho
+1.1\times10^{-7}	1.1 times 10 ^{- 7}
+10^{-14}	10 ^{- 14}
