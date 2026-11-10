@@ -6,3 +6,4 @@ __pycache__/
 *_check.png
 t1_cache/
 k_sweep_cache/
+band_boundary_cache/
