@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _style import FULL, ROOT, TAB10, plt, save, setup
+from matplotlib.ticker import FixedLocator, FuncFormatter, NullFormatter
 
 LABEL = {"sphere": "구", "waist_r3": "허리 r=3", "uniform": "균일각 결정", "band2": "밴드2 계획"}
 
@@ -29,6 +30,11 @@ def main():
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax2.set_yscale("log")
+    fmt = FuncFormatter(lambda v, _: f"{v:,.0f}" if v >= 1 else f"{v:g}")
+    for a in (ax.xaxis, ax.yaxis, ax2.yaxis):
+        a.set_major_formatter(fmt)
+        a.set_minor_formatter(NullFormatter())
+    ax2.yaxis.set_major_locator(FixedLocator([150, 200, 300, 400, 600, 800]))
     ax.set_xlabel("메시 면 수 (개)")
     ax.set_ylabel("계산 시간 (s)")
     ax2.set_ylabel("프로세스 최대 RSS (MB, 점선)")

@@ -75,5 +75,38 @@
    },
    "기준통과": true
   }
+ },
+ {
+  "slug": "t7_scaling",
+  "png": "docs/report/figures/t7_scaling.png",
+  "script": "tools/report_figs/t7_scaling.py",
+  "data_sources": [
+   "t7_scaling_results.json"
+  ],
+  "설명": "면 수 1k~1.3M 에서 균일각 결정·밴드2 계획 시간과 메모리 (단일 프로세스, 4 코어 머신)",
+  "핵심 수치": {
+   "시간_s": {
+    "sphere_band2_1280": 0.941,
+    "sphere_uniform_1280": 0.011,
+    "sphere_band2_5120": 2.813,
+    "sphere_uniform_5120": 0.032,
+    "sphere_band2_20480": 8.914,
+    "sphere_uniform_20480": 0.133,
+    "sphere_band2_81920": 33.658,
+    "sphere_uniform_81920": 0.538,
+    "sphere_band2_327680": 135.026,
+    "sphere_uniform_327680": 2.324,
+    "sphere_band2_1310720": 555.53,
+    "sphere_uniform_1310720": 10.493,
+    "waist_r3_band2_9856": 3.094,
+    "waist_r3_uniform_9856": 0.065,
+    "waist_r3_band2_39424": 10.463,
+    "waist_r3_uniform_39424": 0.245,
+    "waist_r3_band2_157696": 40.844,
+    "waist_r3_uniform_157696": 1.002,
+    "waist_r3_band2_630784": 173.61,
+    "waist_r3_uniform_630784": 4.687
+   }
+  }
  }
 ]
