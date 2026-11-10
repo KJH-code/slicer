@@ -1,5 +1,68 @@
 [
  {
+  "slug": "band_vs_radius",
+  "png": "docs/report/figures/band_vs_radius.png",
+  "script": "tools/report_figs/band_vs_radius.py",
+  "data_sources": [
+   "band_boundary_results.json#figd"
+  ],
+  "description": "그림 D: 모델 반경 R(z), 고른 θ(Z′), 블렌드 위치·폭, r*. 경계 판 = centroid. 블렌드 폭 w ≥ r_b·|Δtanθ|/(m_max−1) (식 (5)) 라 반경이 작은 높이에 둘수록 좁다.",
+  "key_numbers": {
+   "램프": {
+    "thetas": [
+     30.0,
+     0.0
+    ],
+    "edge_mm": 15.0,
+    "blend_mm": [
+     17.35,
+     19.66
+    ],
+    "w_mm": 2.31,
+    "r_star_mm": 2.0,
+    "r_at_edge_mm": 3.82,
+    "w_at_edge_lb_mm": 9.12
+   },
+   "허리 r=3": {
+    "thetas": [
+     28.0,
+     0.0
+    ],
+    "edge_mm": 15.0,
+    "blend_mm": [
+     17.24,
+     20.77
+    ],
+    "w_mm": 3.53,
+    "r_star_mm": 3.32,
+    "r_at_edge_mm": 3.68,
+    "w_at_edge_lb_mm": 8.44
+   },
+   "torus": {
+    "thetas": [
+     6.0,
+     6.0
+    ],
+    "edge_mm": 4.0
+   },
+   "구": {
+    "thetas": [
+     28.0,
+     20.0
+    ],
+    "edge_mm": 10.0,
+    "blend_mm": [
+     3.72,
+     6.28
+    ],
+    "w_mm": 2.56,
+    "r_star_mm": 7.64,
+    "r_at_edge_mm": 10.0,
+    "w_at_edge_lb_mm": 3.27
+   }
+  }
+ },
+ {
   "slug": "bed_cap_cost",
   "png": "docs/report/figures/bed_cap_cost.png",
   "script": "tools/report_figs/bed_cap_cost.py",

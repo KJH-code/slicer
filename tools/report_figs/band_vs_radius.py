@@ -15,7 +15,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
-from _style import FULL_W, ROOT, TAB10, panel_label, plt, save, setup  # noqa: E402
+from _style import FULL_W, ROOT, TAB10, plt, save, setup  # noqa: E402
 
 ORDER = ("램프", "허리 r=3", "torus", "구")
 
@@ -49,24 +49,27 @@ def main():
             ax.axvspan(b["lo"], b["hi"], color=TAB10[0], alpha=0.18, linewidth=0)
             ax.hlines(b["r_star"], b["lo"] - 1.5, b["hi"] + 1.5, color=TAB10[0],
                       linestyle="--", linewidth=1.0)
-            ax.annotate(f"r*={b['r_star']:.1f}\nw={b['w']:.1f}mm",
-                        (b["hi"] + 0.5, b["r_star"]), fontsize=7, color=TAB10[0],
-                        va="bottom")
+            ax.text(0.97, 0.97,
+                    f"r*={b['r_star']:.1f}mm, w={b['w']:.1f}mm\n"
+                    f"등분 경계면 w≥{b['w_needed_at_edge_lower_bound']:.1f}mm",
+                    transform=ax.transAxes, ha="right", va="top", fontsize=6.5,
+                    color=TAB10[0], bbox={"facecolor": "white", "edgecolor": "none",
+                                          "alpha": 0.85, "pad": 1.0})
             kn.update({"blend_mm": [round(b["lo"], 2), round(b["hi"], 2)],
                        "w_mm": round(b["w"], 2), "r_star_mm": round(b["r_star"], 2),
                        "r_at_edge_mm": round(b["r_at_edge"], 2),
                        "w_at_edge_lb_mm": round(b["w_needed_at_edge_lower_bound"], 2)})
         if not m["blends"]:
-            ax.text(0.5, 0.95, f"밴드 안 씀\n(균일 {m['thetas'][0]:.0f}°)",
-                    transform=ax.transAxes, ha="center", va="top", fontsize=7)
-        th_s = "→".join(f"{t:.0f}°" for t in m["thetas"])
-        ax.set_title(f"{name}  [{th_s}]")
+            ax.text(0.55, 0.93, "밴드 안 씀\n(J 가 균일을 고름)",
+                    transform=ax.transAxes, ha="center", va="center", fontsize=7)
+        th_s = ("균일 " + f"{m['thetas'][0]:.0f}°" if len(set(m["thetas"])) == 1
+                else "→".join(f"{t:.0f}°" for t in m["thetas"]))
+        ax.set_title(f"({lab}) {name}  [{th_s}]", loc="left", fontsize=8.5)
         ax.set_xlabel("z (mm)")
         ax.set_xlim(m["z0"], m["z1"])
-        ax.set_ylim(0, max(r.max() * 1.15, 1))
+        ax.set_ylim(0, max(r.max() * 1.4, 1))
         if name == ORDER[0]:
             ax.set_ylabel("반경 R (mm)")
-        panel_label(ax, f"({lab})")
         key_numbers[name] = kn
     h1, l1 = axes[0].get_legend_handles_labels()
     from matplotlib.lines import Line2D
@@ -74,7 +77,7 @@ def main():
     h1 += [Line2D([], [], color=TAB10[3], linewidth=1.3),
            Patch(color=TAB10[0], alpha=0.25),
            Line2D([], [], color=TAB10[0], linestyle="--")]
-    l1 += ["θ(Z′)", "블렌드", "r* = (m_max−1)/|s|"]
+    l1 += ["θ(Z′)", "블렌드", "r* = (m_max-1)/|s|"]
     fig.legend(h1, l1, loc="lower center", ncol=5, frameon=False,
                bbox_to_anchor=(0.5, -0.06))
     fig.tight_layout(rect=(0, 0.06, 1, 1))
