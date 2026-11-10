@@ -43,7 +43,7 @@ Claude Code on the web 세션은 `.claude/hooks/session-start.sh` 가 위를 자
 ## 테스트 · 린트
 
 ```
-pytest tests/ -q      # 228개, 약 180초. 전부 통과가 기준선이다
+pytest tests/ -q      # 230개, 약 190초. 전부 통과가 기준선이다
 ruff check .          # 0건이 기준선이다. 설정은 ruff.toml 에 고정
 ```
 

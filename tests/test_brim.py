@@ -262,8 +262,9 @@ def test_cli_skips_brim_that_would_go_below_bed(tmp_path):
     assert "브림 건너뜀: 요청 2바퀴" in r.stdout and "베드 아래" in r.stdout
     text = out.read_text(encoding="utf-8")
     assert "BRIM" not in text.upper() and "brim=" not in text
-    assert out.read_bytes() == (LADDER / "L3a_lamp_u22.gcode").read_bytes(), \
-        "건너뛴 출력은 브림 없는 출력과 같아야 한다"
+    plain = tmp_path / "plain.gcode"
+    _run(plain)
+    assert out.read_bytes() == plain.read_bytes(), "건너뛴 출력은 브림 없는 출력과 같아야 한다"
 
 
 def test_cli_brim_moves_are_on_layer0_and_above_bed(tmp_path):

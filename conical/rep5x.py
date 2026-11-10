@@ -924,6 +924,8 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
     n_tcp_on = 0
 
     state_fatal, state_warn = [], []
+    m668 = False            # SD 전처리: 뒤의 이동이 joint 좌표로 실행된다
+    soft_on = True          # 소프트 엔드스톱 (펌웨어 기본 켜짐, M211 S0/S1)
     n_cold = 0              # TCP 없이 기운 채 압출
     cold_first = None
     n_bed, n_bed_extr, bed_min, bed_at = 0, 0, None, None
@@ -1004,7 +1006,12 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
                 e_rel = False
             elif word0 == "M83":
                 e_rel = True
+            elif word0 == "M668":
+                m668 = True
+            elif word0 == "M211" and args.get("S") == 1.0:
+                soft_on = True
             elif word0 == "M211" and args.get("S") == 0.0:
+                soft_on = False
                 state_warn.append("`M211 S0` 으로 소프트 엔드스톱을 끈다 — 라이브 TCP "
                                   "에서 팁 좌표에 걸리는 리밋이 유일한 보호다")
             elif word0 == "G92":
@@ -1204,6 +1211,13 @@ def check_rep5x(items, profile=REP5X, max_dc_deg=30.0, max_feed=None):
     if n_omega_blind:
         findings.append(("경고", f"출발 위치를 모르는 채 회전하는 이동 {n_omega_blind}개 — "
                                 f"회전 속도를 판정할 수 없다"))
+    if m668 and soft_on and zj_min is not None and zj_min < -eps:
+        # M668 은 파일을 joint 좌표로 바꿔 G49 로 출력한다 → 소프트 엔드스톱이 joint 에 걸린다
+        # (Rep5x-Marlin ik_preprocessor.cpp). 켜진 채면 기울인 이동이 Z0 에서 조용히 잘린다
+        findings.append(("치명", f"M668(SD 전처리)인데 소프트 엔드스톱이 켜져 있고 joint Z 가 "
+                                f"{zj_min:.2f}mm 까지 내려간다 — joint 좌표로 실행되므로 그 이동이 "
+                                f"Z0 에서 잘린다. M668 경로는 `M211 S0` 이 필요하다 "
+                                f"(profiles/rep5x_ender3v3se_m668.ini)"))
     if zj_min is not None and zj_min < -eps:
         jx, jy, jz, jb = zj_at
         findings.append(("경고", f"joint Z 가 {zj_min:.2f}mm 까지 내려간다 "

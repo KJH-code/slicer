@@ -96,17 +96,24 @@ def test_defaults_are_bit_identical_in_process():
         assert mv.f == (FEED if mv.e is not None else 2 * FEED)
 
 
-def test_default_regeneration_matches_committed_ladder_file(tmp_path):
-    """README 의 명령으로 L3a 를 다시 뽑으면 커밋된 파일과 바이트 단위로 같다."""
+def test_readme_command_reproduces_committed_ladder_file(tmp_path):
+    """README 「다시 뽑기」의 L3a 명령(`--min-layer-time 8` 포함)이 커밋된 파일을 바이트 단위로 재현한다.
+
+    2026-11-10: 사다리는 프로파일 권장값(8s)으로 다시 뽑았다. 그래서 '기본 옵션 출력' 과
+    '커밋된 사다리 파일' 은 이제 다른 것이다 — 기본 출력은 아래 테스트가 따로 본다.
+    """
     out = tmp_path / "L3a.gcode"
-    r = _run(out)
+    _run(out, "--min-layer-time", "8")
     assert out.read_bytes() == (LADDER / "L3a_lamp_u22.gcode").read_bytes(), \
-        "기본 옵션의 출력이 바뀌었다 — 시험 사다리 파일이 재현되지 않는다"
-    # 꺼져 있어도 층이 짧다는 것은 알린다 (기계 프로파일의 권장값)
+        "README 명령으로 시험 사다리 파일이 재현되지 않는다"
+
+
+def test_default_output_hints_recommended_layer_time(tmp_path):
+    """꺼져 있어도(기본) 층이 짧다는 것은 알린다 (기계 프로파일의 권장값)."""
+    r = _run(tmp_path / "d.gcode")
     assert "권장 최소 층 시간 8s" in r.stdout and "--min-layer-time 8" in r.stdout
 
 
-# ───────── (b) 요청 시간을 채운다 ─────────
 def test_min_layer_time_respected_and_only_extrusion_feed_changes():
     mesh = _cylinder()
     base = slice_mesh(mesh)
@@ -216,7 +223,9 @@ def test_rep5x_final_feeds_never_exceed_default(tmp_path):
     r = _run(out, "--min-layer-time", "8", "--fan")
     assert "치명" not in r.stdout, r.stdout
     assert "층 시간(파일)" in r.stdout and "속도 하한 10mm/s" in r.stdout
-    base = gc.parse((LADDER / "L3a_lamp_u22.gcode").read_text(encoding="utf-8").splitlines())
+    dflt = tmp_path / "default.gcode"
+    _run(dflt)                                   # 기본 옵션(최소 층 시간 끔)
+    base = gc.parse(dflt.read_text(encoding="utf-8").splitlines())
     slow = gc.parse(out.read_text(encoding="utf-8").splitlines())
     a, b = _moves(base), _moves(slow)
     assert len(a) == len(b)

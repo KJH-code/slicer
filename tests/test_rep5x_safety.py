@@ -688,3 +688,20 @@ def test_bare_rep5x_output_is_reported_not_silently_passed(tmp_path):
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
 
+
+
+def test_m668_with_soft_endstops_and_negative_joint_z_is_fatal(tmp_path):
+    """M668 은 joint 좌표로 실행한다 → 켜진 소프트 엔드스톱이 기울인 이동(joint Z<0)을 자른다."""
+    out = tmp_path / "m668.gcode"
+    r = subprocess.run(
+        [sys.executable, "conical_slice.py", "examples/rep5x_ladder/lamp_small.stl",
+         "--angle", "20", "--direction", "outward", "--layer-height", "0.6", "--mode", "rep5x",
+         "--machine-profile", "profiles/rep5x_ender3v3se_m668.ini", "-o", str(out)],
+        cwd=ROOT, capture_output=True, text=True, timeout=900)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    lines = out.read_text(encoding="utf-8").splitlines()
+    f, _ = check_rep5x(gc.parse(lines))
+    assert not _fatal(f), _fatal(f)                      # 프로파일이 M211 S0 을 넣으므로 통과
+    bad = [ln.replace("M211 S0", "M211 S1") for ln in lines]
+    f2, _ = check_rep5x(gc.parse(bad))
+    assert any("M668" in m for m in _fatal(f2)), _fatal(f2)
