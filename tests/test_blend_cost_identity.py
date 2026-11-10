@@ -54,7 +54,13 @@ def test_spacing_risk_is_saturated():
                 continue
             a, b = float(prof.zs[i]), float(prof.zs[i + 1])
             s = dt / (b - a)
-            m = abs(1.0 - rp.max_between(a, b) * s)
+            # 2026-11-10 변경 (docs/gap_audit.md G1): 반경 조회를 `max_between(a, b)`
+            # (실공간 z 구간) 에서 `max_in_slab` (그 Z′ 구간의 층이 실제로 닿는 범위) 로
+            # 바꿨다 — 계획기·`blend_penalty` 가 이제 이 조회를 쓰기 때문이다. 항등식
+            # (m = limit) 은 **계획기가 쓴 것과 같은 반경으로 쟀을 때** 성립하는 성질이라,
+            # 옛 조회로 재면 블렌드가 뚱뚱한 곳에 걸치는 모델에서 m < limit 으로 나온다.
+            r_b = rp.max_in_slab(a, b, prof.tans[i], prof.tans[i + 1])
+            m = abs(1.0 - r_b * s)
             risk = min(1.0, max(0.0, (m - 1.0) / (MAX_SPACING_FACTOR - 1.0)))
             assert m == pytest_approx(MAX_SPACING_FACTOR), (
                 f"r_neck={r_neck} 구간 [{a:.2f},{b:.2f}] 에서 m={m:.4f} — "

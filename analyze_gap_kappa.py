@@ -102,10 +102,13 @@ class Faces:
         if not inb.any():
             return None
         bad = inb & ((m > limit + 1e-6) | (m < 1.0 / limit - 1e-6))
-        # J 의 blend_penalty 가 세는 면(실공간 z 로 블렌드 안)
+        # J 의 blend_penalty 가 세는 면. 감사 당시에는 실공간 z 로 블렌드 안인 면이었다.
+        # 2026-11-10 (F1) 부터 `varangle.blend_penalty` 와 같은 닫힌 조건으로 센다:
+        # a − r·tanθ(a) ≤ z ≤ b − r·tanθ(b)  (= 변환높이가 블렌드 안)
         inz = np.zeros(len(zw), dtype=bool)
         for a, b in prof.blend_intervals():
-            inz |= (self.z >= a) & (self.z <= b)
+            inz |= ((self.z >= a - self.r * float(prof.tan_at(a)))
+                    & (self.z <= b - self.r * float(prof.tan_at(b))))
         return {"m_max": float(m[inb].max()), "m_min": float(m[inb].min()),
                 "r_max_in_blend": float(self.r[inb].max()),
                 "area_in_blend_pct": float(self.area[inb].sum() / self.total * 100),

@@ -40,6 +40,20 @@ python3 conical_slice.py model.stl \
   --slicer-cmd "prusa-slicer -g --load profiles/conical_pipeline.ini --dont-arrange -o {gcode} {stl}"
 ```
 
+### REP5X 실물 출력 (Ender-3 V3 SE + REP5X Marlin) — 2026-11-10
+
+```
+python3 conical_slice.py model.stl --mode rep5x --machine-profile profiles/rep5x_ender3v3se.ini \
+  --angle 15 --direction outward --omega-max 180 --strict -o out.gcode
+python3 rep5x_check.py out.gcode --omega-max 180                      # 검사기 C
+python3 tools/fibr3d_crosscheck.py out.gcode --emu ../FIBR3DEmul-Rep5x # 팀 가상 프린터 IK 대조
+```
+
+첫 실험은 [`examples/rep5x_ladder/`](examples/rep5x_ladder/README.md)의 사다리(L0 공중 시운전부터)로 한다.
+기계 규약은 [`docs/rep5x_machine_facts.md`](docs/rep5x_machine_facts.md), 연구 현황은
+[`docs/research_summary.md`](docs/research_summary.md), 허점 감사는 [`docs/gap_audit.md`](docs/gap_audit.md).
+⚠ `examples/lamp_expA_*_rep5x.gcode`는 치명 결함이 있는 옛 파일이다. 프린터에 넣지 말 것.
+
 ### ⚠ 실물로 뽑으려면 기계 프로파일이 필요하다
 
 `--machine-profile` 없이 나온 G-code 에는 **예열·호밍·프라임·냉각이 없다.**

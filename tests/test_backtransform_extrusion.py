@@ -181,12 +181,15 @@ def test_retract_prime_and_wipe_are_not_scaled():
            "G1 X30 Y0 F6000",                          # 트래블
            "G1 E5 F2400",                              # 프라임 +3
            "G1 X40 Y0 E10"]                            # 퇴적 +5 → ×0.75
-    out, _ = backtransform(parse(src), 30.0, "outward")
+    # ε 를 크게 줘서 이동 하나가 조각 하나로 나오게 한다 (E 값을 이동별로 읽으려고)
+    out, _ = backtransform(parse(src), 30.0, "outward", chord_tol=1e3)
     es = _es(out)
     dep = 5 * COS2_30
     want = [0.0, dep, dep - 2, dep - 3, dep, 2 * dep]
-    got = [es[0], es[1], es[2], es[3], es[4], es[-1]]
-    assert np.allclose(got, want, atol=1e-9), (got, want)
+    assert len(es) == len(want) and np.allclose(es, want, atol=1e-9), (es, want)
+    # 기본 ε 로 쪼개져도 끝값은 같다
+    out, _ = backtransform(parse(src), 30.0, "outward")
+    assert abs(_es(out)[-1] - 2 * dep) < 1e-9
 
 
 if __name__ == "__main__":

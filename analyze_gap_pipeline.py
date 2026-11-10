@@ -23,6 +23,10 @@
 ⑥ **층 시간** — 층마다 걸리는 시간(가속 무시, 명령 피드 기준). 최소 층 시간·팬
    제어가 없으므로 짧은 층은 식을 틈 없이 다음 층이 올라온다.
 
+⚠ 2026-11-10: ①②③ 의 수정(F2·F3)이 `conical/backtransform.py` 에 들어갔다. 지금 이
+  스크립트를 돌리면 '현행' 열은 **고친 뒤**의 값이다(E = 야코비안, 현 오차 ≤ ε).
+  감사 당시의 수치는 `docs/gap_audit.md` §2·§5 와 커밋된 `gap_pipeline_results.json` 에 있다.
+
     python3 analyze_gap_pipeline.py
 """
 
@@ -199,11 +203,23 @@ def chord_errors(items, prof, eps=0.05, dense=24):
         if X is not None and None not in (nX, nY, nZ):
             A, B = np.array([X, Y, Zw]), np.array([nX, nY, nZ])
             if np.linalg.norm(B - A) > 1e-9:
-                # 현행 함수가 이 이동을 몇 조각으로 쪼개는지 그대로 받아 온다
+                # 현행 함수가 이 이동을 어디서 쪼개는지 그대로 받아 온다.
+                # ⚠ 2026-11-10 (F3) 부터 분할이 균등이 아니다 — 조각 수만 받아 균등하다고
+                #   가정하면 편차를 지어내게 된다. 출력 꼭짓점을 정변환해 직선 A→B 에
+                #   투영한 매개변수로 조각 경계를 잡는다.
                 two = [("move", Move(g=0, x=X, y=Y, z=Zw)),
                        ("move", Move(g=1, x=nX, y=nY, z=nZ))]
-                n = len(backtransform(two, prof, "outward", chord_tol=eps)[0]) - 1
-                t = np.linspace(0.0, 1.0, n * dense + 1)
+                poly = np.array([[q.x, q.y, q.z] for _k, q in
+                                 backtransform(two, prof, "outward", chord_tol=eps)[0]])
+                n = len(poly) - 1
+                zw = prof.solve_forward(poly[:, 2], np.hypot(poly[:, 0], poly[:, 1]),
+                                        "outward")
+                ct = np.cos(np.radians(prof.theta_at(zw)))
+                tk = np.clip((np.column_stack([poly[:, 0] / ct, poly[:, 1] / ct, zw])
+                              - A) @ (B - A) / ((B - A) @ (B - A)), 0.0, 1.0)
+                tk[0], tk[-1] = 0.0, 1.0
+                t = np.concatenate([np.linspace(tk[k], tk[k + 1], dense, endpoint=False)
+                                    for k in range(n)] + [[1.0]])
                 exact = inv_many(A + (B - A) * t[:, None], prof)
                 knots = exact[::dense]
                 j = np.minimum(np.arange(len(t)) // dense, n - 1)
@@ -308,7 +324,10 @@ def main():
     cur, fix = g92_demo()
     res["g92"] = {"current": cur, "fixed": fix}
     print("② G92 E0 직후의 E (입력: 리셋 뒤 E0.5, E1.0 두 이동)")
-    print(f"   현행 : {cur[:3]} … {cur[-1]}   ← 0 에서 {cur[0]} 로 튄 뒤 감소(리트랙트)")
+    drops = any(b < a for a, b in zip(cur[:-1], cur[1:], strict=False))
+    print(f"   현행 : {cur[:3]} … {cur[-1]}   "
+          + (f"← 0 에서 {cur[0]} 로 튄 뒤 감소(리트랙트)" if drops
+             else "← 0 에서 단조 증가 (F2 가 들어간 뒤)"))
     print(f"   고친 판: {fix[:3]} … {fix[-1]}")
 
     for name, stl, bps, h in CASES:

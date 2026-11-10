@@ -1,9 +1,16 @@
 """역변환의 현 분할: 정확 곡선과 출력 폴리라인의 편차가 ε 이하인가.
 
-docs/gap_audit.md G11. 예전 분할은 허용 현 길이 L = 2√(2·r_mid·ε) 로 균등하게
-쪼갰는데 r_mid 가 **끝점 반경의 평균**이었다. 축 근처를 지나는 인필·트래블은
-곡률이 '축까지의 최근접 거리' 로 정해지므로 ε=0.05 인데 0.33~0.48mm 어긋났다
-(노즐이 앞 층을 파는 방향). 지금은 조각마다 실제 편차를 구해 재귀 이등분한다.
+docs/gap_audit.md G11. 분할은 허용 현 길이 L = 2√(2·r_mid·ε) 로 균등하게 쪼개는데
+r_mid 가 **끝점 반경의 평균**이다. 축 근처를 지나는 인필·트래블은 곡률이 '축까지의
+최근접 거리' 로 정해지므로 ε=0.05 인데 0.33~0.48mm 어긋났다(노즐이 앞 층을 파는
+방향). 지금은 균등 분할한 조각마다 실제 편차를 구해 ε 를 넘는 조각만 더 쪼갠다.
+
+고정하는 것:
+  ① 편차 ≤ ε — 축 근처, 블렌드 안, 층을 건너는 이동 전부
+  ② 균등 분할의 꼭짓점은 전부 남는다. ε 를 지키던 이동은 좌표가 예전 그대로다
+     (5축 출력이 조각 안에서 B/C 를 선형 보간하므로 조각을 길게 만들지 않는다)
+  ③ 축 최근접점 바로 위가 아니라 그 양옆 ±a 에서 자른다
+  ④ 조각 상한에 걸리면 숨기지 않고 통계에 남긴다
 
 편차는 여기서 **분할 코드와 무관하게** 잰다: 출력 꼭짓점 사이를 변환공간에서
 촘촘히 보간해 역변환한 정확 곡선과, 출력 선분 사이의 거리.
@@ -33,12 +40,16 @@ def _inv_many(P, prof, c=1.0):
                             P[:, 2] - c * np.hypot(P[:, 0], P[:, 1]) * np.sin(th)])
 
 
-def _forward(p, prof):
-    """실공간 점들 → 변환공간 (outward, 부호 각도 규약)."""
-    r = np.hypot(p[:, 0], p[:, 1])
-    zw = prof.solve_forward(p[:, 2], r, "outward")
+def _params(A, B, prof, poly):
+    """출력 꼭짓점들의 매개변수 t (정변환해 직선 A→B 에 투영)."""
+    A, B = np.asarray(A, float), np.asarray(B, float)
+    r = np.hypot(poly[:, 0], poly[:, 1])
+    zw = prof.solve_forward(poly[:, 2], r, "outward")
     th = np.radians(prof.theta_at(zw))
-    return np.column_stack([p[:, 0] / np.cos(th), p[:, 1] / np.cos(th), zw])
+    W = np.column_stack([poly[:, 0] / np.cos(th), poly[:, 1] / np.cos(th), zw])
+    t = np.clip(((W - A) @ (B - A)) / float((B - A) @ (B - A)), 0.0, 1.0)
+    t[0], t[-1] = 0.0, 1.0
+    return t
 
 
 def _split(A, B, prof, eps=EPS, **kw):
@@ -52,9 +63,7 @@ def _split(A, B, prof, eps=EPS, **kw):
 def _max_dev(A, B, prof, poly, dense=40):
     """정확 곡선에서 출력 폴리라인까지의 최대 거리."""
     A, B = np.asarray(A, float), np.asarray(B, float)
-    t = np.clip(((_forward(poly, prof) - A) @ (B - A)) / float((B - A) @ (B - A)),
-                0.0, 1.0)
-    t[0], t[-1] = 0.0, 1.0
+    t = _params(A, B, prof, poly)
     worst = 0.0
     for j in range(len(poly) - 1):
         tt = np.linspace(t[j], t[j + 1], dense + 1)
@@ -66,15 +75,17 @@ def _max_dev(A, B, prof, poly, dense=40):
     return worst
 
 
-def _old_uniform_dev(A, B, prof, eps=EPS):
-    """예전 분할(끝점 반경 평균으로 균등)을 그대로 재현해 편차를 잰다 — 대조용."""
+def _legacy(A, B, prof, eps=EPS):
+    """균등 분할만 한 폴리라인 (2026-11-10 이전 동작의 재현) — 대조용."""
     A, B = np.asarray(A, float), np.asarray(B, float)
     ends = _inv_many(np.array([A, B]), prof)
     r_mid = 0.5 * (math.hypot(*ends[0, :2]) + math.hypot(*ends[1, :2]))
     allowed = 2.0 * math.sqrt(max(2.0 * r_mid * eps, 1e-12))
+    if any(a < max(A[2], B[2]) and b > min(A[2], B[2])
+           for a, b in prof.blend_intervals()):
+        allowed *= 0.5
     n = max(1, math.ceil(float(np.linalg.norm(ends[1] - ends[0])) / allowed))
-    poly = _inv_many(A + (B - A) * np.linspace(0, 1, n + 1)[:, None], prof)
-    return _max_dev(A, B, prof, poly), n
+    return _inv_many(A + (B - A) * (np.arange(n + 1) / n)[:, None], prof)
 
 
 def test_near_axis_lines_stay_within_tolerance():
@@ -87,43 +98,79 @@ def test_near_axis_lines_stay_within_tolerance():
             dev = _max_dev(A, B, prof, poly)
             assert dev <= EPS + 1e-9, f"θ={theta} d={d}: 편차 {dev:.4f} > ε"
             assert st["over_tol"] == 0
-            assert len(poly) - 1 <= 40, f"θ={theta} d={d}: {len(poly) - 1}조각"
-    # 대조: 같은 선을 예전 방식으로 쪼개면 ε 의 약 4배다 (이 선 0.19mm. 실제 슬라이스의
+            n_legacy = len(_legacy(A, B, prof)) - 1
+            assert len(poly) - 1 <= n_legacy + 6, \
+                f"θ={theta} d={d}: {n_legacy} → {len(poly) - 1}조각 (과분할)"
+    # 대조: 같은 선을 균등 분할만 하면 ε 의 약 4배다 (이 선 0.19mm. 실제 슬라이스의
     # 더 긴 인필에서는 0.33~0.48mm — docs/gap_audit.md §5)
-    old, n_old = _old_uniform_dev((-6.0, 0.3, 5.1), (7.0, 0.3, 5.1),
-                                  AngleProfile.constant(24.0))
-    assert old > 3 * EPS, f"결함 재현 실패: 예전 분할 편차 {old:.3f} ({n_old}조각)"
+    A, B, prof = (-6.0, 0.3, 5.1), (7.0, 0.3, 5.1), AngleProfile.constant(24.0)
+    old = _max_dev(A, B, prof, _legacy(A, B, prof))
+    assert old > 3 * EPS, f"결함 재현 실패: 균등 분할 편차 {old:.3f}"
 
 
-def test_line_through_the_axis_is_cut_at_the_axis():
-    """축을 정확히 지나는 선은 V 자다 — 꼭짓점(축)에서 한 번만 자르면 끝이다."""
-    prof = AngleProfile.constant(30.0)
-    A, B = (-6.0, 0.0, 5.1), (7.0, 0.0, 5.1)
-    poly, _ = _split(A, B, prof)
-    assert len(poly) == 3, f"{len(poly) - 1}조각"
-    assert np.allclose(poly[1], (0.0, 0.0, 5.1), atol=1e-12)     # 축 위 점: z = Z′
-    assert _max_dev(A, B, prof, poly) < 1e-9
+def test_moves_already_within_tolerance_are_unchanged():
+    """ε 를 지키던 이동은 균등 분할 그대로다 — 좌표가 비트 단위로 같다."""
+    a = 3.0 / 8.0
+    cases = [
+        # 평면(θ=0): 역변환이 항등
+        ((-6.0, 0.3, 5.1), (7.0, 0.3, 5.1), AngleProfile.constant(0.0)),
+        # 반경 방향 선(축을 안 지남): 원뿔의 모선이라 실공간에서도 직선
+        ((2.0, 0.0, 5.1), (12.0, 0.0, 5.1), AngleProfile.constant(30.0)),
+        # 페리미터 현 (r=8 에서 3mm)
+        ((8.0, 0.0, 5.1), (8.0 * math.cos(a), 8.0 * math.sin(a), 5.1),
+         AngleProfile.constant(30.0)),
+        # 블렌드 안의 층, 축에서 먼 선
+        ((6.0, -5.0, 12.0), (6.0, 5.0, 12.0), BLEND),
+        # 층을 건너는 트래블 (Z′ 가 변한다), 축에서 먼 곳
+        ((7.0, 1.0, 5.1), (9.0, 4.0, 5.4), BLEND),
+    ]
+    for A, B, prof in cases:
+        poly, st = _split(A, B, prof)
+        want = _legacy(A, B, prof)
+        assert poly.shape == want.shape, f"{A}→{B}: {len(want)} → {len(poly)} 점"
+        assert np.allclose(poly, want, rtol=0.0, atol=1e-12)
+        assert _max_dev(A, B, prof, poly) <= EPS + 1e-9 and st["over_tol"] == 0
 
 
-def test_no_needless_splitting():
-    """쪼갤 필요가 없는 이동은 한 조각이다."""
-    # 평면(θ=0): 역변환이 항등이라 어떤 이동도 직선 그대로
-    poly, _ = _split((-6.0, 0.3, 5.1), (7.0, 0.3, 5.1), AngleProfile.constant(0.0))
-    assert len(poly) == 2
-    # 반경 방향 선(축을 안 지남): 원뿔의 모선이라 실공간에서도 직선
-    poly, _ = _split((2.0, 0.0, 5.1), (12.0, 0.0, 5.1), AngleProfile.constant(30.0))
-    assert len(poly) == 2
-    # 짧은 페리미터 현 (r=8 에서 1mm): 편차 ≈ sinθ·L²/(8r) = 0.008mm
-    a = 1.0 / 8.0
-    poly, _ = _split((8.0, 0.0, 5.1), (8.0 * math.cos(a), 8.0 * math.sin(a), 5.1),
-                     AngleProfile.constant(30.0))
-    assert len(poly) == 2
+def test_uniform_grid_vertices_survive_refinement():
+    """ε 를 넘던 이동도 균등 분할의 꼭짓점은 전부 남고, 그 사이에만 점이 더 든다."""
+    for A, B, prof in (((-6.0, 0.3, 5.1), (7.0, 0.3, 5.1), AngleProfile.constant(24.0)),
+                       ((-6.0, 0.0, 5.1), (7.0, 0.0, 5.1), AngleProfile.constant(30.0)),
+                       ((-5.0, 0.1, 12.0), (8.0, -0.4, 12.0), BLEND),
+                       ((-5.0, 0.2, 5.1), (6.0, -0.1, 5.4), BLEND)):
+        poly, _ = _split(A, B, prof)
+        legacy = _legacy(A, B, prof)
+        assert len(poly) > len(legacy), "이 이동은 더 쪼개져야 한다 (표본 선택 오류)"
+        for q in legacy:
+            assert np.abs(poly - q).sum(axis=1).min() < 1e-12, f"꼭짓점 {q} 가 사라졌다"
+
+
+def test_axis_passage_is_flanked_not_cut_on_the_closest_point():
+    """축 최근접점 양옆 ±a 에서 자른다 (a = √(τ²+2dτ), τ = ε/sinθ).
+
+    조각 [−a, +a] 의 편차가 정확히 ε 다 — 꺾임을 품는 조각을 허용 한도까지 넓게
+    잡는 것. 최근접점 바로 위에 꼭짓점을 두면 그 점의 방위각이 경로와 직각이라
+    5축 변환이 축 통과를 B 부호 반전 대신 C 90°+90° 로 풀게 된다.
+    """
+    theta = 30.0
+    prof = AngleProfile.constant(theta)
+    tau = EPS / math.sin(math.radians(theta))
+    for d in (0.0, 0.05, 0.3):
+        A, B = (-6.0, d, 5.1), (7.0, d, 5.1)          # 최근접점은 X=0 (t = 6/13)
+        poly, _ = _split(A, B, prof)
+        u = (_params(A, B, prof, poly) - 6.0 / 13.0) * 13.0   # 최근접점 기준 거리(mm)
+        a = math.sqrt(tau * tau + 2.0 * d * tau)
+        inner = np.sort(u[np.abs(u) < a + 1e-3])
+        assert len(inner) == 2 and np.allclose(inner, [-a, a], atol=1e-4), \
+            f"d={d}: 최근접점 근처 꼭짓점 {inner} (기대 ±{a:.4f})"
+        dev = _max_dev(A, B, prof, poly)
+        assert EPS * 0.98 <= dev <= EPS + 1e-9, f"d={d}: 편차 {dev:.4f}"
 
 
 def test_random_moves_within_tolerance_including_blends():
     """무작위 이동 400개 — 블렌드 안의 층, 층을 건너는(Z′ 가 변하는) 이동 포함."""
     rng = np.random.default_rng(1)
-    worst_level, worst_ramp, pieces = 0.0, 0.0, 0
+    worst_level, worst_ramp, pieces, legacy = 0.0, 0.0, 0, 0
     for i in range(400):
         A = np.array([*rng.uniform(-10, 10, 2), rng.uniform(1.0, 25.0)])
         B = np.array([*rng.uniform(-10, 10, 2), A[2]])
@@ -132,6 +179,7 @@ def test_random_moves_within_tolerance_including_blends():
         poly, st = _split(A, B, BLEND)
         dev = _max_dev(A, B, BLEND, poly)
         pieces += len(poly) - 1
+        legacy += len(_legacy(A, B, BLEND)) - 1
         assert st["over_tol"] == 0
         if A[2] == B[2]:
             worst_level = max(worst_level, dev)
@@ -140,7 +188,7 @@ def test_random_moves_within_tolerance_including_blends():
     assert worst_level <= EPS + 1e-9, f"레이어 안 이동 최대 편차 {worst_level:.4f}"
     # Z′ 가 변하는 이동은 닫힌 식이 없어 표본 추정이다 (보수적으로 잡지만 보장은 아님)
     assert worst_ramp <= EPS + 1e-9, f"Z′ 변하는 이동 최대 편차 {worst_ramp:.4f}"
-    assert pieces < 400 * 12, f"과분할: 평균 {pieces / 400:.1f}조각"
+    assert pieces < 1.5 * legacy, f"과분할: {legacy} → {pieces}조각"
 
 
 def test_tighter_tolerance_is_honoured_and_costs_more():
@@ -151,14 +199,18 @@ def test_tighter_tolerance_is_honoured_and_costs_more():
         poly, _ = _split(A, B, prof, eps=eps)
         assert _max_dev(A, B, prof, poly) <= eps + 1e-9
         n[eps] = len(poly) - 1
-    assert n[0.1] <= n[0.05] < n[0.01], n
+    assert n[0.1] < n[0.05] < n[0.01], n
 
 
 def test_piece_limit_is_reported_not_hidden():
     """조각 상한(max_sub)에 걸려 ε 를 못 지키면 통계에 남는다."""
-    A, B = (-6.0, 0.3, 5.1), (7.0, 0.3, 5.1)
-    poly, st = _split(A, B, AngleProfile.constant(24.0), max_sub=2)
-    assert len(poly) - 1 <= 2 and st["over_tol"] > 0
+    A, B = (-10.0, 3.0, 5.1), (10.0, 3.0, 5.1)   # 축에서 3mm 를 스치는 20mm 선
+    prof = AngleProfile.constant(24.0)
+    poly, st = _split(A, B, prof, max_sub=2)
+    assert len(poly) - 1 <= 4                  # 균등 2 + 더 넣은 분할점 2
+    assert st["over_tol"] > 0 and _max_dev(A, B, prof, poly) > EPS
+    poly, st = _split(A, B, prof)
+    assert st["over_tol"] == 0 and _max_dev(A, B, prof, poly) <= EPS + 1e-9
 
 
 def test_e_is_distributed_along_the_pieces():
@@ -169,14 +221,19 @@ def test_e_is_distributed_along_the_pieces():
     es = [p.e for _k, p in out]
     assert len(es) > 4 and np.all(np.diff(es) > 0)
     assert abs(es[-1] - 2.0 * math.cos(math.radians(24.0)) ** 2) < 1e-9
+    # 조각의 E 몫은 변환공간 길이(매개변수)에 비례한다 — 상수각이면 배율이 같으므로
+    poly = np.array([[p.x, p.y, p.z] for _k, p in out])
+    t = _params((-6.0, 0.3, 5.1), (7.0, 0.3, 5.1), AngleProfile.constant(24.0), poly)
+    assert np.allclose(np.array(es) / es[-1], t, atol=1e-9)
 
 
 if __name__ == "__main__":
     test_near_axis_lines_stay_within_tolerance()
-    test_line_through_the_axis_is_cut_at_the_axis()
-    test_no_needless_splitting()
+    test_moves_already_within_tolerance_are_unchanged()
+    test_uniform_grid_vertices_survive_refinement()
+    test_axis_passage_is_flanked_not_cut_on_the_closest_point()
     test_random_moves_within_tolerance_including_blends()
     test_tighter_tolerance_is_honoured_and_costs_more()
     test_piece_limit_is_reported_not_hidden()
     test_e_is_distributed_along_the_pieces()
-    print("PASS: 현 편차 ≤ ε (축 근처·블렌드·층 전환) / 과분할 없음 / 상한 보고")
+    print("PASS: 현 편차 ≤ ε (축 근처·블렌드·층 전환) / 균등 분할 보존 / 상한 보고")

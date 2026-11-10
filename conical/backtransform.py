@@ -6,18 +6,19 @@ backtransform.py — 변환공간 G-code → 실공간 G-code 역변환 (RotBot 
     역변환:  x = X·cosθ,  y = Y·cosθ,  z = Z' − c·√(X²+Y²)·sinθ
     (유도: r_real = cosθ·√(X²+Y²) 이므로 c·r_real·tanθ = c·√(X²+Y²)·sinθ)
 
-재분할 — 실제 편차로 재귀 이등분 (2026-11-10, docs/gap_audit.md G11):
+재분할 — 적응 균등 분할 + 실제 편차로 재귀 이등분:
     변환공간의 직선은 실공간에서 곡선이 된다. 고정 간격으로 잘게 쪼개면 G-code 가
-    폭발하므로(docs/gcode_size_notes.md) 필요한 곳만 쪼갠다.
+    폭발하므로(docs/gcode_size_notes.md), 실공간 반경 r 에서 허용 현 길이
+    L = 2·√(2·r·ε) 로 '적응' 균등 분할한다 (ε = 허용 현 오차. 축에서 멀수록 긴 직선).
 
-    ⚠ 예전에는 허용 현 길이 L = 2·√(2·r_mid·ε) 로 **균등** 분할했다. r_mid 는 끝점
-      반경의 평균인데, 실제 곡률을 정하는 것은 '직선이 축에 가장 가까워지는 거리 d'
-      다. 축 근처를 지나는 인필·트래블은 r_mid ≫ d 라 ε=0.05 인데 0.33~0.48mm
-      어긋났고, 방향이 전부 아래였다(노즐이 앞 층을 판다).
+    ⚠ 그 식만으로는 ε 를 못 지킨다 (2026-11-10 고침, docs/gap_audit.md G11).
+      r 로 끝점 반경의 평균을 쓰는데, 실제 곡률을 정하는 것은 '직선이 축에 가장
+      가까워지는 거리 d' 다. 축 근처를 지나는 인필·트래블은 r ≫ d 라 ε=0.05 인데
+      0.33~0.48mm 어긋났고, 방향이 전부 아래였다(노즐이 앞 층을 판다).
 
-    지금은 조각마다 **정확 곡선과 현 사이의 편차**를 구해 ε 이하가 될 때까지
-    이등분한다. 레이어 안의 이동(Z′ 일정 — 평면 슬라이서 출력의 거의 전부)은
-    편차가 닫힌 식이다:
+    그래서 균등 분할한 조각마다 **정확 곡선과 현 사이의 실제 편차**를 구하고,
+    ε 를 넘는 조각만 — 가장 많이 어긋난 것부터 — 이등분한다. 레이어 안의 이동
+    (Z′ 일정 — 평면 슬라이서 출력의 거의 전부)은 편차가 닫힌 식이다:
 
         ρ(t) = √(d² + ℓ²(t−t*)²)      변환공간 직선의 축까지 거리 (ℓ = XY 길이)
         x, y 는 t 에 선형  →  현과의 차이는 z 뿐:
@@ -26,9 +27,22 @@ backtransform.py — 변환공간 G-code → 실공간 G-code 역변환 (RotBot 
 
     즉 표본 추정이 아니라 **그 조각의 최대 수직 편차 그 자체**이고, 현까지의
     거리는 수직 편차를 넘지 못하므로 `편차 ≤ ε` 가 보장된다
-    (tests/test_backtransform_chord.py). 쪼개야 하는 이동은 축 최근접점 t* 에서
-    먼저 자른다 — 꺾임(d→0 이면 V 자)이 거기 있어서, 그렇게 하면 축을 지나는
-    직선이 두 조각으로 끝난다.
+    (tests/test_backtransform_chord.py).
+
+    설계 선택 둘:
+    · **균등 분할을 버리지 않고 그 위에 얹었다.** 편차만으로 쪼개면 이동 수는 6~14%
+      줄지만(감사 문서의 제안), 조각이 길어진다 — 위치 편차가 작아도 방위각은 크게
+      도는 조각(축 근처를 스치는 긴 선)이 생기고, 5축 출력은 조각 안에서 B/C 를
+      선형 보간하므로 공구 방향이 층 법선에서 벗어난다. 균등 분할의 꼭짓점을 전부
+      남기면 **ε 를 지키던 이동은 좌표가 예전과 비트 단위로 같고**, 바뀌는 것은
+      ε 를 넘던 조각의 안쪽뿐이다.
+    · ε 를 넘는 조각이 축 최근접점 t* 를 품으면 **t* 의 양옆 ±a 에서 먼저 자른다**
+      (a = √(τ² + 2dτ), τ = ε/|sinθ| — 조각 [t*−a, t*+a] 의 편차가 정확히 ε).
+      꺾임(d→0 이면 V 자)을 품는 조각을 허용 한도까지 넓게 잡는 것이라 조각 수가
+      가장 적고, t* 바로 위에 꼭짓점을 두지 않는다 — 거기는 방위각이 경로와 직각이라
+      5축 변환(`rep5x.to_rep5x`)이 축 통과를 B 부호 반전 대신 C 90°+90° 로 풀게 된다.
+      ⚠ 그래도 축 근처 꼭짓점이 늘어나므로 5축 출력의 축 통과 처리는 달라진다 —
+        ε 를 지키는 것과 맞바꾼 것이다.
     Z′ 가 변하는 이동(층 전환 트래블 등)은 닫힌 식이 없어 사분점 표본으로 잰다.
     오목 단봉 편차에서 사분점 표본은 최댓값의 75% 이상을 잡으므로 표본값/0.75 를
     쓴다 — 이쪽은 보수적 추정이지 엄밀한 상한이 아니다.
@@ -73,6 +87,7 @@ E 회계 규칙:
     · 퇴적(ΔE > 0 이고 XYZ 가 움직임)만 조각별 cos²θ·m 을 곱한다
 """
 
+import heapq
 import math
 
 from .gcode import _WORD, Move
@@ -90,7 +105,7 @@ def _inv_point(X, Y, Zw, profile, c):
 
 
 def _crosses_blend(blends, z0, z1):
-    """[z0, z1] 이 블렌드 구간과 겹치는가. (분석 스크립트가 가져다 쓴다)"""
+    """[z0, z1] 이 블렌드 구간(각도가 변하는 Z′ 구간)과 겹치는가."""
     lo, hi = (z0, z1) if z0 <= z1 else (z1, z0)
     return any(a < hi and b > lo for a, b in blends)
 
@@ -118,36 +133,46 @@ def _g92_e(line):
     return None
 
 
-def _bisect(dev, cuts, tol, max_depth):
-    """`cuts` 의 이웃 쌍마다 dev(a, b) ≤ tol 이 될 때까지 이등분한다.
+def _uniform_count(real_len, r_mid, chord_tol, in_blend, max_sub):
+    """적응 균등 분할 수: 허용 현 길이 L = 2√(2·r·ε), 블렌드를 지나면 절반."""
+    allowed = 2.0 * math.sqrt(max(2.0 * r_mid * chord_tol, 1e-12))
+    if in_blend:
+        allowed *= 0.5     # ⚠ 블렌드 통과 이동: θ 변화가 z 곡률 추가 → 분할 2배
+    return max(1, min(max_sub, math.ceil(real_len / max(allowed, 1e-9))))
 
-    반환: (조각 끝 매개변수의 오름차순 목록, 깊이 한도에서 tol 을 넘긴 조각 수).
+
+def _refine(dev, n, tol, max_new, inner=(), gap=0.0):
+    """균등 분할 n 조각에서 편차가 tol 을 넘는 조각만 더 쪼갠다.
+
+    dev(a, b): 매개변수 구간 [a, b] 조각의 편차. inner: 넘는 조각 안에 들면 먼저
+    넣을 분할점(축 최근접점의 양옆, 많아야 둘) — 조각 끝에서 gap 안쪽인 것만 쓴다.
+    그 뒤로는 가장 많이 어긋난 조각부터 이등분하고, 새 분할점이 max_new 개가 되면
+    멈춘다. 반환: (조각 끝 매개변수 오름차순, tol 을 못 지킨 조각 수).
     """
-    out = []
-    over = 0
-    stack = [(a, b, 1) for a, b in zip(cuts[-2::-1], cuts[:0:-1], strict=True)]
-    while stack:
-        a, b, depth = stack.pop()
-        if dev(a, b) > tol:
-            if depth < max_depth:
-                m = 0.5 * (a + b)
-                stack.append((m, b, depth + 1))
-                stack.append((a, m, depth + 1))
-                continue
-            over += 1
-        out.append(b)
-    return out, over
-
-
-def _axis_cut(ts, length, tol):
-    """쪼개야 하는 이동의 첫 분할점들: 축 최근접점 t* 가 안쪽이면 거기서 자른다.
-
-    t* 가 끝에서 ε 안쪽이면 그 꺾임이 만드는 편차도 ε 이하라 따로 안 자른다
-    (0.001mm 짜리 조각을 만들지 않는다).
-    """
-    if tol < ts * length < length - tol:
-        return [0.0, ts, 1.0]
-    return [0.0, 1.0]
+    grid = [i / n for i in range(n + 1)]
+    devs = [dev(a, b) for a, b in zip(grid[:-1], grid[1:], strict=True)]
+    if max(devs) <= tol:
+        return grid[1:], 0
+    heap = []
+    added = 0
+    for a, b, dv in zip(grid[:-1], grid[1:], devs, strict=True):
+        cut = [t for t in inner if a + gap < t < b - gap] if dv > tol else []
+        if cut:
+            pts = [a, *cut, b]
+            added += len(cut)
+            heap += [(-dev(x, y), x, y) for x, y in zip(pts[:-1], pts[1:], strict=True)]
+        else:
+            heap.append((-dv, a, b))
+    heapq.heapify(heap)
+    while -heap[0][0] > tol and added < max_new:
+        _, a, b = heap[0]
+        m = 0.5 * (a + b)
+        if not a < m < b:                    # 부동소수 한계 — 더 못 쪼갠다
+            break
+        heapq.heapreplace(heap, (-dev(a, m), a, m))
+        heapq.heappush(heap, (-dev(m, b), m, b))
+        added += 1
+    return sorted(h[2] for h in heap), sum(1 for h in heap if -h[0] > tol)
 
 
 def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400):
@@ -157,15 +182,15 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
     float 는 상수 프로필로 감싸므로 기존 호출부는 무수정 호환.
 
     chord_tol: 정확 곡선과 출력 폴리라인 사이의 허용 편차 ε (mm).
-    max_sub : 이동 하나를 쪼개는 조각 수의 상한(2의 거듭제곱으로 올림 → 이등분
-              깊이). 한도에 걸려 ε 를 못 지킨 조각 수는 통계 `over_tol` 에 남는다.
+    max_sub : 이동 하나의 균등 분할 수 상한. ε 를 지키려고 더 넣는 분할점도 이
+              개수까지다. 한도에 걸려 ε 를 못 지킨 조각 수는 통계 `over_tol` 에 남는다.
 
     반환: (새 아이템 리스트, 통계 dict)
     """
     profile = cone_angle_deg if isinstance(cone_angle_deg, AngleProfile) \
         else AngleProfile.constant(cone_angle_deg)
     c = 1.0 if cone_type == "outward" else -1.0
-    max_depth = max(1, math.ceil(math.log2(max(float(max_sub), 2.0))))
+    blends = profile.blend_intervals()
 
     layer = {}                   # Z′ → (cosθ, sinθ, s) — 레이어 하나에 이동 수천 개
 
@@ -226,14 +251,14 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
             continue
 
         deposit = dE is not None and dE > 0.0
-        l2 = dX * dX + dY * dY
-        ts = -(X * dX + Y * dY) / l2 if l2 > 1e-18 else 0.0   # 축 최근접점
 
         if dZ == 0.0:
             # ── 레이어 안의 이동: 편차가 닫힌 식 (모듈 docstring) ──
             ct, st, s = consts(Zw)
             amp = abs(st)
+            l2 = dX * dX + dY * dY
             ell = math.sqrt(l2)
+            ts = -(X * dX + Y * dY) / l2 if l2 > 1e-18 else 0.0   # 축 최근접점
             d2 = max(X * X + Y * Y - l2 * ts * ts, 0.0)
             d = math.sqrt(d2)
 
@@ -250,13 +275,21 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
                 tc = min(max(ts + k * d / (ell * math.sqrt(q)), a), b)
                 return amp * (ra + k * (tc - a) - rho(tc))
 
-            if amp == 0.0 or l2 <= 1e-18 or dev(0.0, 1.0) <= chord_tol:
-                cuts, over = [1.0], 0
+            r0, r1 = math.hypot(X, Y), math.hypot(nX, nY)
+            n = _uniform_count(
+                math.dist((X * ct, Y * ct, Zw - c * r0 * st),
+                          (nX * ct, nY * ct, Zw - c * r1 * st)),
+                0.5 * (math.hypot(X * ct, Y * ct) + math.hypot(nX * ct, nY * ct)),
+                chord_tol, bool(blends) and _crosses_blend(blends, Zw, nZ), max_sub)
+            if amp == 0.0 or l2 <= 1e-18:
+                cuts, over = [i / n for i in range(1, n + 1)], 0
             else:
-                cuts, over = _bisect(dev, _axis_cut(ts, ell, chord_tol), chord_tol,
-                                     max_depth)
+                tau = chord_tol / amp
+                a_t = math.sqrt(tau * tau + 2.0 * d * tau) * (1.0 - 1e-6) / ell
+                cuts, over = _refine(dev, n, chord_tol, max_sub,
+                                     (ts - a_t, ts + a_t), 1e-3 / ell)
             n_over += over
-            ta, ra = 0.0, math.hypot(X, Y)
+            ta, ra = 0.0, r0
             for tb in cuts:
                 Xb, Yb = X + dX * tb, Y + dY * tb
                 rb = math.hypot(Xb, Yb)
@@ -271,7 +304,7 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
                     e_out += dE * (tb - ta) * k
                     e_val = e_out
                 out.append(("move", Move(g=mv.g, x=Xb * ct, y=Yb * ct,
-                                         z=Zw - c * st * rb, e=e_val, f=mv.f,
+                                         z=Zw - c * rb * st, e=e_val, f=mv.f,
                                          extra=mv.extra)))
                 ta, ra = tb, rb
             n_out += len(cuts)
@@ -295,11 +328,12 @@ def backtransform(items, cone_angle_deg, cone_type, chord_tol=0.05, max_sub=400)
                         p, [pa[i] + (pb[i] - pa[i]) * f for i in range(3)]))
                 return worst / 0.75
 
-            if dev_s(0.0, 1.0) <= chord_tol:
-                cuts, over = [1.0], 0
-            else:
-                cuts, over = _bisect(dev_s, _axis_cut(ts, math.sqrt(l2), chord_tol),
-                                     chord_tol, max_depth)
+            p0, p1 = pt(0.0), pt(1.0)
+            n = _uniform_count(
+                math.dist(p0, p1),
+                0.5 * (math.hypot(p0[0], p0[1]) + math.hypot(p1[0], p1[1])),
+                chord_tol, bool(blends) and _crosses_blend(blends, Zw, nZ), max_sub)
+            cuts, over = _refine(dev_s, n, chord_tol, max_sub)
             n_over += over
             ta = 0.0
             for tb in cuts:

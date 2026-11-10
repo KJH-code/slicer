@@ -8,7 +8,8 @@ toolpath.py — 툴패스(G-code) 기반 가상 검증기. 하드웨어 없이 �
           수직으로 (0, layer_height×1.5] 아래에 존재
     하면 지지로 판정. 배치(이동 500개)마다 cKDTree 재구축 → O(n log n).
     '수평·수직' 은 기본이 연직(3축) 프레임이다. `tool_up` 을 주면 공구(층 법선)
-    프레임에서 잰다 — 노즐이 층 법선을 따라 기우는 5축 파일용 (`check_support`).
+    프레임에서 잰다 — 노즐이 층 법선을 따라 기우는 5축 파일용. 그때는 `layer`(층
+    번호)도 같이 줘서 같은 층의 점을 지지 후보에서 뺄 것 (`check_support` 참고).
 
 검사기 B (노즐 간섭):
     3축 가정(노즐 수직). 각 압출점에 팁을 놓고, 이미 퇴적된 점 q 중
@@ -137,7 +138,8 @@ def sample_extrusions(items, width=0.45, return_types=False, return_layers=False
 # ─────────────────────────────────────────────────────────────
 def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
                   batch_samples=2000, vwin_factor=1.5,
-                  require_supported_below=False, bed_factor=1.0, tool_up=None):
+                  require_supported_below=False, bed_factor=1.0, tool_up=None,
+                  layer=None):
     """각 샘플점의 지지 여부. 반환: supported(bool 배열), 통계 dict.
 
     '이전에 퇴적'은 G-code 순서를 엄밀히 따른다: 이전 배치들은 cKDTree 로,
@@ -201,6 +203,20 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
       균일 원뿔에서는 창이 그만큼 넉넉하다. 창을 t_n 에 묶을지는 정해지지 않았다
       (gap_audit J7) — 그래서 건드리지 않았다.
     ⚠ 기본값은 바꾸지 않았다(연직). 사전등록 수치가 연직 프레임으로 적혀 있다.
+
+    ── `layer`: 같은 층은 '아래' 가 아니다 (2026-11-10) ───────────────────
+    점별 층 번호 (N,) 를 주면 (`sample_extrusions(return_layers=True)`) **같은 층의
+    점은 지지 후보에서 뺀다.** 층 번호를 모르는 점(−1)은 빼지 않는다.
+    평면 층에서는 같은 층의 높이 차가 0 이라 이 규칙이 저절로 성립했다. 원뿔 층은
+    아니다 — 어느 프레임에서든 같은 층의 점이 미세하게 '아래' 로 잡힌다:
+      · 연직: 바깥 페리미터가 w·sinθ 낮다 (위 ⓑ)
+      · 공구: 원뿔면이 그 점의 접평면 아래로 휘어 있어, **같은 고리의 앞 점**이
+        sinθ·s²/(2r) (r=8mm·간격 0.2mm 에서 1µm, r=1mm 에서 8µm) 낮다
+    ⚠⚠ 그래서 **`tool_up` 을 줄 때는 `layer` 도 같이 줄 것.** 안 주면 고리 위의 점이
+       거의 전부 '바로 앞 점이 받친다' 로 통과해 미지지가 0 에 가깝게 나온다 —
+       공구 프레임 판정이 아니라 이 인공물을 재는 것이다. (감사 문서 §3 의 '공구'
+       행들이 층 번호 없이 잰 값이다.)
+    기본(None)은 예전 그대로 — 층을 가리지 않는다.
     """
     n = len(pts)
     supported = np.zeros(n, dtype=bool)
@@ -211,9 +227,12 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
     supported |= pts[:, 2] <= bed_h + 1e-9         # 베드 지지
     radius = math.sqrt(width ** 2 + vwin ** 2)
     up = _unit_rows(tool_up, n)
+    lay = None if layer is None else np.asarray(layer)
+    if lay is not None and lay.shape != (n,):
+        raise ValueError(f"layer 는 점마다 하나씩 (N,) 이어야 함: {lay.shape} vs N={n}")
 
     if require_supported_below:
-        _chained_support(pts, supported, vwin, width, radius, batch_samples, up)
+        _chained_support(pts, supported, vwin, width, radius, batch_samples, up, lay)
         return supported, _support_stats(pts, supported, weight, layer_height)
 
     tree = None
@@ -227,7 +246,10 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
                 for k, nb in zip(need, neigh, strict=True):
                     if not nb:
                         continue
-                    q = pts[np.array(nb)]
+                    nb = np.array(nb)
+                    if lay is not None and lay[k] >= 0:
+                        nb = nb[lay[nb] != lay[k]]          # 같은 층은 '아래' 가 아니다
+                    q = pts[nb]
                     if up is None:
                         dz = pts[k, 2] - q[:, 2]
                         horiz = np.hypot(pts[k, 0] - q[:, 0], pts[k, 1] - q[:, 1])
@@ -250,6 +272,9 @@ def check_support(pts, move_id, weight, layer_height=0.3, width=0.45,
             d2 = bb[:, None] + bb[None, :] - 2.0 * (b @ b.T)
             horizm = np.sqrt(np.maximum(d2 - dzm * dzm, 0.0))
         earlier = np.tril(np.ones((len(b), len(b)), dtype=bool), k=-1)
+        if lay is not None:
+            lb = lay[idx]
+            earlier &= ~((lb[:, None] == lb[None, :]) & (lb[:, None] >= 0))
         ok = earlier & (dzm > 1e-9) & (dzm <= vwin + 1e-9) & \
              (horizm <= width + 1e-9)
         supported[idx] |= ok.any(axis=1)
@@ -312,48 +337,49 @@ def _support_stats(pts, supported, weight, layer_height):
     return {"unsupported_pct": float(bad / total * 100.0), "layers": layers}
 
 
-def _chained_support(pts, supported, vwin, width, radius, batch_samples, up=None):
+def _chained_support(pts, supported, vwin, width, radius, batch_samples, up=None,
+                     lay=None):
     """지지된 재료만 지지 후보로 쓰는 판정 (supported 를 제자리에서 갱신).
 
     배치 벡터화가 안 되는 이유: 어떤 점의 지지가 **같은 배치 안의 앞선 점이
     방금 지지로 바뀌었는지**에 달려 있어 순서 의존이 생긴다. 그래서 순차로
     돌되, 오래된 지지점은 cKDTree 로 묶고 최근 것만 브루트포스로 본다.
-    up 을 주면(점별 단위벡터) 공구 프레임에서 잰다 — `check_support` 의 `tool_up`.
+    up(점별 단위벡터)·lay(점별 층 번호)는 `check_support` 의 `tool_up`·`layer`.
     """
     n = len(pts)
     tree = None
-    tree_pts = None
-    tail = []                 # 마지막 트리 재구성 이후 새로 지지된 점들
+    tree_idx = np.zeros(0, dtype=int)     # 트리에 든 지지점들의 번호
+    tail = []                 # 마지막 트리 재구성 이후 새로 지지된 점들의 번호
 
-    def _hit(p, q, u):
-        if len(q) == 0:
+    def _hit(i, cand):
+        if lay is not None and lay[i] >= 0:
+            cand = cand[lay[cand] != lay[i]]            # 같은 층은 '아래' 가 아니다
+        if len(cand) == 0:
             return False
-        if u is None:
+        p, q = pts[i], pts[cand]
+        if up is None:
             dz = p[2] - q[:, 2]
             horiz = np.hypot(p[0] - q[:, 0], p[1] - q[:, 1])
         else:
-            dz, horiz = _tool_split(p - q, u)
+            dz, horiz = _tool_split(p - q, up[i])
         return bool(np.any((dz > 1e-9) & (dz <= vwin + 1e-9) &
                            (horiz <= width + 1e-9)))
 
     for i in range(n):
-        p = pts[i]
         if not supported[i]:
-            u = None if up is None else up[i]
             found = False
             if tree is not None:
-                nb = tree.query_ball_point(p, r=radius)
+                nb = tree.query_ball_point(pts[i], r=radius)
                 if nb:
-                    found = _hit(p, tree_pts[np.asarray(nb)], u)
+                    found = _hit(i, tree_idx[np.asarray(nb)])
             if not found and tail:
-                found = _hit(p, np.asarray(tail), u)
+                found = _hit(i, np.asarray(tail))
             supported[i] = found
         if supported[i]:
-            tail.append(p)
+            tail.append(i)
             if len(tail) >= batch_samples:
-                add = np.asarray(tail)
-                tree_pts = add if tree_pts is None else np.vstack([tree_pts, add])
-                tree = cKDTree(tree_pts)
+                tree_idx = np.concatenate([tree_idx, np.asarray(tail)])
+                tree = cKDTree(pts[tree_idx])
                 tail = []
 
 
