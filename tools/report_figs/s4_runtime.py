@@ -13,7 +13,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
-import _style as st  # noqa: E402
+import _s4style as st  # noqa: E402
 from s4_dof_ladder import MODELS, NAMES, pick  # noqa: E402
 
 BARS = [("cone", "원뿔 각도 결정 (균일+밴드+천장)"),

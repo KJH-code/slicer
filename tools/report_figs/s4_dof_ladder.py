@@ -12,7 +12,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
-import _style as st  # noqa: E402
+import _s4style as st  # noqa: E402
 
 MODELS = ["sphere", "funnel", "torus", "mushroom", "lamp"]
 NAMES = {"sphere": "구", "funnel": "깔때기", "torus": "토러스", "mushroom": "버섯",
