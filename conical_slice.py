@@ -44,7 +44,7 @@ from conical.config import (
 )
 from conical.machine import MachineProfile, check_start_extrusion
 from conical.meshio import RadiusProfile, center_on_axis
-from conical.planar_slicer import slice_mesh
+from conical.planar_slicer import BRIM_TYPE, FAN_AFTER_LAYERS, layer_times, slice_mesh
 from conical.profile import AngleProfile
 from conical.selector import select_cone
 from conical.transform import transform_cone, transform_cone_profile
@@ -77,6 +77,112 @@ def run_external_slicer(cmd_template, warped_mesh, workdir):
     subprocess.run(cmd, shell=True, check=True)
     with open(gcode_path) as fh:
         return gc.parse(fh.readlines())
+
+
+# 브림 팁이 층고의 이 배수보다 높으면 '베드에서 떴다' 로 본다. 판단값이다 — 폭 0.45
+# 비드가 베드에 눌려 붙으려면 팁이 노즐 지름(0.4) 안팎보다 높으면 안 된다는 어림.
+BRIM_MAX_LIFT = 1.5
+
+
+def brim_problem(items, cone_angle_deg, cone_type, layer_height, chord_tol=0.05,
+                 ring_k=None, mach=None):
+    """내장 슬라이서가 낸 브림을 **역변환해서** 실공간 높이를 본다 → (사유 또는 None, 정보).
+
+    왜 필요한가 — 브림은 변환공간의 층 0(평면)에 놓이지만 그 평면은 실공간에서
+
+        z = Z′₀ − c·r·tanθ          (transform.py 의 역, r = 실공간 반경)
+
+    인 **원뿔면**이다. outward(c=+1)는 축에서 멀수록 내려간다: 층 0 이 베드 위에 있는
+    곳은 r < Z′₀/tanθ 뿐이고(층고 0.3, 22° 에서 0.74mm), 첫 층 윤곽은 팁 높이가 층고/2
+    이상인 안쪽을 이미 쓰고 있다. 그래서 윤곽 **바깥**의 브림은 한 바퀴째부터 팁이
+    층고/2 아래이고, 두세 바퀴면 베드 밑이다. inward(c=−1)는 반대로 바깥으로 갈수록
+    떠오른다 — 공중에 찍는 고리는 브림이 아니다. θ=0(평면 바닥)에서만 온전히 성립한다.
+
+    보는 것 (브림 구간의 **모든 이동 끝점**, 트래블 포함):
+      · 베드 아래: 파일에 적히는 값(소수 3자리)으로 z < 0
+      · 뜸: z > BRIM_MAX_LIFT × 층고
+      · [rep5x, mach 를 주면] 그 높이에서 기운 핫엔드 몸체가 베드 여유를 침범 —
+        `to_rep5x` 의 이동별 베드 방어선과 **같은 식**이다. 통과시키면 방어선이 브림
+        이동의 B 를 깎고 "프로필 계획이 못 잡았다" 고 경고하게 된다. 브림 탓인 것을
+        거기서는 알 수 없으므로 여기서 거른다. (계획 `bed_safe_profile` 은 '팁은 층고의
+        절반보다 낮아지지 않는다' 를 전제하는데 브림이 그 전제를 깬다.)
+
+    층 안에서 z 는 선분을 따라 오목(z = Z′ − sinθ·ρ, ρ 볼록)이므로 outward 의 최저점은
+    꼭짓점에 있다 — 끝점만 보면 된다.
+
+    브림은 파일의 첫 압출이라 **그 앞부분만** 역변환한 결과가 전체를 역변환한 것의
+    앞부분과 같다 (역변환의 상태는 직전 위치와 누적 E 뿐이다). 전체를 두 번 돌리지 않는다.
+
+    ring_k: `slice_mesh` 의 stats["brim_ring_k"]. 주면 '안쪽 몇 바퀴까지 되는지' 를
+    정보에 넣는다 (fit). 반환 정보: rings, z_min, z_max, fit, reason.
+    """
+    i0 = next((i for i, (k, p) in enumerate(items)
+               if k == "raw" and p == BRIM_TYPE), None)
+    if i0 is None:
+        return None, {"rings": 0, "z_min": None, "z_max": None, "fit": 0, "reason": None}
+    i1 = next((i for i in range(i0 + 1, len(items)) if items[i][0] == "raw"
+               and str(items[i][1]).upper().startswith(";TYPE:")), len(items))
+    zw = next(mv.z for k, mv in items[i0:i1] if k == "move" and mv.z is not None)
+    real, _ = backtransform(items[:i1], cone_angle_deg, cone_type, chord_tol=chord_tol)
+    j0 = next(i for i, (k, p) in enumerate(real) if k == "raw" and p == BRIM_TYPE)
+
+    rings = []                       # 고리마다 끝점 높이들 (고리 = 트래블 + 닫힌 압출)
+    prev_g = None
+    for k, mv in real[j0 + 1:]:
+        if k != "move":
+            continue
+        if mv.g == 0 and prev_g != 0:
+            rings.append([])
+        rings[-1].append(round(float(mv.z), 3))      # 파일에 적히는 값
+        prev_g = mv.g
+
+    theta0 = abs(float(cone_angle_deg.theta_at(zw))
+                 if hasattr(cone_angle_deg, "theta_at") else float(cone_angle_deg))
+    z_all = [z for r in rings for z in r]
+    z_lo, z_hi = min(z_all), max(z_all)
+    z_top = BRIM_MAX_LIFT * layer_height
+
+    def tilt_limit(z):
+        # `to_rep5x` 의 방어선과 글자 그대로 같은 식 (소수 3자리로 내린 B_safe)
+        from conical.rep5x import BED_GUARD_MARGIN, b_safe
+        return math.floor(b_safe(z, mach.hotend, mach.bed_clearance + BED_GUARD_MARGIN)
+                          * 1000.0) / 1000.0
+
+    def bad(r):
+        if min(r) < 0.0:
+            return "below"
+        if max(r) > z_top + 1e-9:
+            return "lifted"
+        if mach is not None and theta0 > tilt_limit(min(r)):
+            return "bed_gap"
+        return None
+
+    verdicts = [bad(r) for r in rings]
+    fit = None
+    if ring_k is not None and len(ring_k) == len(rings):
+        failing = [k for k, v in zip(ring_k, verdicts, strict=True) if v]
+        fit = min(failing) if failing else max(ring_k) + 1
+    info = {"rings": len(rings), "z_min": z_lo, "z_max": z_hi, "fit": fit,
+            "reason": next((v for v in ("below", "lifted", "bed_gap") if v in verdicts),
+                           None)}
+    if info["reason"] is None:
+        return None, info
+    n_bad = sum(1 for v in verdicts if v)
+    why = {
+        "below": f"역변환하면 고리 {n_bad}/{len(rings)}개가 **베드 아래**로 내려간다 "
+                 f"(최저 z={z_lo:.3f}mm). 층 0 은 실공간에서 원뿔면 z = Z′ − r·tanθ 라 "
+                 f"축에서 멀수록 낮다",
+        "lifted": f"역변환하면 고리 {n_bad}/{len(rings)}개가 **베드에서 뜬다** "
+                  f"(최고 z={z_hi:.3f}mm > 층고의 {BRIM_MAX_LIFT:g}배). inward 원뿔의 "
+                  f"층 0 은 바깥으로 갈수록 올라간다",
+        "bed_gap": f"팁이 z={z_lo:.3f}mm 까지 내려가 {theta0:.1f}° 기운 핫엔드가 베드 "
+                   f"여유를 침범한다 (그 높이의 B_safe = "
+                   f"{tilt_limit(z_lo) if mach is not None else 0.0:.2f}°)",
+    }[info["reason"]]
+    if fit is not None:
+        why += (f" — 안쪽 {fit}바퀴까지는 된다 (--brim {fit})" if fit > 0
+                else " — 한 바퀴도 못 놓는다")
+    return why, info
 
 
 def _rep5x_self_check(all_items, mach):
@@ -136,6 +242,21 @@ def main():
     ap.add_argument("--perimeters", type=int, default=2)
     ap.add_argument("--infill-spacing", type=float, default=2.5,
                     help="인필 간격 mm (0=인필 없음)")
+    ap.add_argument("--min-layer-time", type=float, default=0.0,
+                    help="[내장 슬라이서] 최소 층 시간(초). 층의 추정 시간이 이보다 "
+                         "짧으면 그 층의 압출 피드를 낮춘다. 0=끔(기본, 예전 출력과 같다). "
+                         "변환공간 길이 기준이라 실제는 cosθ 배까지 짧다 "
+                         "(conical/planar_slicer.py 머리말)")
+    ap.add_argument("--min-print-speed", type=float, default=10.0,
+                    help="[내장 슬라이서] --min-layer-time 이 낮출 수 있는 속도 하한 mm/s "
+                         "(기본 10). 이 아래로는 안 내리므로 아주 작은 층은 시간을 못 채운다")
+    ap.add_argument("--fan", action="store_true",
+                    help=f"[내장 슬라이서] 처음 {FAN_AFTER_LAYERS} 층 뒤에 팬을 켠다 "
+                         f"(M106 S255, 끝에 M106 S0). 기본 끔")
+    ap.add_argument("--brim", type=int, default=0,
+                    help="[내장 슬라이서] 층 0 윤곽 바깥에 브림 N 바퀴 (기본 0). "
+                         "역변환한 높이가 베드 아래거나 떠 있으면 건너뛰고 알린다 — "
+                         "outward 원뿔에서는 거의 성립하지 않는다")
     ap.add_argument("--chord-tol", type=float, default=0.05,
                     help="역변환 허용 현 오차 ε (mm)")
     ap.add_argument("--max-edge", type=float, default=1.5,
@@ -173,6 +294,8 @@ def main():
                     help="기계 프로파일 INI (시작/종료 G-code). 없으면 경로만 "
                          "나오고 실물로는 못 뽑는다 — profiles/machine.example.ini 참고")
     args = ap.parse_args()
+    if args.min_layer_time < 0 or args.min_print_speed <= 0 or args.brim < 0:
+        raise SystemExit("--min-layer-time ≥ 0, --min-print-speed > 0, --brim ≥ 0 이어야 한다")
 
     mesh = trimesh.load(args.stl, force="mesh")
     mesh = center_on_axis(mesh)
@@ -326,6 +449,12 @@ def main():
     import contextlib
     import io
 
+    cone = profile if profile is not None else angle     # 역변환·5축 변환이 받는 각도
+    # 브림은 역변환한 높이를 보고 나서야 넣을지 정해진다. 한 번 건너뛰기로 하면
+    # 아래 재시도(번갈아 없이 다시)에서도 그대로 간다.
+    brim = {"n": args.brim, "note": None}
+    cool = {"times": None}      # 내장 슬라이서가 잰 층 시간 (감속 전) — 권장값 안내용
+
     def _stages(alt):
         rw = {"fixable": True}
         r5 = {}
@@ -334,19 +463,68 @@ def main():
             with tempfile.TemporaryDirectory() as td:
                 items = run_external_slicer(args.slicer_cmd, warped, td)
             print(f"  슬라이서    : 외부 CLI ({args.slicer_cmd.split()[0]})")
+            if args.min_layer_time > 0 or args.fan or args.brim > 0:
+                print("  ⚠ --min-layer-time / --fan / --brim 은 내장 슬라이서 전용이라 "
+                      "무시한다 — 외부 슬라이서의 냉각·브림 설정을 쓸 것")
         else:
-            # rep5x: 링을 번갈아 돌아 C 가 쌓이지 않게 한다 (되감기 제거, planar_slicer 참고)
-            items = slice_mesh(warped, layer_height=args.layer_height,
-                               perimeters=args.perimeters,
-                               infill_spacing=args.infill_spacing,
-                               alternate_rings=alt)
+            sl = {}
+
+            def _slice(n_brim):
+                # rep5x: 링을 번갈아 돌아 C 가 쌓이지 않게 한다 (되감기 제거, planar_slicer 참고)
+                return slice_mesh(warped, layer_height=args.layer_height,
+                                  perimeters=args.perimeters,
+                                  infill_spacing=args.infill_spacing,
+                                  alternate_rings=alt,
+                                  min_layer_time=args.min_layer_time,
+                                  min_print_speed=args.min_print_speed,
+                                  fan=args.fan, brim=n_brim, stats=sl)
+
+            items = _slice(brim["n"])
+            binfo = None
+            if brim["n"] > 0:
+                # 브림이 실공간에서 베드 위에 놓이는가 — **역변환해서** 본다
+                why_not, binfo = brim_problem(items, cone, direction, args.layer_height,
+                                              args.chord_tol, sl.get("brim_ring_k"), mach)
+                if why_not:
+                    brim.update(n=0, note=why_not)
+                    items = _slice(0)          # 브림 없는 출력과 비트 단위로 같아진다
             print(f"  슬라이서    : 내장 (layer {args.layer_height}mm, "
                   f"perim {args.perimeters}, infill {args.infill_spacing}mm"
                   f"{', 링 방향 번갈아' if alt else ''})")
+            if brim["note"]:
+                print(f"  ⚠ 브림 건너뜀: 요청 {args.brim}바퀴 — {brim['note']}")
+            elif brim["n"] > 0:
+                print(f"  브림        : 층 0 에 {brim['n']}바퀴, 고리 {binfo['rings']}개 "
+                      f"(역변환한 팁 높이 {binfo['z_min']:.3f}~{binfo['z_max']:.3f}mm, "
+                      f"명목 {args.layer_height:g}mm)")
+                if binfo["z_min"] < args.layer_height / 2.0 - 1e-9:
+                    print(f"    ⚠ 팁이 층고의 절반({args.layer_height / 2.0:g}mm) 아래다 — "
+                          f"비드가 그만큼 눌린다(압출량은 층고 기준 그대로). 원뿔면이 "
+                          f"윤곽 바깥에서 베드로 내려가기 때문이다")
+            if args.fan:
+                print(f"  팬          : {FAN_AFTER_LAYERS}층을 낸 뒤 M106 S255, 끝에 M106 S0"
+                      if len(sl["layer_times"]) > FAN_AFTER_LAYERS else
+                      f"  팬          : 층이 {len(sl['layer_times'])}개뿐이라 켜지 않았다")
+            # 층 시간 (변환공간 길이 / 명령 피드 — 슬라이서가 감속을 정할 때 쓴 값)
+            lt = np.array([[b, a] for _i, b, a in sl["layer_times"]])
+            if len(lt):
+                cool["times"] = lt[:, 0]
+                txt = (f"  층 시간     : 중앙 {np.median(lt[:, 0]):.1f}s, 최소 "
+                       f"{lt[:, 0].min():.1f}s ({len(lt)}층, 변환공간 추정·가속 무시)")
+                if args.min_layer_time > 0:
+                    txt += (f"\n                → 최소 {args.min_layer_time:g}s: "
+                            f"{sl['slowed_layers']}층의 압출 피드를 낮춰 중앙 "
+                            f"{np.median(lt[:, 1]):.1f}s, 최소 {lt[:, 1].min():.1f}s"
+                            + (f" (가장 낮은 F{gc.format_feed(sl['min_feed'])})"
+                               if sl["min_feed"] else ""))
+                    if sl["floor_limited"]:
+                        txt += (f"\n                ⚠ {sl['floor_limited']}층은 속도 하한 "
+                                f"{args.min_print_speed:g}mm/s 에 걸려 "
+                                f"{args.min_layer_time:g}s 를 못 채운다")
+                print(txt)
 
         # [4] 역변환 (적응 현 분할; 프로필이면 점별 θ(Zw) + 블렌드 분할 2배)
-        real_items, stats = backtransform(items, profile if profile is not None else angle,
-                                          direction, chord_tol=args.chord_tol)
+        real_items, stats = backtransform(items, cone, direction, chord_tol=args.chord_tol)
         print(f"  역변환      : 이동 {stats['moves_in']:,} → {stats['moves_out']:,} "
               f"(확장 {stats['expansion']:.2f}배, ε={args.chord_tol}mm 적응 분할)")
 
@@ -412,6 +590,15 @@ def main():
                   f"{fs['capped']:,}개 (+{fs['added_seconds']:.0f}초, 최저 "
                   f"F{gc.format_feed(fs['min_feed']) if fs['min_feed'] else '-'}), "
                   f"회전만 하는 이동 {fs['rotation_only']:,}개")
+        if args.min_layer_time > 0 and not args.slicer_cmd:
+            # 위 추정은 변환공간 길이다. 실제로 적힌 경로·F 로 다시 잰다: 역변환이 둘레
+            # 길이를 cosθ 배로 줄이고(짧아진다), rep5x 는 회전 상한·되감기가 더한다(길어진다).
+            real_t = np.array([t for t in layer_times(real_items).values() if t > 0])
+            n_short = int((real_t < args.min_layer_time - 1e-9).sum())
+            print(f"  층 시간(파일): 적힌 경로·F 로 다시 재면 중앙 {np.median(real_t):.1f}s, "
+                  f"최소 {real_t.min():.1f}s — {args.min_layer_time:g}s 미만 {n_short}층"
+                  + (" (속도 하한에 걸린 층, 그리고 역변환이 둘레 길이를 cosθ 배로 "
+                     "줄인 몫)" if n_short else ""))
         return real_items, stats, rw, r5
 
     alt_first = args.mode == "rep5x" and not args.slicer_cmd
@@ -475,6 +662,15 @@ def main():
                "source_stl": Path(args.stl).name, **angle_ctx}
         head, tail = mp.start_items(ctx), mp.end_items(ctx)
         print(f"  기계        : {mp.name}  ({args.machine_profile})")
+        # 프로파일이 권하는 최소 층 시간. **권장일 뿐 자동으로 걸지 않는다** — 걸면 같은
+        # 명령으로 다시 뽑은 파일이 달라진다(시험 사다리 재현). 짧은 층이 있을 때만 알린다.
+        rec = mp.values.get("recommended_min_layer_time")
+        if rec and args.min_layer_time <= 0 and cool["times"] is not None:
+            n_fast = int((cool["times"] < float(rec)).sum())
+            if n_fast:
+                print(f"    ↳ 이 프로파일의 권장 최소 층 시간 {float(rec):g}s 보다 짧은 층이 "
+                      f"{n_fast}/{len(cool['times'])}개다 — --min-layer-time {float(rec):g} "
+                      f"(지금은 꺼짐)")
         # 시작 G-code 의 프라임 선이 부품 자리(원점 둘레)를 지나가면 첫 층이 그 위에
         # 올라간다. 템플릿이 실제로 그랬다(2026-10-16) — 매번 검사한다.
         part_r = max((math.hypot(mv.x, mv.y) for k, mv in real_items
