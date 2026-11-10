@@ -1,0 +1,86 @@
+[
+ {
+  "slug": "exact_lambda",
+  "png": "docs/report/figures/exact_lambda.png",
+  "script": "tools/report_figs/exact_lambda.py",
+  "data_sources": [
+   "analyze_blend_ratio.widen(compare_waist.waisted_model(3.0), λ), λ 1.16~1.30 간격 0.002 (71 점)",
+   "conical.selector.select_cone(method='grid')",
+   "conical.exact_angle.select_uniform_exact"
+  ],
+  "description": "λ 축에서 고른 균일각: 2° 격자는 점프 5회(인용된 24→32° 포함), 정확 탐색은 1회만 남는다(구조적 점프). (b) 격자가 잃는 J 가 경쟁 계단 차보다 크다",
+  "key_numbers": {
+   "grid_jumps": [
+    [
+     1.17,
+     1.172,
+     30.0,
+     28.0
+    ],
+    [
+     1.196,
+     1.198,
+     28.0,
+     26.0
+    ],
+    [
+     1.218,
+     1.22,
+     26.0,
+     24.0
+    ],
+    [
+     1.236,
+     1.238,
+     24.0,
+     32.0
+    ],
+    [
+     1.24,
+     1.242,
+     32.0,
+     34.0
+    ]
+   ],
+   "exact_jumps": [
+    [
+     1.202,
+     1.204,
+     28.066,
+     30.392
+    ]
+   ],
+   "grid_jump_count": 5,
+   "exact_jump_count": 1,
+   "exact_angle_range_deg": [
+    27.489,
+    31.429
+   ],
+   "J_loss_median": 0.1258,
+   "J_loss_max": 0.2739,
+   "k": 0.2
+  }
+ },
+ {
+  "slug": "exact_step",
+  "png": "docs/report/figures/exact_step.png",
+  "script": "tools/report_figs/exact_step.py",
+  "data_sources": [
+   "compare_waist.waisted_model(2.0) (허리 r=2 = 램프, 9856 면)",
+   "conical.exact_angle.support_step / select_uniform_exact",
+   "conical.analytic.support_fraction (2° 격자 점)",
+   "conical.selector.select_cone(method='grid')"
+  ],
+  "description": "허리 r=2 모델의 S(θ) 계단함수와 J(θ): 판정이 바뀌는 근에서만 S 가 변하고, 정확 최적은 근 바로 위, 2° 격자 최적은 그보다 낮은 J",
+  "key_numbers": {
+   "exact_angle_deg": 21.13,
+   "exact_J": 2.3687,
+   "grid_angle_deg": 24.0,
+   "grid_J": 2.3318,
+   "rising_roots": 31,
+   "falling_roots": 0,
+   "S0_pct": 8.9091,
+   "k": 0.2
+  }
+ }
+]
