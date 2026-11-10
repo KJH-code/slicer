@@ -1,0 +1,339 @@
+[
+ {
+  "label": "균일 0°",
+  "profile": [
+   [
+    0.0,
+    0.0
+   ]
+  ],
+  "minutes": 5.694458088928127,
+  "c_bound_min": 0.0,
+  "c_turns": 0.0,
+  "c_max_step": 0.0,
+  "rewinds": 0,
+  "fatal": 0,
+  "warn": 0,
+  "align": 0.5205023249863265,
+  "align_ratio": 1.0,
+  "cusp_mean": 0.156150697495898,
+  "worse_area_pct": 0.0,
+  "path_mm": 8375.66439634392,
+  "layer_comments": 101,
+  "moves": 9967,
+  "seconds": 1.6,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 4°",
+  "profile": [
+   [
+    0.0,
+    4.0
+   ]
+  ],
+  "minutes": 21.008467205415492,
+  "c_bound_min": 0.2632134296086161,
+  "c_turns": 1.8028083333333333,
+  "c_max_step": 92.51499999999999,
+  "rewinds": 219,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5083610636900379,
+  "align_ratio": 0.9766739537683955,
+  "cusp_mean": 0.15213681650670802,
+  "worse_area_pct": 35.292050924548064,
+  "path_mm": 8497.416861438096,
+  "layer_comments": 103,
+  "moves": 10976,
+  "seconds": 1.9,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 8°",
+  "profile": [
+   [
+    0.0,
+    8.0
+   ]
+  ],
+  "minutes": 22.222098433567233,
+  "c_bound_min": 0.3551869231310009,
+  "c_turns": 1.9891694444444445,
+  "c_max_step": 97.686,
+  "rewinds": 224,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.49685136216717984,
+  "align_ratio": 0.954561273439522,
+  "cusp_mean": 0.1476048116594735,
+  "worse_area_pct": 35.292050924548064,
+  "path_mm": 8622.438736540356,
+  "layer_comments": 104,
+  "moves": 11433,
+  "seconds": 1.6,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 12°",
+  "profile": [
+   [
+    0.0,
+    12.0
+   ]
+  ],
+  "minutes": 23.354151729864423,
+  "c_bound_min": 0.3637597509404237,
+  "c_turns": 1.9564611111111112,
+  "c_max_step": 101.403,
+  "rewinds": 219,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.48583076817009635,
+  "align_ratio": 0.9333882767629501,
+  "cusp_mean": 0.14256426007447245,
+  "worse_area_pct": 36.78521565025201,
+  "path_mm": 8790.983491241528,
+  "layer_comments": 106,
+  "moves": 11842,
+  "seconds": 1.4,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 16°",
+  "profile": [
+   [
+    0.0,
+    16.0
+   ]
+  ],
+  "minutes": 24.489350671017984,
+  "c_bound_min": 0.43295068946780374,
+  "c_turns": 1.986547222222222,
+  "c_max_step": 104.07,
+  "rewinds": 219,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.475282637311369,
+  "align_ratio": 0.9131229861919532,
+  "cusp_mean": 0.13706129819758905,
+  "worse_area_pct": 38.270907315445214,
+  "path_mm": 8884.743044587633,
+  "layer_comments": 108,
+  "moves": 12127,
+  "seconds": 1.7,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 20°",
+  "profile": [
+   [
+    0.0,
+    20.0
+   ]
+  ],
+  "minutes": 25.681734432671785,
+  "c_bound_min": 0.5234775336488241,
+  "c_turns": 1.984663888888889,
+  "c_max_step": 107.815,
+  "rewinds": 222,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.4654477137846485,
+  "align_ratio": 0.8942279245282443,
+  "cusp_mean": 0.13121333460153173,
+  "worse_area_pct": 38.270907315445214,
+  "path_mm": 9176.689182669212,
+  "layer_comments": 109,
+  "moves": 12781,
+  "seconds": 1.8,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 24°",
+  "profile": [
+   [
+    0.0,
+    24.0
+   ]
+  ],
+  "minutes": 28.343747315465727,
+  "c_bound_min": 0.6335939557512918,
+  "c_turns": 1.9854361111111112,
+  "c_max_step": 111.79099999999998,
+  "rewinds": 220,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.45589667756596347,
+  "align_ratio": 0.8758782731238324,
+  "cusp_mean": 0.12494470168342181,
+  "worse_area_pct": 39.74555710290817,
+  "path_mm": 9495.945757754302,
+  "layer_comments": 111,
+  "moves": 13614,
+  "seconds": 1.6,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 28°",
+  "profile": [
+   [
+    0.0,
+    28.0
+   ]
+  ],
+  "minutes": 30.4121379020297,
+  "c_bound_min": 0.7796712054802017,
+  "c_turns": 1.994438888888889,
+  "c_max_step": 116.91000000000001,
+  "rewinds": 219,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.4593989986084047,
+  "align_ratio": 0.8826070058773955,
+  "cusp_mean": 0.12168757199492773,
+  "worse_area_pct": 41.205620616430906,
+  "path_mm": 9892.41154382415,
+  "layer_comments": 113,
+  "moves": 14481,
+  "seconds": 1.8,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 32°",
+  "profile": [
+   [
+    0.0,
+    32.0
+   ]
+  ],
+  "minutes": 32.54526504040445,
+  "c_bound_min": 0.9710502277049624,
+  "c_turns": 1.9831305555555554,
+  "c_max_step": 121.588,
+  "rewinds": 219,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.48439626815246506,
+  "align_ratio": 0.9306322851971699,
+  "cusp_mean": 0.12323739989759268,
+  "worse_area_pct": 42.238248686107944,
+  "path_mm": 10232.107528040093,
+  "layer_comments": 116,
+  "moves": 15144,
+  "seconds": 1.9,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 36°",
+  "profile": [
+   [
+    0.0,
+    36.0
+   ]
+  ],
+  "minutes": 35.32004573170284,
+  "c_bound_min": 1.2223300215258666,
+  "c_turns": 1.9648666666666665,
+  "c_max_step": 124.73400000000004,
+  "rewinds": 234,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5096583285517553,
+  "align_ratio": 0.9791662862699871,
+  "cusp_mean": 0.12369667473693016,
+  "worse_area_pct": 42.238248686107944,
+  "path_mm": 10821.720154217563,
+  "layer_comments": 118,
+  "moves": 16649,
+  "seconds": 2.0,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 40°",
+  "profile": [
+   [
+    0.0,
+    40.0
+   ]
+  ],
+  "minutes": 38.72515386593849,
+  "c_bound_min": 1.1121219825545432,
+  "c_turns": 1.9938694444444445,
+  "c_max_step": 127.81200000000001,
+  "rewinds": 235,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5348255084153829,
+  "align_ratio": 1.027518000864708,
+  "cusp_mean": 0.12291003262796588,
+  "worse_area_pct": 43.179371904423924,
+  "path_mm": 11337.286299579036,
+  "layer_comments": 121,
+  "moves": 18513,
+  "seconds": 1.8,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 44°",
+  "profile": [
+   [
+    0.0,
+    44.0
+   ]
+  ],
+  "minutes": 42.61444287590085,
+  "c_bound_min": 1.139220790252564,
+  "c_turns": 1.998488888888889,
+  "c_max_step": 133.704,
+  "rewinds": 228,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5595926233457869,
+  "align_ratio": 1.0751011023062909,
+  "cusp_mean": 0.12076117378456211,
+  "worse_area_pct": 44.02671997222807,
+  "path_mm": 12304.20047641623,
+  "layer_comments": 124,
+  "moves": 21226,
+  "seconds": 2.1,
+  "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "밴드2",
+  "profile": [
+   [
+    0.006392146150271098,
+    30.0
+   ],
+   [
+    16.34849550315555,
+    30.0
+   ],
+   [
+    18.657896642994718,
+    0.0
+   ],
+   [
+    30.0,
+    0.0
+   ]
+  ],
+  "minutes": 21.523597567667704,
+  "c_bound_min": 0.462177657736546,
+  "c_turns": 1.9604472222222222,
+  "c_max_step": 119.774,
+  "rewinds": 133,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5658272967004142,
+  "align_ratio": 1.0870792877155318,
+  "cusp_mean": 0.15714657518124997,
+  "worse_area_pct": 40.04340514476048,
+  "path_mm": 8888.386154355383,
+  "layer_comments": 101,
+  "moves": 11310,
+  "seconds": 4.6,
+  "model": "램프 (examples/lamp.stl)"
+ }
+]
