@@ -294,3 +294,15 @@
 {"model": "허리3 ×1.5", "kind": "band2", "angle": null, "layer_height": 0.4, "thetas": [32.0, 0.0], "blends": [[15.009, 21.996]], "opt": 1.741587780741681, "pes": 30.875088647014515, "seconds": 13.9}
 {"model": "허리3 ×1.5", "kind": "uniform_J", "angle": null, "layer_height": 0.4, "thetas": [36.0], "blends": [], "opt": 0.39937844497611696, "pes": 9.951823945291654, "seconds": 27.6}
 {"model": "허리3 ×1.5", "kind": "sweep", "angle": 44, "layer_height": 0.3, "thetas": [44.0], "blends": [], "opt": 0.011821694798660467, "pes": 3.08144747220587, "seconds": 43.4}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 0, "layer_height": 0.4, "thetas": [0.0], "blends": [], "opt": 6.334459751378614, "pes": 26.651960764416366, "seconds": 13.5}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 4, "layer_height": 0.4, "thetas": [4.0], "blends": [], "opt": 5.343750015394494, "pes": 26.91849574265252, "seconds": 14.2}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 8, "layer_height": 0.4, "thetas": [8.0], "blends": [], "opt": 4.9197859111827285, "pes": 12.797765449948113, "seconds": 14.3}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 12, "layer_height": 0.4, "thetas": [12.0], "blends": [], "opt": 4.303159529656187, "pes": 12.625231936972819, "seconds": 14.9}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 16, "layer_height": 0.4, "thetas": [16.0], "blends": [], "opt": 4.147590367528607, "pes": 11.874473401253711, "seconds": 15.0}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 20, "layer_height": 0.4, "thetas": [20.0], "blends": [], "opt": 3.4653476851512934, "pes": 11.838727200625032, "seconds": 16.1}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 24, "layer_height": 0.4, "thetas": [24.0], "blends": [], "opt": 2.7811883495479988, "pes": 11.849777277054153, "seconds": 17.2}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 28, "layer_height": 0.4, "thetas": [28.0], "blends": [], "opt": 1.851686575395726, "pes": 10.634889070640572, "seconds": 19.5}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 32, "layer_height": 0.4, "thetas": [32.0], "blends": [], "opt": 1.2652776498642093, "pes": 10.756597571821796, "seconds": 16.3}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 36, "layer_height": 0.4, "thetas": [36.0], "blends": [], "opt": 0.39937844497611696, "pes": 9.951823945291654, "seconds": 19.3}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 40, "layer_height": 0.4, "thetas": [40.0], "blends": [], "opt": 0.027762785479386792, "pes": 0.08858982299441355, "seconds": 24.6}
+{"model": "허리3 ×1.5", "kind": "sweep", "angle": 44, "layer_height": 0.4, "thetas": [44.0], "blends": [], "opt": 0.0, "pes": 0.0, "seconds": 26.1}

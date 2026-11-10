@@ -335,5 +335,671 @@
   "moves": 11310,
   "seconds": 4.6,
   "model": "램프 (examples/lamp.stl)"
+ },
+ {
+  "label": "균일 0°",
+  "profile": [
+   [
+    0.0,
+    0.0
+   ]
+  ],
+  "minutes": 6.078353816084839,
+  "c_bound_min": 0.0,
+  "c_turns": 0.0,
+  "c_max_step": 0.0,
+  "rewinds": 0,
+  "fatal": 0,
+  "warn": 0,
+  "align": 0.4823356495440925,
+  "align_ratio": 1.0,
+  "cusp_mean": 0.14470069486322776,
+  "worse_area_pct": 0.0,
+  "path_mm": 8951.141122540537,
+  "layer_comments": 101,
+  "moves": 10928,
+  "seconds": 1.5,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 4°",
+  "profile": [
+   [
+    0.0,
+    4.0
+   ]
+  ],
+  "minutes": 22.666443473793517,
+  "c_bound_min": 0.4091363427923932,
+  "c_turns": 1.9396194444444441,
+  "c_max_step": 92.485,
+  "rewinds": 225,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.4705754155217291,
+  "align_ratio": 0.9756181529740146,
+  "cusp_mean": 0.14082873523816675,
+  "worse_area_pct": 34.775330016995774,
+  "path_mm": 9072.38420367931,
+  "layer_comments": 103,
+  "moves": 11961,
+  "seconds": 1.4,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 8°",
+  "profile": [
+   [
+    0.0,
+    8.0
+   ]
+  ],
+  "minutes": 23.847269686504227,
+  "c_bound_min": 0.3710593054599817,
+  "c_turns": 1.9548805555555557,
+  "c_max_step": 97.64200000000002,
+  "rewinds": 222,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.45924109117230005,
+  "align_ratio": 0.9521193210710807,
+  "cusp_mean": 0.1364315365325895,
+  "worse_area_pct": 36.16200790879165,
+  "path_mm": 9201.880136828102,
+  "layer_comments": 104,
+  "moves": 12370,
+  "seconds": 1.5,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 12°",
+  "profile": [
+   [
+    0.0,
+    12.0
+   ]
+  ],
+  "minutes": 25.224664792387088,
+  "c_bound_min": 0.4538794313821827,
+  "c_turns": 1.9817666666666665,
+  "c_max_step": 101.23400000000001,
+  "rewinds": 211,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.4487014623263237,
+  "align_ratio": 0.9302680876904701,
+  "cusp_mean": 0.1316688776460731,
+  "worse_area_pct": 37.54378856171037,
+  "path_mm": 9368.021271034873,
+  "layer_comments": 106,
+  "moves": 12757,
+  "seconds": 1.6,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 16°",
+  "profile": [
+   [
+    0.0,
+    16.0
+   ]
+  ],
+  "minutes": 26.325977872385447,
+  "c_bound_min": 0.4121876886316028,
+  "c_turns": 1.9938972222222222,
+  "c_max_step": 103.42399999999998,
+  "rewinds": 218,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.4386528750784942,
+  "align_ratio": 0.9094349038747445,
+  "cusp_mean": 0.12649806198785182,
+  "worse_area_pct": 37.54378856171037,
+  "path_mm": 9475.823938446953,
+  "layer_comments": 108,
+  "moves": 13085,
+  "seconds": 1.7,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 20°",
+  "profile": [
+   [
+    0.0,
+    20.0
+   ]
+  ],
+  "minutes": 27.40379859163676,
+  "c_bound_min": 0.5145102354200004,
+  "c_turns": 1.9971333333333336,
+  "c_max_step": 105.418,
+  "rewinds": 217,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.42939783389184266,
+  "align_ratio": 0.8902469355058306,
+  "cusp_mean": 0.12105059276688533,
+  "worse_area_pct": 38.91764789408113,
+  "path_mm": 9768.860419613835,
+  "layer_comments": 109,
+  "moves": 13669,
+  "seconds": 1.7,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 24°",
+  "profile": [
+   [
+    0.0,
+    24.0
+   ]
+  ],
+  "minutes": 29.978689857046856,
+  "c_bound_min": 0.5731406646689262,
+  "c_turns": 1.9940944444444446,
+  "c_max_step": 113.47399999999999,
+  "rewinds": 223,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.44000267100184415,
+  "align_ratio": 0.9122333615973403,
+  "cusp_mean": 0.12058873243330394,
+  "worse_area_pct": 40.280579485767056,
+  "path_mm": 10052.41501225681,
+  "layer_comments": 111,
+  "moves": 14320,
+  "seconds": 1.8,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 28°",
+  "profile": [
+   [
+    0.0,
+    28.0
+   ]
+  ],
+  "minutes": 31.78931648687961,
+  "c_bound_min": 0.8117470143825815,
+  "c_turns": 1.9942305555555555,
+  "c_max_step": 116.71,
+  "rewinds": 216,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.4667714203548508,
+  "align_ratio": 0.9677315388071499,
+  "cusp_mean": 0.12364041060529736,
+  "worse_area_pct": 41.629601272198286,
+  "path_mm": 10451.685673671578,
+  "layer_comments": 113,
+  "moves": 15090,
+  "seconds": 1.7,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 32°",
+  "profile": [
+   [
+    0.0,
+    32.0
+   ]
+  ],
+  "minutes": 34.251173892131156,
+  "c_bound_min": 0.9887973455041547,
+  "c_turns": 1.9631861111111113,
+  "c_max_step": 121.402,
+  "rewinds": 222,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.4937038857114434,
+  "align_ratio": 1.0235691394117274,
+  "cusp_mean": 0.1256053921027858,
+  "worse_area_pct": 41.629601272198286,
+  "path_mm": 10879.583739653224,
+  "layer_comments": 116,
+  "moves": 15930,
+  "seconds": 2.0,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 36°",
+  "profile": [
+   [
+    0.0,
+    36.0
+   ]
+  ],
+  "minutes": 37.04129766662523,
+  "c_bound_min": 0.9574270635154132,
+  "c_turns": 1.9889583333333336,
+  "c_max_step": 124.265,
+  "rewinds": 233,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5207913131505867,
+  "align_ratio": 1.07972801438758,
+  "cusp_mean": 0.1263987068585009,
+  "worse_area_pct": 42.96176217553296,
+  "path_mm": 11459.828011671038,
+  "layer_comments": 118,
+  "moves": 17132,
+  "seconds": 2.1,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 40°",
+  "profile": [
+   [
+    0.0,
+    40.0
+   ]
+  ],
+  "minutes": 40.97292672377877,
+  "c_bound_min": 1.234918620491096,
+  "c_turns": 1.999822222222222,
+  "c_max_step": 127.62300000000002,
+  "rewinds": 231,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5475857190388931,
+  "align_ratio": 1.135279383882314,
+  "cusp_mean": 0.1258424991603162,
+  "worse_area_pct": 44.274148656119564,
+  "path_mm": 11998.767490476906,
+  "layer_comments": 121,
+  "moves": 18524,
+  "seconds": 1.9,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 44°",
+  "profile": [
+   [
+    0.0,
+    44.0
+   ]
+  ],
+  "minutes": 44.58604287443176,
+  "c_bound_min": 1.1812964847835477,
+  "c_turns": 1.9985083333333333,
+  "c_max_step": 133.644,
+  "rewinds": 218,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5740120734919293,
+  "align_ratio": 1.1900676925590925,
+  "cusp_mean": 0.12387291910129787,
+  "worse_area_pct": 70.57044576469691,
+  "path_mm": 12920.552977661644,
+  "layer_comments": 124,
+  "moves": 21114,
+  "seconds": 2.2,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "밴드2",
+  "profile": [
+   [
+    0.005822652950882912,
+    28.0
+   ],
+   [
+    16.407782972834887,
+    28.0
+   ],
+   [
+    19.598039680115996,
+    0.0
+   ],
+   [
+    30.0,
+    0.0
+   ]
+  ],
+  "minutes": 22.11224046588753,
+  "c_bound_min": 0.5067176970888574,
+  "c_turns": 1.7758277777777778,
+  "c_max_step": 116.71,
+  "rewinds": 141,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5282959255347492,
+  "align_ratio": 1.0952869148985747,
+  "cusp_mean": 0.14782804397152072,
+  "worse_area_pct": 41.17341101444695,
+  "path_mm": 9364.480667914355,
+  "layer_comments": 101,
+  "moves": 12225,
+  "seconds": 4.9,
+  "model": "허리 r=3"
+ },
+ {
+  "label": "균일 0°",
+  "profile": [
+   [
+    0.0,
+    0.0
+   ]
+  ],
+  "minutes": 7.280288781666246,
+  "c_bound_min": 0.0,
+  "c_turns": 0.0,
+  "c_max_step": 0.0,
+  "rewinds": 0,
+  "fatal": 0,
+  "warn": 0,
+  "align": 0.49984484853569217,
+  "align_ratio": 1.0,
+  "cusp_mean": 0.14995345456070763,
+  "worse_area_pct": 0.0,
+  "path_mm": 10326.642810206566,
+  "layer_comments": 68,
+  "moves": 10752,
+  "seconds": 1.2,
+  "model": "구"
+ },
+ {
+  "label": "균일 4°",
+  "profile": [
+   [
+    0.0,
+    4.0
+   ]
+  ],
+  "minutes": 22.268127904388628,
+  "c_bound_min": 0.15066954047857703,
+  "c_turns": 1.9474638888888889,
+  "c_max_step": 92.917,
+  "rewinds": 153,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5009504778030962,
+  "align_ratio": 1.0022119449077909,
+  "cusp_mean": 0.14991905628505522,
+  "worse_area_pct": 51.32717054759066,
+  "path_mm": 10358.58547779062,
+  "layer_comments": 68,
+  "moves": 11279,
+  "seconds": 1.2,
+  "model": "구"
+ },
+ {
+  "label": "균일 8°",
+  "profile": [
+   [
+    0.0,
+    8.0
+   ]
+  ],
+  "minutes": 23.834936855993654,
+  "c_bound_min": 0.1173178413563786,
+  "c_turns": 1.9870611111111112,
+  "c_max_step": 96.458,
+  "rewinds": 152,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5050722013037121,
+  "align_ratio": 1.0104579506687597,
+  "cusp_mean": 0.1500470620080242,
+  "worse_area_pct": 52.792457077050194,
+  "path_mm": 10423.007175264953,
+  "layer_comments": 68,
+  "moves": 11312,
+  "seconds": 1.4,
+  "model": "구"
+ },
+ {
+  "label": "균일 12°",
+  "profile": [
+   [
+    0.0,
+    12.0
+   ]
+  ],
+  "minutes": 25.81005591157137,
+  "c_bound_min": 0.09845570729720925,
+  "c_turns": 2.0,
+  "c_max_step": 98.97,
+  "rewinds": 154,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5107491866755928,
+  "align_ratio": 1.0218154456764836,
+  "cusp_mean": 0.1498764274570421,
+  "worse_area_pct": 55.65436487491334,
+  "path_mm": 10519.892653646186,
+  "layer_comments": 68,
+  "moves": 11412,
+  "seconds": 1.3,
+  "model": "구"
+ },
+ {
+  "label": "균일 16°",
+  "profile": [
+   [
+    0.0,
+    16.0
+   ]
+  ],
+  "minutes": 27.87441388885228,
+  "c_bound_min": 0.19222782038904224,
+  "c_turns": 1.9621972222222224,
+  "c_max_step": 104.39699999999999,
+  "rewinds": 151,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5193297915191145,
+  "align_ratio": 1.0389819821900814,
+  "cusp_mean": 0.14976355084408724,
+  "worse_area_pct": 55.94869540983155,
+  "path_mm": 10704.69503456861,
+  "layer_comments": 69,
+  "moves": 11754,
+  "seconds": 1.4,
+  "model": "구"
+ },
+ {
+  "label": "균일 20°",
+  "profile": [
+   [
+    0.0,
+    20.0
+   ]
+  ],
+  "minutes": 29.637154668783936,
+  "c_bound_min": 0.23735765705986764,
+  "c_turns": 2.0139777777777774,
+  "c_max_step": 108.141,
+  "rewinds": 152,
+  "fatal": 1,
+  "warn": 1,
+  "align": 0.5294886287731148,
+  "align_ratio": 1.0593059632889381,
+  "cusp_mean": 0.14926696717444357,
+  "worse_area_pct": 58.132581089423056,
+  "path_mm": 10931.367164725378,
+  "layer_comments": 70,
+  "moves": 12186,
+  "seconds": 1.3,
+  "model": "구"
+ },
+ {
+  "label": "균일 24°",
+  "profile": [
+   [
+    0.0,
+    24.0
+   ]
+  ],
+  "minutes": 31.646384167568424,
+  "c_bound_min": 0.21186577125710657,
+  "c_turns": 1.980738888888889,
+  "c_max_step": 111.93700000000001,
+  "rewinds": 153,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5421071635631146,
+  "align_ratio": 1.084550866436317,
+  "cusp_mean": 0.14857186104857933,
+  "worse_area_pct": 59.02518892197934,
+  "path_mm": 11205.91514402435,
+  "layer_comments": 71,
+  "moves": 12736,
+  "seconds": 1.3,
+  "model": "구"
+ },
+ {
+  "label": "균일 28°",
+  "profile": [
+   [
+    0.0,
+    28.0
+   ]
+  ],
+  "minutes": 34.22260757919244,
+  "c_bound_min": 0.37854693775602244,
+  "c_turns": 1.9937944444444446,
+  "c_max_step": 117.959,
+  "rewinds": 150,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5561038278566336,
+  "align_ratio": 1.112552884131453,
+  "cusp_mean": 0.14730316085569492,
+  "worse_area_pct": 61.18818189562636,
+  "path_mm": 11582.290632925922,
+  "layer_comments": 72,
+  "moves": 13288,
+  "seconds": 1.4,
+  "model": "구"
+ },
+ {
+  "label": "균일 32°",
+  "profile": [
+   [
+    0.0,
+    32.0
+   ]
+  ],
+  "minutes": 37.06754073335002,
+  "c_bound_min": 0.4088695825322281,
+  "c_turns": 1.9934555555555555,
+  "c_max_step": 118.73800000000003,
+  "rewinds": 157,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5719522960867143,
+  "align_ratio": 1.144259659296805,
+  "cusp_mean": 0.14551291673659034,
+  "worse_area_pct": 61.494939102059234,
+  "path_mm": 12068.643140162221,
+  "layer_comments": 74,
+  "moves": 14159,
+  "seconds": 1.4,
+  "model": "구"
+ },
+ {
+  "label": "균일 36°",
+  "profile": [
+   [
+    0.0,
+    36.0
+   ]
+  ],
+  "minutes": 39.70372827083055,
+  "c_bound_min": 0.515694158744743,
+  "c_turns": 2.014536111111111,
+  "c_max_step": 120.74300000000002,
+  "rewinds": 159,
+  "fatal": 1,
+  "warn": 1,
+  "align": 0.58908326396139,
+  "align_ratio": 1.178532229925194,
+  "cusp_mean": 0.14297351149398826,
+  "worse_area_pct": 63.29600231181308,
+  "path_mm": 12607.60501075231,
+  "layer_comments": 76,
+  "moves": 14782,
+  "seconds": 1.5,
+  "model": "구"
+ },
+ {
+  "label": "균일 40°",
+  "profile": [
+   [
+    0.0,
+    40.0
+   ]
+  ],
+  "minutes": 44.12433683996407,
+  "c_bound_min": 0.5215200272969804,
+  "c_turns": 1.9969944444444445,
+  "c_max_step": 123.24999999999999,
+  "rewinds": 156,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.6071860524921107,
+  "align_ratio": 1.2147490451704708,
+  "cusp_mean": 0.13953945043527882,
+  "worse_area_pct": 63.857995948393494,
+  "path_mm": 13527.978803149279,
+  "layer_comments": 78,
+  "moves": 16605,
+  "seconds": 1.5,
+  "model": "구"
+ },
+ {
+  "label": "균일 44°",
+  "profile": [
+   [
+    0.0,
+    44.0
+   ]
+  ],
+  "minutes": 49.09024054509336,
+  "c_bound_min": 0.6786517581529866,
+  "c_turns": 2.0267555555555554,
+  "c_max_step": 132.962,
+  "rewinds": 156,
+  "fatal": 1,
+  "warn": 1,
+  "align": 0.6264735549295416,
+  "align_ratio": 1.2533360236977762,
+  "cusp_mean": 0.13519420857613842,
+  "worse_area_pct": 65.4175697350246,
+  "path_mm": 14500.545298404284,
+  "layer_comments": 81,
+  "moves": 18350,
+  "seconds": 1.7,
+  "model": "구"
+ },
+ {
+  "label": "밴드2",
+  "profile": [
+   [
+    0.07290925830602646,
+    28.0
+   ],
+   [
+    19.927090326944988,
+    28.0
+   ]
+  ],
+  "minutes": 34.22260757919244,
+  "c_bound_min": 0.37854693775602244,
+  "c_turns": 1.9937944444444446,
+  "c_max_step": 117.959,
+  "rewinds": 150,
+  "fatal": 0,
+  "warn": 1,
+  "align": 0.5561038278566336,
+  "align_ratio": 1.112552884131453,
+  "cusp_mean": 0.14730316085569492,
+  "worse_area_pct": 61.18818189562636,
+  "path_mm": 11582.290632925922,
+  "layer_comments": 72,
+  "moves": 13288,
+  "seconds": 2.0,
+  "model": "구"
  }
 ]
