@@ -242,13 +242,19 @@ wall)**
 법선으로 잰 유효 오버행과 α − θ 의 차는 40,000점에서 최대 1.2×10⁻⁷°
 였다.
 
+<img src="media/2c99ed509ef4dc2c862cfaafe4ec5972a473e5be.png"
+style="width:5.90625in;height:2.58333in" />
+
+**\[Fig. 4\] (a) Effective overhang measured from actual cone-layer
+normals vs. α − θ; (b) difference (×10⁻⁷°)**
+
 **정확한 최적 각도.** 면마다 g 는 θ 의 연속함수이므로 서포트 면적 S(θ)
 는 g = κ 가 되는 근에서만 바뀌는 계단함수이다. 근 사이에서 J = S(0) −
 S(θ) − k·θ 는 −k·θ 로 감소하므로
 
 θ̂ ∈ {0°} ∪ {면이 고쳐지는 근 θ\* = asin(κ/R) − atan2(n_z, c·n_r)} (4)
 
-이다. 격자 없이 이 후보만 평가하면 최적이 정확히 나온다(Fig. 3, 4).
+이다. 격자 없이 이 후보만 평가하면 최적이 정확히 나온다(Fig. 5, 6).
 
 <table>
 <colgroup>
@@ -277,14 +283,14 @@ S(θ) − k·θ 는 −k·θ 로 감소하므로
 <img src="media/c96864e09be29bac7ddd96e5e2188ec96d64bf23.png"
 style="width:5.90625in;height:2.29167in" />
 
-**\[Fig. 4\] (a) Step-shaped support area S(θ) and the roots where faces
+**\[Fig. 5\] (a) Step-shaped support area S(θ) and the roots where faces
 become supported; (b) J(θ) with the exact and 2° grid optima (waist r =
 2 mm)**
 
 <img src="media/61c6274a87b69075759e21e6a0bee03f5181b363.png"
 style="width:5.90625in;height:2.29167in" />
 
-**\[Fig. 5\] (a) Selected uniform angle vs. XY scale λ for 2° grid and
+**\[Fig. 6\] (a) Selected uniform angle vs. XY scale λ for 2° grid and
 exact search; (b) J gain of the exact search**
 
 **3. 가변 원뿔각과 층간격**
@@ -326,24 +332,13 @@ exact search; (b) J gain of the exact search**
 | **<span class="mark">【그림 대기: spacing_heatmap.png】</span>** |
 |------------------------------------------------------------------|
 
-**\[Fig. 6\] Layer-spacing factor m(r, z) of a two-band profile with the
+**\[Fig. 7\] Layer-spacing factor m(r, z) of a two-band profile with the
 limits 1/1.5 and 1.5**
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><p><strong><mark>【그림 대기: t2_spacing.png】</mark></strong></p>
-<p>T2 세션</p></th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+<img src="media/d9326d9ed673300714413fcfd8b6a1577feeef5b.png"
+style="width:5.90625in;height:2.94792in" />
 
-**\[Fig. 7\] (a) Measured vs. predicted layer spacing from generated
+**\[Fig. 8\] (a) Measured vs. predicted layer spacing from generated
 G-code; (b) ratio distribution**
 
 **4. 압출량 보정**
@@ -352,12 +347,12 @@ dV / dV′ = cos²θ · m (6)
 
 역변환 시 압출량에 식 (6) 을 곱한다. 단독 벽에서는 1mm 당 압출비가 cosθ
 가 되며, 22° 에서 생성 G-code 의 측정값 0.9271 대 cos22° = 0.9272
-이다(Fig. 8). 실물 모형 판정은 L4 출력으로 한다.
+이다(Fig. 9). 실물 모형 판정은 L4 출력으로 한다.
 
 | **<span class="mark">【그림 대기: extrusion_ratio.png】</span>** |
 |------------------------------------------------------------------|
 
-**\[Fig. 8\] Extrusion per mm of a single wall vs. cone angle: measured
+**\[Fig. 9\] Extrusion per mm of a single wall vs. cone angle: measured
 from generated G-code and cosθ**
 
 **Ⅲ. 연구 방법 및 절차**
@@ -380,13 +375,13 @@ from generated G-code and cosθ**
 | **<span class="mark">【그림 대기: support_vs_angle.png】</span>** |
 |-------------------------------------------------------------------|
 
-**\[Fig. 9\] Support area S(θ) and objective J(θ) for demo models;
+**\[Fig. 10\] Support area S(θ) and objective J(θ) for demo models;
 markers are the selected angles**
 
 | **<span class="mark">【그림 대기: toolpath_3d.png】</span>** |
 |--------------------------------------------------------------|
 
-**\[Fig. 10\] Generated 5-axis toolpath colored by head tilt B, and B
+**\[Fig. 11\] Generated 5-axis toolpath colored by head tilt B, and B
 per layer**
 
 **2. 검증 계층과 실험 조건**
@@ -440,13 +435,13 @@ wins · ties, unsupported length)**
 | **<span class="mark">【그림 대기: baseline_bars.png】</span>** |
 |----------------------------------------------------------------|
 
-**\[Fig. 11\] Unsupported length of 17 models: uniform (J), band2 and
+**\[Fig. 12\] Unsupported length of 17 models: uniform (J), band2 and
 uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers**
 
 | **<span class="mark">【그림 대기: tilt_reduction.png】</span>** |
 |-----------------------------------------------------------------|
 
-**\[Fig. 12\] Mean \|θ\| of uniform (J) and band2 per model**
+**\[Fig. 13\] Mean \|θ\| of uniform (J) and band2 per model**
 
 <table>
 <colgroup>
@@ -462,7 +457,7 @@ uniform at band2's bottom angle; (a) 0.4 mm, (b) 0.3 mm layers**
 </tbody>
 </table>
 
-**\[Fig. 13\] Regret of fixed conventional angles (15·20·25·45°) and
+**\[Fig. 14\] Regret of fixed conventional angles (15·20·25·45°) and
 automatic selection against the per-model optimum**
 
 **2. 구간(밴드) 개수 (RQ3)**
@@ -495,7 +490,7 @@ t3_band_curve.png】</mark></strong></p>
 </tbody>
 </table>
 
-**\[Fig. 14\] Best-achievable unsupported length and mean \|θ\| vs.
+**\[Fig. 15\] Best-achievable unsupported length and mean \|θ\| vs.
 number of bands N**
 
 **가정.** 축대칭 곡면 층 z = Z′ − f(r) 의 1차 근사가 원뿔이며 오차는
@@ -532,25 +527,13 @@ mushroom 은 모든 칸이 28.3% 로 원뿔족이 풀 수 없다(Table 5).
 </tbody>
 </table>
 
-**\[Fig. 15\] Support area from planar to the cone-family ceiling (and
+**\[Fig. 16\] Support area from planar to the cone-family ceiling (and
 curved slicing, S4)**
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><p><strong><mark>【그림 대기:
-t6_cone_approx.png】</mark></strong></p>
-<p>T6 세션</p></th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+<img src="media/96123937e50082e1fb99606c901454ad63c822ec.png"
+style="width:5.90625in;height:2.58333in" />
 
-**\[Fig. 16\] (a) Curved layer and its tangent cone; (b) height error
+**\[Fig. 17\] (a) Curved layer and its tangent cone; (b) height error
 vs. r on log–log axes (slope 2)**
 
 **3. 결정의 신뢰성 (RQ2)**
@@ -570,7 +553,7 @@ vs. r on log–log axes (slope 2)**
 | **<span class="mark">【그림 대기: iou_angle.png】</span>** |
 |------------------------------------------------------------|
 
-**\[Fig. 17\] Deposition-reconstruction IoU over 46 cone-angle
+**\[Fig. 18\] Deposition-reconstruction IoU over 46 cone-angle
 candidates (mushroom_03) with three re-runs**
 
 <table>
@@ -588,7 +571,7 @@ t5_pred_vs_meas.png】</mark></strong></p>
 </tbody>
 </table>
 
-**\[Fig. 18\] Analytic prediction vs. toolpath measurement with
+**\[Fig. 19\] Analytic prediction vs. toolpath measurement with
 per-model Spearman ρ**
 
 **4. 실물 출력**
@@ -606,12 +589,12 @@ per-model Spearman ρ**
 | **<span class="mark">【사진 대기: 개조한 REP5X 프린터 전경 · 헤드(B/C축) 근접】</span>** |
 |------------------------------------------------------------------------------------------|
 
-**\[Fig. 19\] The modified 5-axis printer (REP5X on Ender-3 V3 SE)**
+**\[Fig. 20\] The modified 5-axis printer (REP5X on Ender-3 V3 SE)**
 
 | **<span class="mark">【사진 대기: L1~L5 출력물 — 같은 조명·배경·스케일, 4방향 + 위】</span>** |
 |-----------------------------------------------------------------------------------------------|
 
-**\[Fig. 20\] Printed test ladder L1–L5**
+**\[Fig. 21\] Printed test ladder L1–L5**
 
 **5. 계산 비용**
 
@@ -633,7 +616,7 @@ per-model Spearman ρ**
 </tbody>
 </table>
 
-**\[Fig. 21\] Run time vs. number of faces (log–log) for uniform and
+**\[Fig. 22\] Run time vs. number of faces (log–log) for uniform and
 band selection**
 
 <table>
@@ -650,7 +633,7 @@ band selection**
 </tbody>
 </table>
 
-**\[Fig. 22\] Run time: cone-angle selection vs. curved slicing (S4)
+**\[Fig. 23\] Run time: cone-angle selection vs. curved slicing (S4)
 stages**
 
 **Ⅴ. 고찰**

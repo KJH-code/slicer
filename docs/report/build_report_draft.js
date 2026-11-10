@@ -165,9 +165,10 @@ C.push(CODE([
 C.push(...FIG("g_theta_funnel", "(a) g(θ) for overhang faces and the threshold −sin45°; (b) effective overhang vs. overhang measured in the warped space (funnel wall)", 15));
 C.push(...FIG("theta_star_check", "Closed-form critical angle θ* vs. exhaustive search (independent numpy implementation)", 15));
 C.push(P("검산: 닫힌 식 θ* 와 0~90° 전수 탐색이 무작위 면 423개에서 불일치 0, 팀원 독립 구현과 약 22,000면에서 최대 차 1.42×10⁻¹⁴°, 실제 원뿔 층 법선으로 잰 유효 오버행과 α − θ 의 차는 40,000점에서 최대 1.2×10⁻⁷° 였다.", { noIndent: true }));
+C.push(...FIG("t6_effective_overhang", "(a) Effective overhang measured from actual cone-layer normals vs. α − θ; (b) difference (×10⁻⁷°)", 15));
 C.push(P("**정확한 최적 각도.** 면마다 g 는 θ 의 연속함수이므로 서포트 면적 S(θ) 는 g = κ 가 되는 근에서만 바뀌는 계단함수이다. 근 사이에서 J = S(0) − S(θ) − k·θ 는 −k·θ 로 감소하므로", { noIndent: true }));
 C.push(EQ("θ̂ ∈ {0°} ∪ {면이 고쳐지는 근 θ* = asin(κ/R) − atan2(n_z, c·n_r)}", "4"));
-C.push(P("이다. 격자 없이 이 후보만 평가하면 최적이 정확히 나온다(Fig. 3, 4).", { noIndent: true }));
+C.push(P("이다. 격자 없이 이 후보만 평가하면 최적이 정확히 나온다(Fig. 5, 6).", { noIndent: true }));
 C.push(CODE([
   "R = np.hypot(nz, b)                       # b = c·n_r",
   "valid = R > abs(kappa) * (1.0 + 1e-12)    # R ≤ |κ| 면은 근 없음",
@@ -199,7 +200,7 @@ C.push(...FIG("t2_spacing", "(a) Measured vs. predicted layer spacing from gener
 
 C.push(H2("4. 압출량 보정"));
 C.push(EQ("dV / dV′ = cos²θ · m", "6"));
-C.push(P("역변환 시 압출량에 식 (6) 을 곱한다. 단독 벽에서는 1mm 당 압출비가 cosθ 가 되며, 22° 에서 생성 G-code 의 측정값 0.9271 대 cos22° = 0.9272 이다(Fig. 8). 실물 모형 판정은 L4 출력으로 한다.", { noIndent: true }));
+C.push(P("역변환 시 압출량에 식 (6) 을 곱한다. 단독 벽에서는 1mm 당 압출비가 cosθ 가 되며, 22° 에서 생성 G-code 의 측정값 0.9271 대 cos22° = 0.9272 이다(Fig. 9). 실물 모형 판정은 L4 출력으로 한다.", { noIndent: true }));
 C.push(...FIG("extrusion_ratio", "Extrusion per mm of a single wall vs. cone angle: measured from generated G-code and cosθ", 11));
 
 // Ⅲ. 연구 방법
