@@ -5,3 +5,4 @@ __pycache__/
 # (보관할 결과 PNG 는 이미 추적 중이라 영향 없음)
 *_check.png
 t1_cache/
+k_sweep_cache/
