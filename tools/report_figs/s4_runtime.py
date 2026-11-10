@@ -35,7 +35,7 @@ def main():
     st.setup()
     rows = json.load(open(os.path.join(st.ROOT, "s4_comparison_results.json"), encoding="utf-8"))
     models = [m for m in MODELS if pick(rows, m)]
-    fig, ax = st.plt.subplots(figsize=(st.FULL, 6.0 * st.CM))
+    fig, ax = st.plt.subplots(figsize=(st.FULL, 7.0 * st.CM))
     x = np.arange(len(models))
     w = 0.16
     key = {}
@@ -58,8 +58,8 @@ def main():
     ax.set_xlabel("모델 (대표 해상도)")
     ax.grid(axis="y", which="both", alpha=0.3, linewidth=0.5)
     ax.set_axisbelow(True)
-    ax.legend(ncol=3, frameon=False, loc="upper left", bbox_to_anchor=(0, 1.22))
-    fig.tight_layout()
+    fig.legend(ncol=3, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout(rect=(0, 0, 1, 0.84))
     st.save(fig, "s4_runtime", __file__, ["s4_comparison_results.json"],
             "모델별 실행 시간(로그축): 원뿔 각도 결정(conical, 같은 표면) vs S4 단계별"
             "(사면체화/속성/회전장/변형), 같은 컨테이너 벽시계", key)

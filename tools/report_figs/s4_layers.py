@@ -90,7 +90,8 @@ def main():
         zc = z + c * np.abs(x) * np.tan(th)
         for vals, col in ((zc, st.TAB10[1]), (zp, st.TAB10[0])):
             lv = np.linspace(vals.min(), vals.max(), N_LEVELS + 2)[1:-1]
-            ax.tricontour(T, vals, levels=lv, colors=[col], linewidths=0.7)
+            ax.tricontour(T, vals, levels=lv, colors=[col], linewidths=0.7,
+                          negative_linestyles="solid")
         from matplotlib.collections import LineCollection
         ax.add_collection(LineCollection(np.array(s["outline"]), colors="0.2", linewidths=0.7))
         ax.set_aspect("equal")

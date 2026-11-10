@@ -114,7 +114,7 @@ class _NullPlotter:
         return lambda *a, **k: None
 
 
-def run_s4(srcs, mesh, params):
+def run_s4(srcs, mesh, params, deform_iterations=DEFORM_ITERATIONS):
     """S4 한 번 실행. 반환: (undeformed_tet, new_vertices, info)."""
     import pyvista as pv
     from scipy.optimize import least_squares as _ls
@@ -152,7 +152,7 @@ def run_s4(srcs, mesh, params):
         params["SET_INITIAL_ROTATION_TO_ZERO"], np.deg2rad(3600), np.deg2rad(-3600))
     times["rotation_field"] = time.perf_counter() - t0
     t0 = time.perf_counter()
-    new_v = ns["calculate_deformation"](tet, rot, DEFORM_ITERATIONS, False)
+    new_v = ns["calculate_deformation"](tet, rot, deform_iterations, False)
     times["deformation"] = time.perf_counter() - t0
     info = {"times_s": times, "opt_rotation": results[0], "opt_deformation": results[1],
             "n_tets": int(tet.number_of_cells), "n_points": int(tet.number_of_points),
@@ -412,6 +412,8 @@ def main():
     ap.add_argument("--res", nargs="+", default=["R1", "R2"])
     ap.add_argument("--params", nargs="+", default=["P1", "P2"])
     ap.add_argument("--out", default="s4_comparison_results.json")
+    ap.add_argument("--deform-iters", type=int, default=DEFORM_ITERATIONS,
+                    help="변형 단계 max_nfev (사전 등록값 1000; 다르면 탐색용으로 표시)")
     ap.add_argument("--save-fields", default=None,
                     help="이 폴더에 실행별 npz(원본 점·사면체·변형 점) 저장 — 그림용")
     a = ap.parse_args()
@@ -424,22 +426,25 @@ def main():
 
     srcs = load_s4_sources(a.s4)
     rows = json.load(open(a.out)) if os.path.exists(a.out) else []
-    done = {(r["model"], r["res"], r["params"]) for r in rows}
+    done = {(r["model"], r["res"], r["params"], r.get("deform_iterations", DEFORM_ITERATIONS))
+            for r in rows}
     for name in a.models:
         for res in a.res:
             mesh = get_model(name, res)
             orig = cone_ladder(mesh)
             for pk in a.params:
-                if (name, res, pk) in done:
+                if (name, res, pk, a.deform_iters) in done:
                     continue
                 row = {"model": name, "res": res, "params": pk,
                        "param_values": PARAMS[pk], "n_input_faces": int(len(mesh.faces)),
                        "input_volume": float(mesh.volume),
+                       "deform_iterations": a.deform_iters,
+                       "preregistered": a.deform_iters == DEFORM_ITERATIONS,
                        "cone_on_input_mesh": {k: v for k, v in orig.items()
                                               if not k.startswith("t_")}}
                 t0 = time.perf_counter()
                 try:
-                    tet, new_v, info = run_s4(srcs, mesh.copy(), PARAMS[pk])
+                    tet, new_v, info = run_s4(srcs, mesh.copy(), PARAMS[pk], a.deform_iters)
                     row.update(info)
                     row.update(evaluate(tet, new_v))
                     if a.save_fields:

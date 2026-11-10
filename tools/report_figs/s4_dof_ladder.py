@@ -29,6 +29,12 @@ def pick(rows, model):
     return None
 
 
+def valid(r):
+    """사전 등록 기준 1·2: 두 최적화 수렴(status ≥ 1) + 뒤집힌 사면체 0개."""
+    return (r["opt_rotation"]["status"] >= 1 and r["opt_deformation"]["status"] >= 1
+            and r["n_inverted"] == 0)
+
+
 def values(r, nobed):
     c = r["cone_nobed"] if nobed else r["cone"]
     v = {k: c[k] for k, _ in COLS[:4]}
@@ -41,7 +47,7 @@ def main():
     path = os.path.join(st.ROOT, "s4_comparison_results.json")
     rows = json.load(open(path, encoding="utf-8"))
     models = [m for m in MODELS if pick(rows, m)]
-    fig, axes = st.plt.subplots(1, 2, figsize=(st.FULL, 6.2 * st.CM), sharey=True)
+    fig, axes = st.plt.subplots(1, 2, figsize=(st.FULL, 7.0 * st.CM), sharey=True)
     key = {}
     for ax, nobed, lab in ((axes[0], False, "a"), (axes[1], True, "b")):
         x = np.arange(len(models))
@@ -50,6 +56,12 @@ def main():
             vals = [values(pick(rows, m), nobed)[k] for m in models]
             ax.bar(x + (i - 2) * w, vals, w, label=name, color=st.TAB10[i])
             if k == "s4":
+                for xi, m in zip(x, models, strict=True):
+                    if not valid(pick(rows, m)):
+                        top = max((r["s4_nobed"] if nobed else r["s4"]) for r in rows
+                                  if r["model"] == m and r["ok"] and r["params"] in ("P1", "P2"))
+                        ax.text(xi + (i - 2) * w, top + 0.8, "×",
+                                ha="center", va="bottom", fontsize=9, color="k")
                 lo, hi = [], []
                 for m in models:
                     rr = [r for r in rows if r["model"] == m and r["ok"]
@@ -70,11 +82,16 @@ def main():
         ax.grid(axis="y", alpha=0.3, linewidth=0.5)
         ax.set_axisbelow(True)
         st.panel(ax, lab)
-    axes[0].legend(ncol=1, frameon=False, loc="upper right")
-    fig.tight_layout()
+    h, lab_ = axes[0].get_legend_handles_labels()
+    fig.legend(h, lab_ + [], ncol=5, frameon=False, loc="upper center",
+               bbox_to_anchor=(0.5, 1.0))
+    fig.text(0.99, 0.005, "× = 대표 실행이 수렴·뒤집힘 기준 미달(무효)", ha="right",
+             va="bottom", fontsize=7)
+    fig.tight_layout(rect=(0, 0.03, 1, 0.9))
     st.save(fig, "s4_dof_ladder", __file__, ["s4_comparison_results.json"],
             "모델별 평면→균일 원뿔→밴드→원뿔족 천장→곡면(S4) 서포트 넓이, g=n·d<−sin45° 같은 판정식;"
-            " (a) 바닥면 포함 (b) 베드 접촉면 제외; S4 수염=해상도·파라미터 4실행 범위", key)
+            " (a) 바닥면 포함 (b) 베드 접촉면 제외(토러스 천장 0 은 바닥 띠 제거로 클러스터가 갈라진"
+            " 인공물); S4 수염=해상도·파라미터 4실행 범위; ×=무효 실행", key)
 
 
 if __name__ == "__main__":
