@@ -61,7 +61,7 @@ function table(widths, rows, o = {}) {
   return new Table({
     width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA }, columnWidths: widths, alignment: AlignmentType.CENTER,
     rows: rows.map((r, i) => new TableRow({
-      tableHeader: i === 0 && o.header !== false,
+      tableHeader: i === 0 && o.header !== false, cantSplit: true,
       children: r.map((c, j) => cell(c, widths[j], {
         bold: (i === 0 && o.header !== false) || (o.firstColBold && j === 0),
         fill: (i === 0 && o.header !== false) || (o.firstColFill && j === 0) ? "E7E6E6" : undefined,
@@ -260,7 +260,7 @@ C.push(H1("Ⅳ. 연구 결과"));
 C.push(H2("1. 원뿔각 자동 결정 (RQ1)"));
 C.push(P("**1.1 알고리즘은 무엇을 보고 각도를 고르나.** 식 (4) 로 21개 모델의 0° 서포트 필요 면을 풀면, 그 면들은 모두 높이 하반부에 있고 θ* 가 0~44° 에 넓게 퍼져 있다(Fig. 4). 균일 J 는 '이 각을 1° 올려 새로 풀리는 면적' 이 k 보다 작아지는 자리에서 멈추므로 모델마다 16~42° 로 다른 각을 고르고, 밴드2 의 위 구간 각도는 고칠 면이 없어 0~20° 로 내려간다. 모델마다 0° 필요 면적 중 θ* 가 베드 안전각 22.79° 를 넘는 몫을 구하면 그 중앙값이 26% 다(허리형 23~31%, 허리 r=3·λ=2 47%, torus 50%, funnel·mushroom 100%).", { noIndent: true }));
 C.push(...FIG("critical_angle_select", "Area-weighted distribution of per-face critical cone angles θ* (positive = outward, negative = inward) for the 21 sample models, with the automatically selected uniform angle (▼), the two band angles (dashed) and the bed-safe limit 22.79° (red)", 13));
-C.push(P("**1.2 방향.** 표본 21개 중 안쪽 방향 오버행(inward θ*)을 가진 모델은 torus 하나뿐이고(0° 필요 면의 10.6%, 구멍 쪽 아랫면), 나머지 20개는 오버행이 모두 바깥을 향한다. 선택기는 상한 판 torus 한 건을 빼면 inward 를 고르지 않았다. 안쪽 오버행 그릇과 바깥 오버행 그릇을 따로 만들면 해석식이 각각 inward 15°·outward 15° 를 정확히 고르고, 툴패스에서도 층고 0.3mm 에서 고른 방향만 미지지가 0 이 된다(Fig. 5). 층고 0.4mm 에서는 15~16° 로 부족했다(층고 의존성은 Ⅳ.3 절).", { noIndent: true }));
+C.push(P("**1.2 방향.** 표본 21개 중 안쪽 방향 오버행(inward θ*)을 가진 모델은 torus 하나뿐이고(0° 필요 면의 10.6%, 구멍 쪽 아랫면), 나머지 20개는 오버행이 모두 바깥을 향한다. 선택기는 상한 판 torus 한 건을 빼면 inward 를 고르지 않았다. 안쪽 오버행 그릇과 바깥 오버행 그릇을 따로 만들면 해석식이 각각 inward 15°·outward 15° 를 정확히 고르고, 툴패스에서도 층고 0.3mm 에서 고른 방향만 미지지가 0 이 된다(Fig. 5). 층고 0.4mm 에서는 15~16° 로 부족했다(층고 의존성은 Ⅳ.3절).", { noIndent: true }));
 C.push(...FIG("direction_demo", "Automatic choice of cone direction on two hollow vessels with a 60° shoulder: S(θ), J(θ) and toolpath unsupported length for outward and inward cones at 0.3 and 0.4 mm layers", 13));
 
 C.push(P("**1.3 관례 각도와 비교 (사전 등록 T1).** 사전 기준은 \"자동 결정의 후회 중앙값이 모든 실현 가능한 고정 관례각보다 작다\" 였다. **결과는 불통과이다**(Table 5).", { noIndent: true }));
@@ -301,7 +301,7 @@ C.push(table([3400, 2100, 2100, 2038], [
   ["(c) 등왜곡 균일, 낙관 (%p, 16)", "**15 · 0 · 1**", "15 · 1 · 0", "구는 밴드를 쓰지 않음"],
   ["(c) 등왜곡 균일, 비관 (%p, 16)", "**14 · 1 · 1**", "1 · 15 · 0", "0.4mm 는 지지 모형에 따라 반대"],
 ], { size: 17 }));
-C.push(NOTE("(c) 는 현재 코드보다 이전 코드 시점에서 잰 값이다. 【현재 코드로 재현 확인 필요 — 보류 구 두 모델의 밴드 각도가 시점 간 다르게 나옴】"));
+C.push(NOTE("(c) 는 현재 코드보다 이전 버전에서 잰 값이다. 보류 표본 중 구 2개 모델은 버전에 따라 밴드 각도가 달라, 현재 코드로 재현을 확인하고 있다. 【재현 확인 후 '(c) 는 현재 코드로 다시 계산해 같은 결과를 확인하였다.' 로 교체】"));
 C.push(...FIG("band_vs_radius", "Radius profile R(z), selected θ(Z′), blend position and width, and r* for lamp, waist r = 3, torus and sphere; the blend is moved to the waist", 13));
 
 C.push(P("**1.7 기계 제약의 비용.** 베드 안전각 22.79° 를 걸면 21개 중 9개의 균일각과 14개의 밴드2 아래 구간 각도가 내려가고, 균일 원뿔의 미지지가 바뀐 모델에서 중앙 33~36mm 늘었다. 늘어난 양의 55~57% 는 한 모델(층고 0.3mm: θ* 가 25~26° 에 몰린 funnel, 0.4mm: 허리 r=3·λ=2 모델)에서 나왔다(Fig. 10, 11).", { noIndent: true }));
@@ -323,7 +323,7 @@ C.push(table([2700, 1900, 2300, 2738], [
   ["축 3° 기울임", "14/21", "11/21", "17/19"],
 ], { center: true, size: 17 }));
 C.push(NOTE("분모가 21 보다 작은 칸은 교란 해가 원본 메시에서 층간격 제약을 어겨 실현 불가인 경우. 각도가 튄 60건 중 53건은 J 차 0.4%p 이하 구간."));
-C.push(P("**2.3 보류 표본.** 결과를 보기 전에 시드를 고정한 무작위 20개 모델에 funnel 을 더한 21개에서 시험하였다(층고 0.3mm). funnel 은 기본 표본(데모)에도 있으므로 엄밀한 보류 표본은 무작위 20개이다. 구성은 원기둥·상자·나팔 14, 구 3, 허리형 3, funnel 1 이다. 사전 기준을 글자 그대로 적용하면 밴드 승률 3/21 로 가설이 기각된다. 사전에 적어 둔 단서(허리 유무로 나눠 볼 것)대로 나누면 원기둥·상자·나팔 14개는 평면 오버행이 없어 선택기가 밴드를 쓰지 않았고(올바른 동작), 허리형 3개는 낙관 3/3 승이었다. 구 3개는 낙관에서 2무·1개 밴드 미사용이었지만 비관에서 2패(+3.0, +5.8%p)였다. 각도 차가 작은 밴드(26°→24°)가 이득 없이 블렌드의 미지지만 만든 경우다. funnel 은 낙관 무·비관 승이었다. 두 판정을 모두 적는다. 【현재 코드로 재현 확인 필요】", { noIndent: true }));
+C.push(P("**2.3 보류 표본.** 결과를 보기 전에 시드를 고정한 무작위 20개 모델에 funnel 을 더한 21개에서 시험하였다(층고 0.3mm, 본문의 기본 표본 21개와는 별개). funnel 은 기본 표본(데모)에도 있으므로 엄밀한 보류 표본은 무작위 20개이다. 구성은 원기둥·상자·나팔 14, 구 3, 허리형 3, funnel 1 이다. 사전 기준을 글자 그대로 적용하면 밴드 승률 3/21 로 가설이 기각된다. 사전에 적어 둔 단서(허리 유무로 나눠 볼 것)대로 나누면 원기둥·상자·나팔 14개는 평면 오버행이 없어 선택기가 밴드를 쓰지 않았고(올바른 동작), 허리형 3개는 낙관 3/3 승이었다. 구 3개는 낙관에서 2무·1개 밴드 미사용이었지만 비관에서 2패(+3.0, +5.8%p)였다. 각도 차가 작은 밴드(26°→24°)가 이득 없이 블렌드의 미지지만 만든 경우다. funnel 은 낙관 무·비관 승이었다. 두 판정을 모두 적는다. 【현재 코드로 재현 확인 필요】", { noIndent: true }));
 C.push(P("**2.4 퇴적 복원.** mushroom_03 의 46개 각도 후보에서 IoU 는 0.926~0.932, 이웃 각도 차 평균 0.57%p 로 0~12° 의 순위는 복원 해상도로 가려지지 않았다.", { noIndent: true }));
 
 C.push(H2("3. 구간(밴드) 개수 (RQ3)"));
@@ -373,11 +373,11 @@ C.push(PAIR(["t7_scaling", "Run time vs. number of faces (log–log)"], ["s4_run
 // Ⅴ. 고찰
 C.push(H1("Ⅴ. 고찰"));
 C.push(BUL("• **자동 결정의 가치는 교환 곡선에서 판단해야 한다.** 각도 비용이 없는 지표(미지지 mm)에서는 각도를 키울수록 좋아지므로 큰 고정각이 이긴다(T1 불통과). 각도에는 출력 시간(세 모델 평균 1° 당 0.56분)과 표면 계단이라는 비용이 있고, 그 비용을 두는 한 모델마다 다른 각도를 고르는 것이 같은 기울기 예산에서 미지지를 33~48% 줄였다"));
-C.push(BUL("• **k 는 데이터가 아니라 데이터 + 가치판단으로 정해진다.** 미지지만 보면 k ≈ 0.06(층고 0.4)~0.115(층고 0.3)이고, 기본값 0.2 는 '기울기 1° = 미지지 2~5mm' 에 해당한다. 층고에 따라 k 가 다른 것은 검사기의 실효 문턱 atan(0.45/h) 이 층고에 따라 움직이기 때문으로 보인다(Ⅳ.1.8, Ⅳ.3 절)"));
+C.push(BUL("• **k 는 데이터가 아니라 데이터 + 가치판단으로 정해진다.** 미지지만 보면 k ≈ 0.06(층고 0.4)~0.115(층고 0.3)이고, 기본값 0.2 는 '기울기 1° = 미지지 2~5mm' 에 해당한다. 층고에 따라 k 가 다른 것은 검사기의 실효 문턱 atan(0.45/h) 이 층고에 따라 움직이기 때문으로 보인다(Ⅳ.1.8절, Ⅳ.3절)"));
 C.push(BUL("• **고정 45° 문턱의 한계.** 해석식은 면이 45° 를 넘는 순간만 센다. funnel 처럼 상한 안에서 문턱을 못 넘는 면은 '조금 줄이기' 를 평가하지 못하고, 검사기의 문턱은 층고 0.3~0.4mm 에서 41~56° 로 움직인다(평면 환산 56°·48°, funnel 실측 53°·41°). 연속 지표나 층고 의존 문턱이 향후 과제이다"));
 C.push(BUL("• **구간 분할의 고유 효과는 기울기 감소이다.** 같은 서포트를 평균 |θ| 8.4° 적게 얻고, 이는 허리에 블렌드를 둘 수 있을 때 나온다. 기울기를 최대로 줄인 최선해는 해석식이 층간격을 모르기 때문에 G-code 에서 졌다"));
 C.push(BUL("• **견고성은 각도가 아니라 J 손실로 본다.** 밴드 각도는 메시 교란에 흔들리지만 J 가 평평한 곳의 동점 깨기여서 손해가 작다. 남은 결함(면 중심 구적)은 블렌드 경계에서 면을 자르는 적분으로 고칠 수 있다"));
-C.push(BUL("• **한계**: 기본 표본 21개(축대칭 11, XY 배율·로브의 약한 비축대칭 10), 45° 문턱 기하 판정(중력·냉각 없음), 핫엔드 치수·베드 안전각 22.79° 는 공개 자료 기반 추정, 일부 결과(Table 7 (c)·2.3 절)는 다른 코드 시점에서 잰 값, 실물 결과 【보류】"));
+C.push(BUL("• **한계**: 기본 표본 21개(축대칭 11, XY 배율·로브의 약한 비축대칭 10), 45° 문턱 기하 판정(중력·냉각 없음), 핫엔드 치수·베드 안전각 22.79° 는 공개 자료 기반 추정, 일부 결과(Table 7 (c)·Ⅳ.2.3절)는 이전 버전에서 잰 값, 실물 결과 【보류】"));
 
 // Ⅵ. 결론
 C.push(H1("Ⅵ. 결론"));
@@ -403,14 +403,14 @@ C.push(table([2500, 4500, 2638], [
 C.push(H1("■ 참고문헌"));
 [
   "[1] Wüthrich, M., Gubser, M., Elspass, W. J., & Jaeger, C. (2021). A novel slicing strategy to print overhangs without support material. Applied Sciences, 11(18), 8760.",
-  "[2] Coupek, D., Friedrich, J., Battran, D., & Riedel, O. (2018). Reduction of support structures and building time by optimized path planning algorithms in multi-axis additive manufacturing. Procedia CIRP, 67, 221–226. 【서지 원문 확인 필요】",
+  "[2] Coupek, D., Friedrich, J., Battran, D., & Riedel, O. (2018). Reduction of support structures and building time by optimized path planning algorithms in multi-axis additive manufacturing. Procedia CIRP, 67, 221–226. 【권·쪽 DOI 확인 필요 — 제목·연도는 확인됨】",
   "[3] Zhang, T., Fang, G., Huang, Y., Dutta, N., Lefebvre, S., Kilic, Z. M., & Wang, C. C. L. (2022). S³-Slicer: A general slicing framework for multi-axis 3D printing. ACM Transactions on Graphics, 41(6), 277.",
   "[4] Liu, T., Zhang, T., Chen, Y., Huang, Y., & Wang, C. C. L. (2024). Neural slicer for multi-axis 3D printing. ACM Transactions on Graphics, 43(4), 85.",
-  "[5] Spiritdude. Slicer4RTN. https://xyzdims.com/3d-printing/slicer4rtn/ (접속일 기입)",
-  "[6] CNC Kitchen. ConicalSlicer. https://github.com/CNCKitchen/ConicalSlicer (접속일 기입)",
-  "[7] CNC Kitchen. Conical Slicing: A different angle of 3D printing. https://www.cnckitchen.com/blog/conical-slicing-a-different-angle-of-3d-printing (접속일 기입)",
-  "[8] Klappe, D. Rep5x. https://github.com/dennisklappe/Rep5x (접속일 기입)",
-  "[9] jyjblrd. S4_Slicer. https://github.com/jyjblrd/S4_Slicer (접속일 기입)",
+  "[5] Spiritdude. Slicer4RTN. https://xyzdims.com/3d-printing/slicer4rtn/ (접속일: 2026.11.11)",
+  "[6] CNC Kitchen. ConicalSlicer. https://github.com/CNCKitchen/ConicalSlicer (접속일: 2026.11.11)",
+  "[7] CNC Kitchen. Conical Slicing: A different angle of 3D printing. https://www.cnckitchen.com/blog/conical-slicing-a-different-angle-of-3d-printing (접속일: 2026.11.11)",
+  "[8] Klappe, D. Rep5x. https://github.com/dennisklappe/Rep5x 【링크 확인 후 접속일 기입】",
+  "[9] Bird, J. S4_Slicer. https://github.com/jyjblrd/S4_Slicer (접속일: 2026.11.11)",
 ].forEach((r) => C.push(new Paragraph({ children: runs(r, { size: 18 }), indent: { left: 400, hanging: 400 }, spacing: { after: 50 } })));
 
 const doc = new Document({
