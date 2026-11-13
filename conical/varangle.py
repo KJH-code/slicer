@@ -54,6 +54,7 @@ from .config import (
     MAX_SPACING_FACTOR,
     THRESHOLD_DEG,
 )
+from .exact_angle import select_uniform_exact
 from .profile import AngleProfile
 
 
@@ -72,10 +73,29 @@ def angle_candidates(max_angle, step):
 # ─────────────────────────────────────────────────────────────
 # 높이 구간 나누기
 # ─────────────────────────────────────────────────────────────
-def assign_height_bands(mesh, n_bands):
-    """면을 centroid 높이(z)로 n_bands개 구간에 배정한다. (0=맨 아래)"""
+BAND_EDGE_MODES = ("centroid", "bounds")
+
+
+def assign_height_bands(mesh, n_bands, edges_from="centroid"):
+    """면을 centroid 높이(z)로 n_bands개 구간에 배정한다. (0=맨 아래)
+
+    edges_from — 경계(등분점)를 무엇으로 정하나:
+      · "centroid" (기본, 예전 동작): **면 중심 z** 의 최소~최대를 등분한다.
+        ⚠ 삼각분할에 의존한다 — 면을 쪼개면(중점 분할 등, 형상 불변) 면 중심 범위가
+        실제 높이 쪽으로 넓어져 경계·프로필 양 끝이 움직인다 (docs/test_band_boundary.md).
+      · "bounds": **정점 z** 의 최소~최대(= 메시 bounds = RadiusProfile.z0/z1)를 등분한다.
+        형상의 높이 범위라 중점 분할·면 수와 무관하다.
+    면 배정(라벨)은 두 경우 모두 면 중심 z 로 한다.
+    """
     fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
-    edges = np.linspace(fz.min(), fz.max(), n_bands + 1)
+    if edges_from == "centroid":
+        lo, hi = fz.min(), fz.max()
+    elif edges_from == "bounds":
+        vz = np.asarray(mesh.vertices)[:, 2]
+        lo, hi = vz.min(), vz.max()
+    else:
+        raise ValueError(f"edges_from 는 {BAND_EDGE_MODES} 중 하나: {edges_from!r}")
+    edges = np.linspace(lo, hi, n_bands + 1)
     # digitize 로 각 면을 구간에 배정 (경계 clip)
     labels = np.clip(np.digitize(fz, edges[1:-1]), 0, n_bands - 1)
     return labels, edges
@@ -86,8 +106,20 @@ def assign_height_bands(mesh, n_bands):
 # ─────────────────────────────────────────────────────────────
 def best_angle_for_mask(mesh, mask, orig_areas, k,
                         max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
-                        threshold_deg=THRESHOLD_DEG):
-    """mask 면들만 놓고 J=(서포트 감소 %) − k×각도 가 최대인 (각도, 방향)."""
+                        threshold_deg=THRESHOLD_DEG, method="grid"):
+    """mask 면들만 놓고 J=(서포트 감소 %) − k×각도 가 최대인 (각도, 방향).
+
+    method="exact" 면 격자 대신 판정이 바뀌는 근들만 후보로 쓴다
+    (`exact_angle.select_uniform_exact`, docs/exact_angle.md). 기본은 격자.
+    ⚠ exact 는 `mesh.area_faces` 로 정규화한다 — `orig_areas` 가 그것과 다르면 쓰지 말 것.
+    """
+    if method == "exact":
+        if not np.array_equal(orig_areas, mesh.area_faces):
+            raise ValueError("method='exact' 는 orig_areas == mesh.area_faces 일 때만")
+        best, _ = select_uniform_exact(mesh, k, max_angle, threshold_deg, mask=mask)
+        return best["angle"], best["direction"]
+    if method != "grid":
+        raise ValueError(f"method 는 'grid' 또는 'exact': {method!r}")
     band_area = orig_areas[mask].sum()
     need0, _ = face_support_and_staircase(mesh, 0, "outward", threshold_deg)
     base_pct = orig_areas[mask & need0].sum() / band_area * 100.0
@@ -134,11 +166,11 @@ def evaluate_assignment(mesh, assignment, threshold_deg=THRESHOLD_DEG):
 # 전략들: 균일 / 구간별 / 세밀(면마다)
 # ─────────────────────────────────────────────────────────────
 def select_uniform(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
-                   threshold_deg=THRESHOLD_DEG):
-    """전역 단일 각도 (RotBot식 균일 원뿔 = 비교 대상)."""
+                   threshold_deg=THRESHOLD_DEG, method="grid"):
+    """전역 단일 각도 (RotBot식 균일 원뿔 = 비교 대상). method: best_angle_for_mask 참고."""
     allmask = np.ones(len(mesh.faces), dtype=bool)
     a, c = best_angle_for_mask(mesh, allmask, mesh.area_faces, k,
-                               max_angle, step, threshold_deg)
+                               max_angle, step, threshold_deg, method)
     m = evaluate_assignment(mesh, [(allmask, a, c)], threshold_deg)
     return {"strategy": "uniform", "n_regions": 1, "profile": [(a, c)], **m}
 
@@ -173,6 +205,9 @@ def blend_penalty(mesh, profile, radius_profile=None,
     각도 변화가 없으면 블렌드 구간 자체가 없어 0 이 되고, J 는 균일각 J 와
     정확히 같아진다.
 
+    '그 구간에 있는' = 면 중심의 **변환높이 Z′** 가 블렌드 구간 안이라는 뜻이다
+    (2026-11-10 고침). 아래 2026-09-22 의 수치들은 실공간 z 구간으로 세던 때 잰 것이다.
+
     ⚠⚠ **이 항이 무엇인지 2026-09-22 에 다시 쟀다. 세 가지가 전부 틀렸다**
         (`analyze_blend_cost.py`, docs/verification.md):
 
@@ -205,7 +240,8 @@ def blend_penalty(mesh, profile, radius_profile=None,
     if spacing_limit is None or spacing_limit <= 1.0:
         return 0.0
     c = 1.0 if direction == "outward" else -1.0
-    fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
+    fc = mesh.vertices[mesh.faces].mean(axis=1)
+    fr, fz = np.hypot(fc[:, 0], fc[:, 1]), fc[:, 2]
     areas = mesh.area_faces
     total = areas.sum()
     cost = 0.0
@@ -215,11 +251,19 @@ def blend_penalty(mesh, profile, radius_profile=None,
         if abs(dt) < 1e-12:
             continue
         s = dt / (b - a)
-        r = (radius_profile.max_between(a, b) if radius_profile is not None
+        # 블렌드는 변환높이 Z′ 구간이다 — 그 층들이 실제로 닿는 곳은 실공간 z 구간
+        # [a, b] 가 아니라 슬랩  a − r·tanθ_i ≤ z ≤ b − r·tanθ_{i+1}  이다
+        # (profile.py docstring ⚠⚠, docs/gap_audit.md G1·G13). 반경도 면적도 그
+        # 조건으로 센다. 예전에는 둘 다 z 구간으로 세서 램프 밴드2 의 블렌드 면적을
+        # 2.3% 로 봤다(실제 15.0%).
+        t_lo, t_hi = c * profile.tans[i], c * profile.tans[i + 1]
+        r = (radius_profile.max_in_slab(a, b, t_lo, t_hi)
+             if radius_profile is not None
              else float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max()))
         m = abs(1.0 - c * r * s)
         risk = min(1.0, max(0.0, (m - 1.0) / (spacing_limit - 1.0)))
-        area_pct = areas[(fz >= a) & (fz <= b)].sum() / total * 100.0
+        in_blend = (fz >= a - fr * t_lo) & (fz <= b - fr * t_hi)
+        area_pct = areas[in_blend].sum() / total * 100.0
         cost += area_pct * risk
     return float(cost)
 
@@ -256,7 +300,7 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
                     spacing_limit=MAX_SPACING_FACTOR, max_shift=None,
                     k_blend=BLEND_COST_K, max_angle=MAX_ANGLE_DEG,
                     step=ANGLE_STEP, threshold_deg=THRESHOLD_DEG,
-                    max_sweeps=4):
+                    max_sweeps=4, band_edges="centroid"):
     """밴드별 각도를 '실제로 만들어질 프로필'의 J 로 고른다 (좌표하강).
 
     select_banded 와의 차이: 저기는 밴드마다 독립적으로 '그 구간만 놓고' 최적
@@ -275,8 +319,12 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
       중간 상태([36°,2°] 등)가 블렌드 비용을 다 물어서 [2°,2°] 같은 국소 최적에
       갇힌다. 그래서 균일 후보(모든 밴드 같은 각도)를 전부 따로 평가해 넣는다.
       부수 효과로 **결과가 균일 원뿔보다 나쁠 수 없다**(J 기준)는 성질이 생긴다.
+
+    band_edges: 밴드 등분점을 정하는 방식 (`assign_height_bands` 의 edges_from).
+      기본 "centroid" 는 예전 동작이다. "bounds" 는 메시 독립(형상의 높이 범위) 경계 —
+      세분화 ×4 에서 경계가 바뀌던 결함의 수정 옵션 (docs/test_band_boundary.md).
     """
-    labels, edges = assign_height_bands(mesh, n_bands)
+    labels, edges = assign_height_bands(mesh, n_bands, band_edges)
     areas = mesh.area_faces
     base_pct = support_fraction(mesh, 0.0, "outward", threshold_deg)
     if max_shift is None:      # 모델 높이 기준 (밴드 수와 무관 — config 주석 참조)
@@ -366,7 +414,7 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
     thetas, prof, met = max(results, key=lambda r: r[2]["J"])
 
     return {"strategy": f"banded-{n_bands}-J", "n_regions": n_bands,
-            "edges": edges, "thetas": thetas, "start_thetas": start,
+            "edges": edges, "band_edges": band_edges, "thetas": thetas, "start_thetas": start,
             "uniform_best": best_uni[0] if best_uni else None,
             "uniform_J": best_uni_m["J"],
             "profile_obj": prof, "staircase": float("nan"), **met}

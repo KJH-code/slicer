@@ -14,14 +14,16 @@ compare_waist.py — 핵심 실험: 부위별 각도(밴드)가 균일 원뿔을
 이 스크립트는 두 모델 × 여러 전략을 돌려 그 표를 만든다.
 
     python3 compare_waist.py            # 구(허리 없음) + 램프(허리 있음)
+    python3 compare_waist.py --layer-height 0.3 --out /tmp/w.png --json w.json
 
 ⚠ 보고 지표는 '페리미터 미지지 %' 다. 전체 미지지 %는 희소 인필(레이어마다
   0/90° 교차 → 원래 브리징)에 지배당해 표면 지지를 가린다 — 이 사실 자체가
   검사기가 잡아낸 측정 결함이었다(docs/verification.md).
 """
 
+import argparse
+import json
 import math
-import sys
 import time
 
 import matplotlib
@@ -81,8 +83,12 @@ def mean_abs_angle(mesh, spec):
     return float((np.abs(spec.theta_at(fz)) * areas).sum() / areas.sum())
 
 
-def run_pipeline(mesh, angle_or_profile, direction="outward", breakdown=False):
+def run_pipeline(mesh, angle_or_profile, direction="outward", breakdown=False,
+                 layer_height=None):
     """파이프라인 1회 → (페리미터 미지지 %, 전체 미지지 %, 인필 미지지 %).
+
+    `layer_height` 를 안 주면 모듈 상수 `LAYER_H`(0.4) — 기존 표와 같은 경로다.
+    검사기의 `layer_height` 도 같은 값으로 맞춘다(지지 창·베드 판정이 층고에 비례).
 
     `breakdown=True` 면 (진짜 오버행 %p, 아랫층 단면 안 %p, 그 수직 간격 중앙값)
     을 덧붙인다. 서포트 판단은 **진짜 오버행**으로 한다. '단면 안'은 오버행이
@@ -95,12 +101,13 @@ def run_pipeline(mesh, angle_or_profile, direction="outward", breakdown=False):
         v = transform_cone(mesh.vertices, angle_or_profile, direction)
     else:
         v = mesh.vertices
+    lh = LAYER_H if layer_height is None else float(layer_height)
     warped = trimesh.Trimesh(vertices=v, faces=mesh.faces, process=False)
-    items = slice_mesh(warped, layer_height=LAYER_H)
+    items = slice_mesh(warped, layer_height=lh)
     real, _ = backtransform(items, angle_or_profile, direction)
     pts, mid, w, kinds, lay = sample_extrusions(real, return_types=True,
                                                 return_layers=True)
-    sup, st = check_support(pts, mid, w, layer_height=LAYER_H)
+    sup, st = check_support(pts, mid, w, layer_height=lh)
 
     def pct(mask):
         tot = w[mask].sum()
@@ -151,11 +158,22 @@ def strategies(mesh, k=DEFAULT_K):
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[1],
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("stl", nargs="?", help="임의 STL (없으면 구 + 램프)")
+    ap.add_argument("--layer-height", type=float, default=LAYER_H,
+                    help=f"층고 mm (기본 {LAYER_H} — 기존 표의 값)")
+    ap.add_argument("--out", default="compare_waist.png")
+    ap.add_argument("--json", default=None,
+                    help="표의 수치를 남길 JSON (기본: 안 남긴다)")
+    args = ap.parse_args()
+
     models = [("구 (허리 없음)",
                center_on_axis(trimesh.creation.icosphere(subdivisions=3, radius=10.0))),
               ("램프 (허리 있음)", waisted_model())]
-    if len(sys.argv) > 1:
-        models = [(sys.argv[1], center_on_axis(trimesh.load(sys.argv[1], force="mesh")))]
+    if args.stl:
+        models = [(args.stl, center_on_axis(trimesh.load(args.stl, force="mesh")))]
+    print(f"층고 {args.layer_height:g}mm")
 
     results = {}
     for name, mesh in models:
@@ -167,8 +185,8 @@ def main():
         strats, _ = strategies(mesh)
         for label, spec, note in strats:
             t0 = time.time()
-            peri, total, fill, oh, ins, gapz = run_pipeline(mesh, spec,
-                                                            breakdown=True)
+            peri, total, fill, oh, ins, gapz = run_pipeline(
+                mesh, spec, breakdown=True, layer_height=args.layer_height)
             ma = mean_abs_angle(mesh, spec)
             rows.append((label, peri, total, fill, note, ma, oh, ins, gapz))
             # 수직거리는 참고용 — 희소 인필 격자에 지배되어 평면 0° 에서도
@@ -217,8 +235,17 @@ def main():
                    "부위별 각도 vs 균일 원뿔 — 결론은 아래 칸(진짜 오버행)으로만 읽는다  "
                    "(⟨|θ|⟩ = 면적가중 평균 왜곡각)"), fontsize=11)
     fig.tight_layout()
-    fig.savefig("compare_waist.png", dpi=130)
-    print("\n그림 저장: compare_waist.png")
+    fig.savefig(args.out, dpi=130)
+    print(f"\n그림 저장: {args.out}")
+    if args.json:
+        keys = ("strategy", "perimeter_pct", "total_pct", "infill_pct", "note",
+                "mean_abs_angle", "overhang_pct", "inside_pct", "inside_gap_median")
+        with open(args.json, "w", encoding="utf-8") as fh:
+            json.dump({"layer_height": args.layer_height,
+                       "models": {name: [dict(zip(keys, r, strict=True)) for r in rows]
+                                  for name, rows in results.items()}},
+                      fh, ensure_ascii=False, indent=1, default=float)
+        print(f"측정 결과 저장: {args.json}")
     print("⚠ 시뮬레이션 경향이며 실물 출력 검증 전 — '증명'이 아니다.")
     return 0
 

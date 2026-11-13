@@ -1,0 +1,23 @@
+[
+ {
+  "model": "구",
+  "index": 0,
+  "angles_full": 23,
+  "angles_restricted": 12,
+  "same_optimum": false
+ },
+ {
+  "model": "허리 r=3",
+  "index": 4,
+  "angles_full": 23,
+  "angles_restricted": 12,
+  "same_optimum": true
+ },
+ {
+  "model": "허리3 로브0.2",
+  "index": 14,
+  "angles_full": 23,
+  "angles_restricted": 12,
+  "same_optimum": true
+ }
+]

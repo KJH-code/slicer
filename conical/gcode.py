@@ -22,13 +22,26 @@ class Move:
     def to_line(self):
         parts = [f"G{self.g}"]
         for k, v, fmt in (("X", self.x, ".3f"), ("Y", self.y, ".3f"),
-                          ("Z", self.z, ".3f"), ("E", self.e, ".5f"),
-                          ("F", self.f, ".0f")):
+                          ("Z", self.z, ".3f"), ("E", self.e, ".5f")):
             if v is not None:
                 parts.append(f"{k}{format(v, fmt)}")
+        if self.f is not None:
+            parts.append(f"F{format_feed(self.f)}")
         if self.extra:
             parts.append(self.extra)
         return " ".join(parts)
+
+
+def format_feed(f):
+    """F 값 문자열. 100 이상은 예전처럼 정수, 그 아래는 소수 3자리까지.
+
+    왜: REP5X 는 회전이 큰 짧은 이동의 F 를 깎아야 한다(`rep5x.limit_rotary_speed`).
+    축 근처에서는 F 가 1 mm/min 아래로도 내려가는데, 정수로 찍으면 F0.4 가 `F0` 이
+    된다 — 펌웨어가 그 줄의 피드를 버리고 직전 값으로 달린다.
+    """
+    if f >= 100.0:
+        return f"{f:.0f}"
+    return f"{f:.3f}".rstrip("0").rstrip(".") or "0"
 
 
 def parse(lines):
@@ -65,7 +78,13 @@ def parse(lines):
     return out
 
 
+def to_lines(items):
+    """아이템 목록 → 파일에 적힐 줄들 (개행 없음). `write` 와 검사기가 같이 쓴다."""
+    return [payload.to_line() if kind == "move" else payload
+            for kind, payload in items]
+
+
 def write(items, path):
     with open(path, "w") as fh:
-        for kind, payload in items:
-            fh.write((payload.to_line() if kind == "move" else payload) + "\n")
+        for line in to_lines(items):
+            fh.write(line + "\n")

@@ -49,12 +49,25 @@ profile.py — θ(Z′) 가변각 프로필. 부위별 최적 각도를 '실제 
       검사기로 재측정해 4.93%로 내려간 것까지 확인했다 — 예측기와 검사기가
       서로를 검사하는 구조가 실제로 작동한 사례.
 
-    여기서 r 은 전 모델 최대 반경이 아니라 '블렌드가 걸리는 높이의 최대 반경'
+    여기서 r 은 전 모델 최대 반경이 아니라 '블렌드의 층이 실제로 닿는 최대 반경'
     r_b 를 쓴다(meshio.RadiusProfile). 그래야 ⓐ 가는 부분에서 과하게 넓은 블렌드를
     피하고 ⓑ 경계를 반경이 작은 높이로 옮기는 것이 이득이 된다(전이 위치 최적화).
     폭을 아무리 넓혀도 자리가 없으면 각도 차 자체를 줄인다(각도 예산 삭감) —
     깨진 프로필을 내보내는 대신 '출력 가능한 최선'으로 내려앉고, 무엇을 깎았는지
     profile.notes 에 남겨 CLI 가 보고한다.
+
+    ⚠⚠ r_b 를 조회하는 자리 (2026-11-10 고침, docs/gap_audit.md G1):
+      블렌드는 **변환높이 Z′** 구간 [lo, hi] 다. 그 구간의 층은 원뿔이라 반경이
+      클수록 실공간에서 아래로 내려간다(z = Z′ − r·tanθ). 예전에는 r_b 를 **실공간
+      z 구간 [lo, hi]** 의 최대 반경으로 조회해서, 그 층들이 실제로 닿는 뚱뚱한
+      부분을 못 봤다. 위 유도(m = 1 − c·r·s)는 맞고 r 을 조회한 높이가 틀렸던
+      것이다 — 램프 밴드2 [30°, 0°] 는 목(r=2mm)만 보고 폭 2.31mm 를 잡았는데
+      층은 구의 어깨(r=6.6mm)까지 내려가 명목 m=1.50 이 실제 2.6 이었다.
+      점 (r, z) 가 블렌드에 드는 조건은 닫힌 식이다 (F(Z′) = Z′ − r·T(Z′) 가 순증가):
+          lo − r·tanθ₁  ≤  z  ≤  hi − r·tanθ₂
+      이 조건으로 조회한다(`RadiusProfile.max_in_slab`). 계획기(`_required_width`,
+      `_plan_blend`)·검사(`check_spacing`, `max_spacing_factor`)·J 의 블렌드 벌점
+      (`varangle.blend_penalty`)이 전부 같은 조회를 쓴다.
 """
 
 import math
@@ -91,13 +104,24 @@ def max_dtan_for_width(r_blend, w, sign, direction="outward",
     return w * factor / r_blend
 
 
-def _required_width(zc, dtan, r_global, radius_profile, safety, min_blend,
-                    spacing_limit):
-    """중심 zc 에 놓을 블렌드의 '진짜 필요 폭'과 그때의 블렌드 반경 r_b.
+def _blend_radius(radius_profile, lo, hi, tan_lo, tan_hi, r_global):
+    """블렌드 Z′ 구간 [lo, hi] 의 층이 실제로 닿는 최대 반경 r_b (모듈 docstring ⚠⚠).
 
-    r_b 는 블렌드가 덮는 높이 구간의 최대 반경인데, 그 구간이 '폭에 따라' 달라진다
-    (넓힐수록 더 뚱뚱한 높이까지 덮을 수 있다). 그래서 (폭 → 구간 → 반경 → 폭)을
-    수렴할 때까지 반복한다. w 는 단조증가하고 반경이 r_global 에서 포화하므로 수렴한다.
+    tan_lo·tan_hi 는 부호 있는 각도 규약(c=+1)의 tanθ. 반경 프로필이 없으면 전 모델
+    최대 반경(보수적)."""
+    if radius_profile is None:
+        return r_global
+    return radius_profile.max_in_slab(lo, hi, tan_lo, tan_hi)
+
+
+def _required_width(zc, tan1, tan2, r_global, radius_profile, safety, min_blend,
+                    spacing_limit):
+    """중심 zc 에 놓을 블렌드(tanθ: tan1 → tan2)의 '진짜 필요 폭'과 그때의 반경 r_b.
+
+    r_b 는 블렌드의 층이 실제로 닿는 최대 반경인데, 그 범위가 '폭에 따라' 달라진다
+    (넓힐수록 더 뚱뚱한 곳까지 닿는다). 그래서 (폭 → 슬랩 → 반경 → 폭)을 수렴할
+    때까지 반복한다. 폭을 넓히면 슬랩이 포함관계로 커지므로 w 는 단조증가하고
+    반경이 r_global 에서 포화하므로 수렴한다.
     ⚠ 2회만 돌리면 구처럼 위로 갈수록 뚱뚱해지는 모델에서 과소평가된다(실측으로 발견).
 
     ⚠ 자리(가용 폭)로 잘라서 반환하면 안 된다(실측으로 발견): 자리가 거의 없는 중심이
@@ -105,14 +129,15 @@ def _required_width(zc, dtan, r_global, radius_profile, safety, min_blend,
       '자리 부족 → 각도 삭감' 검사가 안 걸린다. 램프 N=4 에서 0.14mm 폭에 42°→0° 가
       들어가 층간격 배율 53.7배짜리 프로필이 나왔다. 자를지 말지는 호출부가 정한다.
     """
+    dtan = tan2 - tan1
     w_inv = r_global * dtan                        # c=+1 규약, 불안정 방향만 >0
     w = max(min_blend, safety * w_inv if w_inv > 0 else min_blend)
     r_b = r_global
     if spacing_limit is None:
         return w, r_b
     for _ in range(40):
-        r_b = (radius_profile.max_between(zc - w / 2.0, zc + w / 2.0)
-               if radius_profile is not None else r_global)
+        r_b = _blend_radius(radius_profile, zc - w / 2.0, zc + w / 2.0, tan1, tan2,
+                            r_global)
         w_new = max(w, blend_width_for_spacing(r_b, dtan, "outward", spacing_limit))
         if w_new <= w * (1 + 1e-4):
             return w_new, r_b
@@ -146,11 +171,11 @@ def _plan_blend(zb, th1, th2, room_lo, room_hi, r_global, radius_profile,
     for zc in centers:
         if available(zc) <= 0:
             continue
-        w, r_b = _required_width(zc, dtan, r_global, radius_profile,
+        w, r_b = _required_width(zc, tan1, tan2, r_global, radius_profile,
                                  safety, min_blend, spacing_limit)
         cands.append((zc, w, r_b, available(zc)))
     if not cands:                                   # 자리가 아예 없음 → 원위치 강행
-        w, r_b = _required_width(zb, dtan, r_global, radius_profile,
+        w, r_b = _required_width(zb, tan1, tan2, r_global, radius_profile,
                                  safety, min_blend, spacing_limit)
         cands = [(zb, w, r_b, max(available(zb), min_blend))]
 
@@ -178,14 +203,27 @@ def _plan_blend(zb, th1, th2, room_lo, room_hi, r_global, radius_profile,
     th2_used = th2
     if w > avail + 1e-9 and spacing_limit is not None and abs(dtan) > 1e-12:
         w = max(avail, min_blend)
-        dtan_max = max_dtan_for_width(r_b, w, math.copysign(1.0, dtan),
-                                      "outward", spacing_limit)
-        if abs(dtan) > dtan_max:
-            dtan_new = math.copysign(dtan_max, dtan)
+        sign = math.copysign(1.0, dtan)
+        # r_b 는 '필요 폭' 슬랩에서 잰 값이다. 폭을 줄이고 각도를 깎으면 슬랩의 위
+        # 경계(hi − r·tanθ₂)가 움직인다 — 각도가 커지는 블렌드(Δtan>0)에서는 깎을수록
+        # 위 경계가 큰 반경 쪽에서 올라가 **새 재료가 걸릴 수 있다.** 깎은 각도로
+        # 다시 조회해 반경이 더 커지지 않을 때까지 되풀이한다 (반경은 늘기만 하고
+        # r_global 에서 포화하므로 수렴한다).
+        r_use = r_b
+        dtan_new = dtan
+        for _ in range(20):
+            dtan_max = max_dtan_for_width(r_use, w, sign, "outward", spacing_limit)
+            dtan_new = math.copysign(min(abs(dtan), dtan_max), dtan)
+            r_now = _blend_radius(radius_profile, zc - w / 2.0, zc + w / 2.0,
+                                  tan1, tan1 + dtan_new, r_global)
+            if r_now <= r_use * (1.0 + 1e-9):
+                break
+            r_use = r_now
+        if abs(dtan_new) < abs(dtan):
             th2_used = math.degrees(math.atan(tan1 + dtan_new))
             note = ((note + "; ") if note else "") + (
                 f"각도 예산 삭감: θ {th1:.1f}°→{th2:.1f}° 를 {th2_used:.1f}° 로 "
-                f"(높이 {zc:.2f}의 반경 {r_b:.1f}mm 에서 폭 {w:.2f}mm 로는 "
+                f"(높이 {zc:.2f}의 반경 {r_use:.1f}mm 에서 폭 {w:.2f}mm 로는 "
                 f"층간격 {spacing_limit:.1f}배를 못 지킴)")
     return zc - w / 2.0, zc + w / 2.0, th2_used, note
 
@@ -243,22 +281,28 @@ class AngleProfile:
         return True
 
     # ── 층간격 배율 (두 번째 제약) ──
-    def spacing_factor(self, zw, r, direction="outward"):
-        """변환높이 Zw·반경 r 에서의 층간격 배율 m = 1 − c·r·s."""
-        c = 1.0 if direction == "outward" else -1.0
+    def slope_at(self, zw):
+        """s = dtanθ/dZ′ (스칼라/배열). 블렌드 밖은 0, 경계점은 위쪽 구간의 값."""
         zw = np.asarray(zw, dtype=float)
         s = np.zeros(zw.shape) if zw.ndim else 0.0
         for i in range(len(self.zs) - 1):
             si = (self.tans[i + 1] - self.tans[i]) / (self.zs[i + 1] - self.zs[i])
             inside = (zw >= self.zs[i]) & (zw <= self.zs[i + 1])
             s = np.where(inside, si, s)
-        return 1.0 - c * np.asarray(r, dtype=float) * s
+        return s
+
+    def spacing_factor(self, zw, r, direction="outward"):
+        """변환높이 Zw·반경 r 에서의 층간격 배율 m = 1 − c·r·s."""
+        c = 1.0 if direction == "outward" else -1.0
+        return 1.0 - c * np.asarray(r, dtype=float) * self.slope_at(zw)
 
     def check_spacing(self, r_max, direction="outward",
                       limit=MAX_SPACING_FACTOR, radius_profile=None):
         """층간격 배율이 [1/limit, limit] 를 벗어나는 구간 목록 (에러 안 냄).
 
-        radius_profile 을 주면 구간별 실제 반경으로, 없으면 전 모델 r_max 로 본다.
+        radius_profile 을 주면 그 블렌드의 층이 실제로 닿는 최대 반경으로
+        (`RadiusProfile.max_in_slab` — 실공간 z 구간이 아니다. 모듈 docstring ⚠⚠),
+        없으면 전 모델 r_max 로 본다.
         반환: [{"lo","hi","r","factor","theta1","theta2"}, ...] (배율 큰 순)
         """
         c = 1.0 if direction == "outward" else -1.0
@@ -269,7 +313,8 @@ class AngleProfile:
             if abs(dt) < 1e-12:
                 continue
             s = dt / (b - a)
-            r = radius_profile.max_between(a, b) if radius_profile else r_max
+            r = _blend_radius(radius_profile, a, b, c * self.tans[i],
+                              c * self.tans[i + 1], r_max)
             m = 1.0 - c * r * s
             if m > limit + 1e-9 or m < 1.0 / limit - 1e-9:
                 bad.append({"lo": a, "hi": b, "r": float(r), "factor": float(m),
@@ -288,7 +333,8 @@ class AngleProfile:
             if abs(dt) < 1e-12:
                 continue
             s = dt / (b - a)
-            r = radius_profile.max_between(a, b) if radius_profile else r_max
+            r = _blend_radius(radius_profile, a, b, c * self.tans[i],
+                              c * self.tans[i + 1], r_max)
             m = 1.0 - c * r * s
             if abs(math.log(max(m, 1e-9))) > abs(math.log(max(worst, 1e-9))):
                 worst = m

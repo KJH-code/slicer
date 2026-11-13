@@ -44,6 +44,7 @@ from conical.rep5x import (
     add_c_rewinds,
     check_rep5x,
     cone_tool_direction,
+    limit_rotary_speed,
     to_rep5x,
     tool_direction,
 )
@@ -147,7 +148,16 @@ def test_rewind_keeps_c_inside_firmware_window():
         cs = [_c_of(m.extra, "C") for m in _moves(out2)]
         assert min(cs) >= REP5X.c_min - 1e-6, f"{name}: C 최소 {min(cs):.1f}"
         assert max(cs) <= REP5X.c_max + 1e-6, f"{name}: C 최대 {max(cs):.1f}"
-        fatal = [m for sev, m in check_rep5x(out2)[0] if sev == "치명"]
+        # 2026-11-10: 검사기가 회전축 속도와 베드 간섭도 본다. 그래서 실제 파이프라인
+        # 처럼 마지막 패스(`limit_rotary_speed`)까지 돌린 것을 검사한다 — 그 패스는
+        # F 만 깎고 C 는 건드리지 않아야 한다(첫 자세 맞춤 한 줄만 더한다).
+        out3, _fs = limit_rotary_speed(out2, REP5X)
+        cs3 = [_c_of(m.extra, "C") for m in _moves(out3) if m.x is not None]
+        assert cs3 == cs, f"{name}: 속도 상한 패스가 C 를 바꿨다"
+        fatal = [m for sev, m in check_rep5x(out3)[0] if sev == "치명"]
+        # lamp 24° 는 첫 층에서 노즐 몸통이 베드 여유를 침범한다. 그건 여기서 건너뛴
+        # `bed_safe_profile` 의 일이고 tests/test_rep5x_safety.py 가 고정한다.
+        fatal = [m for m in fatal if "베드 여유" not in m]
         assert not fatal, f"{name}: {fatal}"
 
 
