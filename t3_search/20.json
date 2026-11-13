@@ -1,0 +1,230 @@
+{
+ "model": "mushroom",
+ "index": 20,
+ "faces": 256,
+ "height": 17.0,
+ "r_max": 8.0,
+ "z_range": [
+  0.0,
+  17.0
+ ],
+ "waist_z": 1.7000000000000002,
+ "boundary_candidates": [
+  1.416666667,
+  1.7,
+  2.833333333,
+  4.25,
+  5.666666667,
+  7.083333333,
+  8.5,
+  9.916666667,
+  11.333333333,
+  12.75,
+  14.166666667,
+  15.583333333
+ ],
+ "angles": [
+  0.0,
+  4.0,
+  8.0,
+  12.0,
+  16.0,
+  20.0,
+  24.0,
+  28.0,
+  32.0,
+  36.0,
+  40.0,
+  44.0
+ ],
+ "restrict_signs": true,
+ "uniform_J": {
+  "theta": 0.0,
+  "support_pct": 28.274050715670985,
+  "mean_abs_deg": 0.0
+ },
+ "base_support_pct": 28.274050715670985,
+ "N": {
+  "1": {
+   "evaluated": 12,
+   "infeasible": 0,
+   "obj1": {
+    "bounds": [],
+    "thetas": [
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "obj2": {
+    "bounds": [],
+    "thetas": [
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "seconds": 0.00032868400012375787
+  },
+  "2": {
+   "evaluated": 1728,
+   "infeasible": 7,
+   "obj1": {
+    "bounds": [
+     1.416666667
+    ],
+    "thetas": [
+     0.0,
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "obj2": {
+    "bounds": [
+     1.416666667
+    ],
+    "thetas": [
+     0.0,
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "seconds": 1.2756854690001092
+  },
+  "3": {
+   "evaluated": 114048,
+   "infeasible": 13957,
+   "obj1": {
+    "bounds": [
+     1.416666667,
+     1.7
+    ],
+    "thetas": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "obj2": {
+    "bounds": [
+     1.416666667,
+     1.7
+    ],
+    "thetas": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "seconds": 116.55059946600022
+  },
+  "4": {
+   "obj1": {
+    "bounds": [
+     1.416666667,
+     1.7,
+     2.833333333
+    ],
+    "thetas": [
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "obj1_evaluated": 5760,
+   "obj2": {
+    "bounds": [
+     1.416666667,
+     1.7,
+     2.833333333
+    ],
+    "thetas": [
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "support_pct": 28.274050715670985,
+    "mean_abs_deg": 0.0,
+    "distinct_bands": 1,
+    "breakpoints": [
+     [
+      0.0,
+      0.0
+     ]
+    ],
+    "notes": []
+   },
+   "obj2_evaluated": 5760,
+   "seconds": 2.4763660050002727,
+   "restricted": true
+  }
+ },
+ "fast_eval_max_abs_diff": 0.0,
+ "seconds_total": 120.36269282900003
+}

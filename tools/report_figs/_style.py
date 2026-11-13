@@ -62,6 +62,19 @@ def log_ticks(ax):
         axis.set_major_formatter(FuncFormatter(fmt))
 
 
+def family(name):
+    """모델 이름 → (계열 번호, 계열 이름) — 21 모델을 tab10 색 다섯 개로 묶는다."""
+    if name.startswith("허리3 로브"):
+        return 3, "허리3 로브"
+    if name.startswith("허리3 ×"):
+        return 2, "허리3 ×λ"
+    if name.startswith("허리 r="):
+        return 1, "허리 r"
+    if name == "구":
+        return 0, "구"
+    return 4, "데모"
+
+
 def panel_label(ax, s):
     ax.text(0.0, 1.08, s, transform=ax.transAxes, ha="left", va="bottom",
             fontsize=9, fontweight="bold")
