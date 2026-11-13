@@ -73,10 +73,29 @@ def angle_candidates(max_angle, step):
 # ─────────────────────────────────────────────────────────────
 # 높이 구간 나누기
 # ─────────────────────────────────────────────────────────────
-def assign_height_bands(mesh, n_bands):
-    """면을 centroid 높이(z)로 n_bands개 구간에 배정한다. (0=맨 아래)"""
+BAND_EDGE_MODES = ("centroid", "bounds")
+
+
+def assign_height_bands(mesh, n_bands, edges_from="centroid"):
+    """면을 centroid 높이(z)로 n_bands개 구간에 배정한다. (0=맨 아래)
+
+    edges_from — 경계(등분점)를 무엇으로 정하나:
+      · "centroid" (기본, 예전 동작): **면 중심 z** 의 최소~최대를 등분한다.
+        ⚠ 삼각분할에 의존한다 — 면을 쪼개면(중점 분할 등, 형상 불변) 면 중심 범위가
+        실제 높이 쪽으로 넓어져 경계·프로필 양 끝이 움직인다 (docs/test_band_boundary.md).
+      · "bounds": **정점 z** 의 최소~최대(= 메시 bounds = RadiusProfile.z0/z1)를 등분한다.
+        형상의 높이 범위라 중점 분할·면 수와 무관하다.
+    면 배정(라벨)은 두 경우 모두 면 중심 z 로 한다.
+    """
     fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
-    edges = np.linspace(fz.min(), fz.max(), n_bands + 1)
+    if edges_from == "centroid":
+        lo, hi = fz.min(), fz.max()
+    elif edges_from == "bounds":
+        vz = np.asarray(mesh.vertices)[:, 2]
+        lo, hi = vz.min(), vz.max()
+    else:
+        raise ValueError(f"edges_from 는 {BAND_EDGE_MODES} 중 하나: {edges_from!r}")
+    edges = np.linspace(lo, hi, n_bands + 1)
     # digitize 로 각 면을 구간에 배정 (경계 clip)
     labels = np.clip(np.digitize(fz, edges[1:-1]), 0, n_bands - 1)
     return labels, edges
@@ -281,7 +300,7 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
                     spacing_limit=MAX_SPACING_FACTOR, max_shift=None,
                     k_blend=BLEND_COST_K, max_angle=MAX_ANGLE_DEG,
                     step=ANGLE_STEP, threshold_deg=THRESHOLD_DEG,
-                    max_sweeps=4):
+                    max_sweeps=4, band_edges="centroid"):
     """밴드별 각도를 '실제로 만들어질 프로필'의 J 로 고른다 (좌표하강).
 
     select_banded 와의 차이: 저기는 밴드마다 독립적으로 '그 구간만 놓고' 최적
@@ -300,8 +319,12 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
       중간 상태([36°,2°] 등)가 블렌드 비용을 다 물어서 [2°,2°] 같은 국소 최적에
       갇힌다. 그래서 균일 후보(모든 밴드 같은 각도)를 전부 따로 평가해 넣는다.
       부수 효과로 **결과가 균일 원뿔보다 나쁠 수 없다**(J 기준)는 성질이 생긴다.
+
+    band_edges: 밴드 등분점을 정하는 방식 (`assign_height_bands` 의 edges_from).
+      기본 "centroid" 는 예전 동작이다. "bounds" 는 메시 독립(형상의 높이 범위) 경계 —
+      세분화 ×4 에서 경계가 바뀌던 결함의 수정 옵션 (docs/test_band_boundary.md).
     """
-    labels, edges = assign_height_bands(mesh, n_bands)
+    labels, edges = assign_height_bands(mesh, n_bands, band_edges)
     areas = mesh.area_faces
     base_pct = support_fraction(mesh, 0.0, "outward", threshold_deg)
     if max_shift is None:      # 모델 높이 기준 (밴드 수와 무관 — config 주석 참조)
@@ -391,7 +414,7 @@ def select_banded_j(mesh, k, n_bands, r_max, radius_profile=None,
     thetas, prof, met = max(results, key=lambda r: r[2]["J"])
 
     return {"strategy": f"banded-{n_bands}-J", "n_regions": n_bands,
-            "edges": edges, "thetas": thetas, "start_thetas": start,
+            "edges": edges, "band_edges": band_edges, "thetas": thetas, "start_thetas": start,
             "uniform_best": best_uni[0] if best_uni else None,
             "uniform_J": best_uni_m["J"],
             "profile_obj": prof, "staircase": float("nan"), **met}

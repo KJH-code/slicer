@@ -1,5 +1,68 @@
 [
  {
+  "slug": "band_vs_radius",
+  "png": "docs/report/figures/band_vs_radius.png",
+  "script": "tools/report_figs/band_vs_radius.py",
+  "data_sources": [
+   "band_boundary_results.json#figd"
+  ],
+  "description": "그림 D: 모델 반경 R(z), 고른 θ(Z′), 블렌드 위치·폭, r*. 경계 판 = centroid. 블렌드 폭 w ≥ r_b·|Δtanθ|/(m_max−1) (식 (5)) 라 반경이 작은 높이에 둘수록 좁다.",
+  "key_numbers": {
+   "램프": {
+    "thetas": [
+     30.0,
+     0.0
+    ],
+    "edge_mm": 15.0,
+    "blend_mm": [
+     17.35,
+     19.66
+    ],
+    "w_mm": 2.31,
+    "r_star_mm": 2.0,
+    "r_at_edge_mm": 3.82,
+    "w_at_edge_lb_mm": 9.12
+   },
+   "허리 r=3": {
+    "thetas": [
+     28.0,
+     0.0
+    ],
+    "edge_mm": 15.0,
+    "blend_mm": [
+     17.24,
+     20.77
+    ],
+    "w_mm": 3.53,
+    "r_star_mm": 3.32,
+    "r_at_edge_mm": 3.68,
+    "w_at_edge_lb_mm": 8.44
+   },
+   "torus": {
+    "thetas": [
+     6.0,
+     6.0
+    ],
+    "edge_mm": 4.0
+   },
+   "구": {
+    "thetas": [
+     28.0,
+     20.0
+    ],
+    "edge_mm": 10.0,
+    "blend_mm": [
+     3.72,
+     6.28
+    ],
+    "w_mm": 2.56,
+    "r_star_mm": 7.64,
+    "r_at_edge_mm": 10.0,
+    "w_at_edge_lb_mm": 3.27
+   }
+  }
+ },
+ {
   "slug": "baseline_bars",
   "png": "docs/report/figures/baseline_bars.png",
   "script": "tools/report_figs/baseline_bars.py",
@@ -40,6 +103,67 @@
      2,
      15
     ]
+   }
+  }
+ },
+ {
+  "slug": "bed_cap_cost",
+  "png": "docs/report/figures/bed_cap_cost.png",
+  "script": "tools/report_figs/bed_cap_cost.py",
+  "data_sources": [
+   "report_fig_bed_cap_results.json",
+   "t1_conventional_results.json"
+  ],
+  "description": "E: 베드 상한 22.79° 전후 고른 각도(균일·밴드2 아랫각, 층고 0.4 선택)와 균일 원뿔 미지지 증가(층고 0.3/0.4)",
+  "key_numbers": {
+   "0.3:uniform:n_changed": 9,
+   "0.3:uniform:median_delta_mm": 36.4,
+   "0.3:uniform:max_delta_mm": 734.1,
+   "0.3:uniform:top": "funnel (57%)",
+   "0.3:band2:n_changed": 14,
+   "0.3:band2:median_delta_mm": 25.7,
+   "0.3:band2:max_delta_mm": 733.8,
+   "0.3:band2:top": "funnel (54%)",
+   "0.3:oracle:n_changed": 19,
+   "0.3:oracle:median_delta_mm": 29.4,
+   "0.3:oracle:max_delta_mm": 293.3,
+   "0.3:oracle:top": "허리3 ×2 (36%)",
+   "0.4:uniform:n_changed": 9,
+   "0.4:uniform:median_delta_mm": 32.8,
+   "0.4:uniform:max_delta_mm": 624.0,
+   "0.4:uniform:top": "허리3 ×2 (55%)",
+   "0.4:band2:n_changed": 14,
+   "0.4:band2:median_delta_mm": 29.7,
+   "0.4:band2:max_delta_mm": 311.7,
+   "0.4:band2:top": "허리3 ×2 (33%)",
+   "0.4:oracle:n_changed": 20,
+   "0.4:oracle:median_delta_mm": 62.8,
+   "0.4:oracle:max_delta_mm": 627.5,
+   "0.4:oracle:top": "허리3 ×2 (25%)"
+  }
+ },
+ {
+  "slug": "checker_criterion",
+  "png": "docs/report/figures/checker_criterion.png",
+  "script": "tools/report_figs/checker_criterion.py",
+  "data_sources": [
+   "report_fig_checker_results.json",
+   "conical/toolpath.py"
+  ],
+  "description": "G: 검사기 A 지지 정의(수평 ≤ 0.45mm, 수직 (0,1.5h], 베드 z ≤ h) 모식도와 합성 고리 시험",
+  "key_numbers": {
+   "width_mm": 0.45,
+   "vwin_factor": 1.5,
+   "bed_factor": 1.0,
+   "sample_spacing_mm": 0.225,
+   "six_cases_match": true,
+   "implied_planar_deg": {
+    "0.2": 66.0,
+    "0.25": 60.9,
+    "0.3": 56.3,
+    "0.35": 52.1,
+    "0.4": 48.4,
+    "0.5": 42.0
    }
   }
  },
@@ -116,6 +240,93 @@
     "in44": 8.909113822197835,
     "beyond44": 0.0,
     "never": 0.0
+   }
+  }
+ },
+ {
+  "slug": "critical_angle_select",
+  "png": "docs/report/figures/critical_angle_select.png",
+  "script": "tools/report_figs/critical_angle_select.py",
+  "data_sources": [
+   "report_fig_critical_angle_results.json",
+   "t1_conventional_results.json",
+   "conical/analytic.py",
+   "conical/exact_angle.py"
+  ],
+  "description": "A: 21 모델 면별 임계각 θ* 분포(0° 필요 면은 전부 아래 밴드)와 자동 균일·밴드2 각, 베드 상한 22.79°",
+  "key_numbers": {
+   "recheck_old_hist_all_match_0p1": true,
+   "why_check_pass": "20/20",
+   "exact_vs_grid_within_2deg": "12/21",
+   "over_cap_share_median_pct": 27.3,
+   "upper_band_need0_area_pct_max": 0.0
+  }
+ },
+ {
+  "slug": "direction_demo",
+  "png": "docs/report/figures/direction_demo.png",
+  "script": "tools/report_figs/direction_demo.py",
+  "data_sources": [
+   "report_fig_direction_results.json",
+   "conical/exact_angle.py",
+   "conical/toolpath.py"
+  ],
+  "description": "C: 안쪽/바깥 오버행 그릇에서 방향 자동 결정 — 단면, S(θ)·J(θ) 두 방향, 검사기 미지지(구멍 살린 분류)",
+  "key_numbers": {
+   "sample_inward_counts": {
+    "grid_uniform": 0,
+    "exact_uniform": 0,
+    "auto_uniform": 0,
+    "auto_band2": 0,
+    "cap_uniform": 0,
+    "cap_band2": 1
+   },
+   "C1_pass": true,
+   "selection": {
+    "inner": {
+     "grid_uniform": -16.0,
+     "exact_uniform": -15.011712277414517,
+     "exact_J": 7.0375429743391535,
+     "banded_j_N1": [
+      -16.0
+     ],
+     "banded_j_N2": [
+      -16.0,
+      0.0
+     ]
+    },
+    "outer": {
+     "grid_uniform": 16.0,
+     "exact_uniform": 15.011535440019943,
+     "exact_J": 12.683162677412458,
+     "banded_j_N1": [
+      16.0
+     ],
+     "banded_j_N2": [
+      10.0,
+      16.0
+     ]
+    }
+   },
+   "C2_prereg": {
+    "inner": {
+     "0.3": false,
+     "0.4": false
+    },
+    "outer": {
+     "0.3": true,
+     "0.4": false
+    }
+   },
+   "C2_hole_aware": {
+    "inner": {
+     "0.3": true,
+     "0.4": false
+    },
+    "outer": {
+     "0.3": true,
+     "0.4": false
+    }
    }
   }
  },
@@ -310,6 +521,31 @@
   }
  },
  {
+  "slug": "funnel_cap",
+  "png": "docs/report/figures/funnel_cap.png",
+  "script": "tools/report_figs/funnel_cap.py",
+  "data_sources": [
+   "k_funnel_results.json",
+   "t1_conventional_results.json",
+   "docs/test_k_sweep.md"
+  ],
+  "description": "funnel 은 오버행 면 전부가 θ*=25.26° 에서 한꺼번에 풀려 상한 22.79° 아래 ΔS=0 → J 가 0° 를 고른다; 툴패스 미지지도 계단이나 위치가 층고별(0.3: 17°, 0.4: 29°)로 다르다; S³ 모델은 ΔS 가 k·θ 선 아래(k 스케일)",
+  "key_numbers": {
+   "funnel:theta_star_deg": 25.26,
+   "funnel:overhang_area_pct": 51.51,
+   "funnel:toolpath_drop_0_to_22_mm": {
+    "0.3": 733.7,
+    "0.4": 84.9
+   },
+   "ring:k_star": 0.1635,
+   "ring:max_dS_pct": 3.14,
+   "topopt_new4:k_star": 0.0965,
+   "topopt_new4:max_dS_pct": 3.14,
+   "armadillo4:k_star": 0.1527,
+   "armadillo4:max_dS_pct": 4.04
+  }
+ },
+ {
   "slug": "g_theta_funnel",
   "png": "docs/report/figures/g_theta_funnel.png",
   "script": "tools/report_figs/g_theta_funnel.py",
@@ -363,6 +599,548 @@
      "iou": 0.9267034221143492
     }
    }
+  }
+ },
+ {
+  "slug": "k_estimate",
+  "png": "docs/report/figures/k_estimate.png",
+  "script": "tools/report_figs/k_estimate.py",
+  "data_sources": [
+   "k_estimate_results.json",
+   "docs/test_k_estimate.md"
+  ],
+  "description": "k 추정: 셀별 후회 곡선과 k̂(1-SE) 95% 구간, 부트스트랩 분포(전체/층고별), 가족 제외 교차검증 후회, 각도 비용 λ 에 따른 추정 k",
+  "key_numbers": {
+   "k_1se": 0.06,
+   "ci95_model": [
+    0.055,
+    0.08
+   ],
+   "k_1se_0.3": 0.115,
+   "ci95_0.3": [
+    0.085,
+    0.16
+   ],
+   "k_1se_0.4": 0.06,
+   "ci95_0.4": [
+    0.055,
+    0.08
+   ],
+   "lofo_k": [
+    0.06,
+    0.07,
+    0.075,
+    0.075,
+    0.06
+   ],
+   "reliable": false,
+   "k_by_lambda": {
+    "0": 0.055,
+    "1": 0.07,
+    "2": 0.14,
+    "5": 0.365,
+    "10": 0.5,
+    "20": 0.5
+   }
+  }
+ },
+ {
+  "slug": "k_pareto",
+  "png": "docs/report/figures/k_pareto.png",
+  "script": "tools/report_figs/k_pareto.py",
+  "data_sources": [
+   "k_sweep_results.json",
+   "docs/test_k_sweep.md"
+  ],
+  "description": "교환 곡선: 고정 균일각 곡선(평균|θ| 대 미지지 합) 위에 k 별 자동 균일(●)·밴드2(▲) 점, 21 모델, 층고 0.3/0.4, 베드 상한 유무",
+  "key_numbers": {
+   "0.3|none:k0:uniform": [
+    40.76,
+    446.8,
+    "자동 승"
+   ],
+   "0.3|none:k0:band2": [
+    40.52,
+    267.3,
+    "자동 승"
+   ],
+   "0.3|none:k0.02:uniform": [
+    39.62,
+    448.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.02:band2": [
+    38.4,
+    267.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.05:uniform": [
+    37.71,
+    435.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.05:band2": [
+    36.33,
+    256.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.1:uniform": [
+    33.24,
+    434.6,
+    "자동 승"
+   ],
+   "0.3|none:k0.1:band2": [
+    29.28,
+    259.1,
+    "자동 승"
+   ],
+   "0.3|none:k0.15:uniform": [
+    28.29,
+    320.6,
+    "자동 승"
+   ],
+   "0.3|none:k0.15:band2": [
+    21.2,
+    359.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.2:uniform": [
+    23.05,
+    588.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.2:band2": [
+    17.91,
+    489.2,
+    "자동 승"
+   ],
+   "0.3|none:k0.3:uniform": [
+    13.52,
+    1095.9,
+    "자동 승"
+   ],
+   "0.3|none:k0.3:band2": [
+    12.52,
+    752.4,
+    "자동 승"
+   ],
+   "0.3|none:k0.5:uniform": [
+    3.05,
+    3001.2,
+    "자동 승"
+   ],
+   "0.3|none:k0.5:band2": [
+    5.72,
+    1776.3,
+    "자동 승"
+   ],
+   "0.3|none:k1:uniform": [
+    1.24,
+    3251.9,
+    "자동 승"
+   ],
+   "0.3|none:k1:band2": [
+    1.58,
+    3084.3,
+    "자동 승"
+   ],
+   "0.4|none:k0:uniform": [
+    40.76,
+    1185.9,
+    "자동 패"
+   ],
+   "0.4|none:k0:band2": [
+    40.52,
+    1081.6,
+    "자동 패"
+   ],
+   "0.4|none:k0.02:uniform": [
+    39.62,
+    1185.9,
+    "자동 패"
+   ],
+   "0.4|none:k0.02:band2": [
+    38.4,
+    1057.2,
+    "자동 패"
+   ],
+   "0.4|none:k0.05:uniform": [
+    37.71,
+    1193.0,
+    "자동 패"
+   ],
+   "0.4|none:k0.05:band2": [
+    36.33,
+    1064.3,
+    "자동 패"
+   ],
+   "0.4|none:k0.1:uniform": [
+    33.24,
+    1464.7,
+    "자동 패"
+   ],
+   "0.4|none:k0.1:band2": [
+    29.28,
+    1336.7,
+    "자동 승"
+   ],
+   "0.4|none:k0.15:uniform": [
+    28.29,
+    1697.0,
+    "자동 승"
+   ],
+   "0.4|none:k0.15:band2": [
+    21.2,
+    1917.6,
+    "자동 승"
+   ],
+   "0.4|none:k0.2:uniform": [
+    23.05,
+    2089.0,
+    "자동 승"
+   ],
+   "0.4|none:k0.2:band2": [
+    17.91,
+    2328.4,
+    "자동 승"
+   ],
+   "0.4|none:k0.3:uniform": [
+    13.52,
+    2842.8,
+    "자동 승"
+   ],
+   "0.4|none:k0.3:band2": [
+    12.52,
+    3099.9,
+    "자동 승"
+   ],
+   "0.4|none:k0.5:uniform": [
+    3.05,
+    4839.3,
+    "자동 패"
+   ],
+   "0.4|none:k0.5:band2": [
+    5.72,
+    3771.8,
+    "자동 승"
+   ],
+   "0.4|none:k1:uniform": [
+    1.24,
+    5255.1,
+    "자동 패"
+   ],
+   "0.4|none:k1:band2": [
+    1.58,
+    4940.3,
+    "자동 패"
+   ],
+   "0.3|cap:k0:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0:band2": [
+    20.8,
+    1808.9,
+    "자동 패"
+   ],
+   "0.3|cap:k0.02:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.02:band2": [
+    20.46,
+    1808.9,
+    "자동 패"
+   ],
+   "0.3|cap:k0.05:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.05:band2": [
+    18.61,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.1:uniform": [
+    19.43,
+    1832.1,
+    "자동 패"
+   ],
+   "0.3|cap:k0.1:band2": [
+    13.9,
+    1782.2,
+    "자동 승"
+   ],
+   "0.3|cap:k0.15:uniform": [
+    18.86,
+    1837.3,
+    "자동 패"
+   ],
+   "0.3|cap:k0.15:band2": [
+    13.26,
+    1782.2,
+    "자동 승"
+   ],
+   "0.3|cap:k0.2:uniform": [
+    18.1,
+    1886.2,
+    "자동 패"
+   ],
+   "0.3|cap:k0.2:band2": [
+    12.55,
+    1796.1,
+    "자동 승"
+   ],
+   "0.3|cap:k0.3:uniform": [
+    10.1,
+    2335.6,
+    "자동 승"
+   ],
+   "0.3|cap:k0.3:band2": [
+    9.71,
+    1938.4,
+    "자동 승"
+   ],
+   "0.3|cap:k0.5:uniform": [
+    1.81,
+    3735.2,
+    "자동 패"
+   ],
+   "0.3|cap:k0.5:band2": [
+    4.61,
+    2485.3,
+    "자동 승"
+   ],
+   "0.3|cap:k1:uniform": [
+    0.0,
+    3986.0,
+    "무승부"
+   ],
+   "0.3|cap:k1:band2": [
+    0.43,
+    3818.1,
+    "자동 승"
+   ],
+   "0.4|cap:k0:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0:band2": [
+    20.8,
+    3108.0,
+    "자동 승"
+   ],
+   "0.4|cap:k0.02:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.02:band2": [
+    20.46,
+    3108.0,
+    "자동 승"
+   ],
+   "0.4|cap:k0.05:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.05:band2": [
+    18.61,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.1:uniform": [
+    19.43,
+    3171.3,
+    "자동 승"
+   ],
+   "0.4|cap:k0.1:band2": [
+    13.9,
+    3161.2,
+    "자동 승"
+   ],
+   "0.4|cap:k0.15:uniform": [
+    18.86,
+    3175.7,
+    "자동 승"
+   ],
+   "0.4|cap:k0.15:band2": [
+    13.26,
+    3161.2,
+    "자동 승"
+   ],
+   "0.4|cap:k0.2:uniform": [
+    18.1,
+    3229.8,
+    "자동 승"
+   ],
+   "0.4|cap:k0.2:band2": [
+    12.55,
+    3227.0,
+    "자동 승"
+   ],
+   "0.4|cap:k0.3:uniform": [
+    10.1,
+    3692.5,
+    "자동 승"
+   ],
+   "0.4|cap:k0.3:band2": [
+    9.71,
+    3458.6,
+    "자동 승"
+   ],
+   "0.4|cap:k0.5:uniform": [
+    1.81,
+    4871.0,
+    "자동 패"
+   ],
+   "0.4|cap:k0.5:band2": [
+    4.61,
+    3902.0,
+    "자동 승"
+   ],
+   "0.4|cap:k1:uniform": [
+    0.0,
+    5286.7,
+    "무승부"
+   ],
+   "0.4|cap:k1:band2": [
+    0.43,
+    5073.1,
+    "자동 승"
+   ]
+  }
+ },
+ {
+  "slug": "k_sweep",
+  "png": "docs/report/figures/k_sweep.png",
+  "script": "tools/report_figs/k_sweep.py",
+  "data_sources": [
+   "k_sweep_results.json",
+   "docs/test_k_sweep.md"
+  ],
+  "description": "k 스윕: 자동 균일·밴드2 후회 중앙값(점선 = 고정 15·20·25·45° 후회 중앙값)과 고른 균일각, 21 모델, 층고 0.3/0.4, 베드 상한 유무",
+  "key_numbers": {
+   "0.3|none:k0:uniform_regret_median": 1.7,
+   "0.3|none:k0.02:uniform_regret_median": 1.7,
+   "0.3|none:k0.05:uniform_regret_median": 0.2,
+   "0.3|none:k0.1:uniform_regret_median": 0.4,
+   "0.3|none:k0.15:uniform_regret_median": 0.9,
+   "0.3|none:k0.2:uniform_regret_median": 15.7,
+   "0.3|none:k0.3:uniform_regret_median": 43.4,
+   "0.3|none:k0.5:uniform_regret_median": 97.2,
+   "0.3|none:k1:uniform_regret_median": 99.3,
+   "0.4|none:k0:uniform_regret_median": 0.0,
+   "0.4|none:k0.02:uniform_regret_median": 0.0,
+   "0.4|none:k0.05:uniform_regret_median": 0.0,
+   "0.4|none:k0.1:uniform_regret_median": 11.5,
+   "0.4|none:k0.15:uniform_regret_median": 24.4,
+   "0.4|none:k0.2:uniform_regret_median": 43.3,
+   "0.4|none:k0.3:uniform_regret_median": 96.3,
+   "0.4|none:k0.5:uniform_regret_median": 145.6,
+   "0.4|none:k1:uniform_regret_median": 145.7,
+   "none:k0:uniform_theta_median": 44.0,
+   "none:k0.02:uniform_theta_median": 42.0,
+   "none:k0.05:uniform_theta_median": 40.0,
+   "none:k0.1:uniform_theta_median": 34.0,
+   "none:k0.15:uniform_theta_median": 30.0,
+   "none:k0.2:uniform_theta_median": 22.0,
+   "none:k0.3:uniform_theta_median": 12.0,
+   "none:k0.5:uniform_theta_median": 0.0,
+   "none:k1:uniform_theta_median": 0.0,
+   "0.3|cap:k0:uniform_regret_median": 0.0,
+   "0.3|cap:k0.02:uniform_regret_median": 0.0,
+   "0.3|cap:k0.05:uniform_regret_median": 0.0,
+   "0.3|cap:k0.1:uniform_regret_median": 0.0,
+   "0.3|cap:k0.15:uniform_regret_median": 0.0,
+   "0.3|cap:k0.2:uniform_regret_median": 0.0,
+   "0.3|cap:k0.3:uniform_regret_median": 33.7,
+   "0.3|cap:k0.5:uniform_regret_median": 85.5,
+   "0.3|cap:k1:uniform_regret_median": 87.0,
+   "0.4|cap:k0:uniform_regret_median": 0.0,
+   "0.4|cap:k0.02:uniform_regret_median": 0.0,
+   "0.4|cap:k0.05:uniform_regret_median": 0.0,
+   "0.4|cap:k0.1:uniform_regret_median": 0.0,
+   "0.4|cap:k0.15:uniform_regret_median": 0.0,
+   "0.4|cap:k0.2:uniform_regret_median": 2.7,
+   "0.4|cap:k0.3:uniform_regret_median": 30.3,
+   "0.4|cap:k0.5:uniform_regret_median": 82.8,
+   "0.4|cap:k1:uniform_regret_median": 103.0,
+   "cap:k0:uniform_theta_median": 22.0,
+   "cap:k0.02:uniform_theta_median": 22.0,
+   "cap:k0.05:uniform_theta_median": 22.0,
+   "cap:k0.1:uniform_theta_median": 22.0,
+   "cap:k0.15:uniform_theta_median": 22.0,
+   "cap:k0.2:uniform_theta_median": 22.0,
+   "cap:k0.3:uniform_theta_median": 10.0,
+   "cap:k0.5:uniform_theta_median": 0.0,
+   "cap:k1:uniform_theta_median": 0.0
+  }
+ },
+ {
+  "slug": "layer_height_blend",
+  "png": "docs/report/figures/layer_height_blend.png",
+  "script": "tools/report_figs/layer_height_blend.py",
+  "data_sources": [
+   "report_fig_layer_blend_results.json",
+   "report_figs_exp2_rerun.json"
+  ],
+  "description": "F: 층고별 검사기-선택기 경계식, 재실행 미지지(블렌드 층 몫), 해석식 불일치 면적",
+  "key_numbers": {
+   "vertical_window_boundary": "m > 1.5 (층고 무관)",
+   "h_c_theta0_m1.5": 0.3,
+   "h_c_min_m1": 0.373,
+   "h_c_min_m1.5": 0.249,
+   "analytic_onset_h": {
+    "램프(허리 r=2)": [
+     0.38,
+     0.39
+    ],
+    "허리 r=3": [
+     0.38,
+     0.39
+    ],
+    "구": [
+     0.39,
+     0.37
+    ]
+   },
+   "blend_m_max_measured": 1.474,
+   "램프(허리 r=2)@0.3:uni/band2/blend_mm": [
+    17.8,
+    0.0,
+    0.0
+   ],
+   "램프(허리 r=2)@0.4:uni/band2/blend_mm": [
+    59.3,
+    33.4,
+    0.0
+   ],
+   "허리 r=3@0.3:uni/band2/blend_mm": [
+    35.2,
+    6.4,
+    0.0
+   ],
+   "허리 r=3@0.4:uni/band2/blend_mm": [
+    66.4,
+    35.4,
+    0.0
+   ],
+   "구@0.3:uni/band2/blend_mm": [
+    7.7,
+    7.7,
+    0.0
+   ],
+   "구@0.4:uni/band2/blend_mm": [
+    35.6,
+    94.2,
+    57.5
+   ]
   }
  },
  {
@@ -619,6 +1397,52 @@
   }
  },
  {
+  "slug": "t1_angle_spread",
+  "png": "docs/report/figures/t1_angle_spread.png",
+  "script": "tools/report_figs/t1_angle_spread.py",
+  "data_sources": [
+   "t1_conventional_results.json",
+   "docs/test_t1_t4.md"
+  ],
+  "description": "T1: 모델별 사후 최적 균일각(미지지 mm 최소, 베드 상한 없음) 분포와 관례 고정각(15·20·25·45°)",
+  "key_numbers": {
+   "0.3:oracle_median_deg": 32.0,
+   "0.3:oracle_range_deg": [
+    -6.0,
+    45.0
+   ],
+   "0.3:n_models": 21,
+   "0.4:oracle_median_deg": 40.0,
+   "0.4:oracle_range_deg": [
+    6.0,
+    44.0
+   ],
+   "0.4:n_models": 21
+  }
+ },
+ {
+  "slug": "t1_regret",
+  "png": "docs/report/figures/t1_regret.png",
+  "script": "tools/report_figs/t1_regret.py",
+  "data_sources": [
+   "t1_conventional_results.json",
+   "docs/test_t1_t4.md"
+  ],
+  "description": "T1: 관례 고정각·자동 결정의 후회(미지지 mm − 사후 최적 균일) 분포, 층고 0.4mm, (a) 베드 상한 없음 (b) 22.79° 상한",
+  "key_numbers": {
+   "none:fixed15:median_regret_mm": 84.9,
+   "none:fixed20:median_regret_mm": 66.4,
+   "none:fixed25:median_regret_mm": 57.7,
+   "none:fixed45:median_regret_mm": 0.0,
+   "none:auto_uniform:median_regret_mm": 43.3,
+   "none:auto_band2:median_regret_mm": 56.1,
+   "cap:fixed15:median_regret_mm": 22.1,
+   "cap:fixed20:median_regret_mm": 3.8,
+   "cap:auto_uniform:median_regret_mm": 2.7,
+   "cap:auto_band2:median_regret_mm": 0.0
+  }
+ },
+ {
   "slug": "t2_spacing",
   "png": "docs/report/figures/t2_spacing.png",
   "script": "tools/report_figs/t2_spacing.py",
@@ -638,6 +1462,34 @@
    ],
    "±5% 밖 쌍": 16,
    "사전 기준": "중앙값 1±0.02, 95% 구간 1±0.05 — 통과"
+  }
+ },
+ {
+  "slug": "t4_robustness",
+  "png": "docs/report/figures/t4_robustness.png",
+  "script": "tools/report_figs/t4_robustness.py",
+  "data_sources": [
+   "t4_robustness_results.json",
+   "docs/test_t1_t4.md"
+  ],
+  "description": "T4: 교란 축별 자동 결정 각도 변화(점=모델, 회색 띠=±2° 격자 한 칸, 위 숫자=띠 안 비율)",
+  "key_numbers": {
+   "uniform:subdiv4:frac_le2deg": 1.0,
+   "uniform:simplify0.5:frac_le2deg": 0.905,
+   "uniform:shift0.1:frac_le2deg": 1.0,
+   "uniform:shift0.5:frac_le2deg": 0.952,
+   "uniform:tilt1:frac_le2deg": 0.81,
+   "uniform:tilt3:frac_le2deg": 0.667,
+   "uniform:thr40:frac_le2deg": 0.19,
+   "uniform:thr50:frac_le2deg": 0.381,
+   "band2:subdiv4:frac_le2deg": 0.81,
+   "band2:simplify0.5:frac_le2deg": 0.667,
+   "band2:shift0.1:frac_le2deg": 0.619,
+   "band2:shift0.5:frac_le2deg": 0.714,
+   "band2:tilt1:frac_le2deg": 0.476,
+   "band2:tilt3:frac_le2deg": 0.524,
+   "band2:thr40:frac_le2deg": 0.476,
+   "band2:thr50:frac_le2deg": 0.381
   }
  },
  {
