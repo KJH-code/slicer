@@ -187,7 +187,7 @@
   ],
   "description": "램프(lamp_small) 실제 G-code 층의 r–z 단면(압출 선분을 21점씩 샘플, 축대칭이라 ±r 로 펼침): (a) 균일 22°, (b) 밴드 22°→0°. 블렌드 띠는 축 위 Z′ 범위",
   "key_numbers": "층 수 (a) 65 / (b) 60; (b) 블렌드 Z′ 10.27~11.34 mm, 블렌드 층 3개",
-  "generated_at_commit": "977e76a"
+  "generated_at_commit": "cfbc734"
  },
  {
   "slug": "critical_angle_hist",
@@ -1722,5 +1722,23 @@
   "description": "L3b(램프 밴드 22°→0°) 압출 경로 3D (색 = |B|) 와 층별 B 각",
   "key_numbers": "층 60개, 압출 선분 3634개; |B| 22° 층 34, 블렌드 층 [34, 35, 36] (|B| 17.60, 11.53, 5.18°), 0° 층 23",
   "generated_at_commit": "977e76a"
+ },
+ {
+  "slug": "conical_layers_lamp_band",
+  "png": "docs/report/figures/conical_layers_lamp_band.png",
+  "script": "tools/report_figs/conical_layers_lamp.py",
+  "data_sources": [
+   {
+    "path": "examples/rep5x_ladder/L3b_lamp_band22to0.gcode",
+    "commit": "bd6a855"
+   },
+   {
+    "path": "examples/rep5x_ladder/lamp_small.stl",
+    "commit": "70cc3c8"
+   }
+  ],
+  "description": "램프(lamp_small) 밴드 22°→0° 실제 G-code 층의 r–z 단면, 패널 라벨 없음(다른 그림과 합쳐 쓰는 용도). 파랑 22°, 빨강 블렌드, 초록 0°, 검정 STL 외곽. 축대칭이라 ±r 로 펼침",
+  "key_numbers": "층 수 60; 블렌드 Z′ 10.27~11.34 mm, 블렌드 층 3개",
+  "generated_at_commit": "cfbc734"
  }
 ]
