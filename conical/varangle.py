@@ -54,6 +54,7 @@ from .config import (
     MAX_SPACING_FACTOR,
     THRESHOLD_DEG,
 )
+from .exact_angle import select_uniform_exact
 from .profile import AngleProfile
 
 
@@ -86,8 +87,20 @@ def assign_height_bands(mesh, n_bands):
 # ─────────────────────────────────────────────────────────────
 def best_angle_for_mask(mesh, mask, orig_areas, k,
                         max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
-                        threshold_deg=THRESHOLD_DEG):
-    """mask 면들만 놓고 J=(서포트 감소 %) − k×각도 가 최대인 (각도, 방향)."""
+                        threshold_deg=THRESHOLD_DEG, method="grid"):
+    """mask 면들만 놓고 J=(서포트 감소 %) − k×각도 가 최대인 (각도, 방향).
+
+    method="exact" 면 격자 대신 판정이 바뀌는 근들만 후보로 쓴다
+    (`exact_angle.select_uniform_exact`, docs/exact_angle.md). 기본은 격자.
+    ⚠ exact 는 `mesh.area_faces` 로 정규화한다 — `orig_areas` 가 그것과 다르면 쓰지 말 것.
+    """
+    if method == "exact":
+        if not np.array_equal(orig_areas, mesh.area_faces):
+            raise ValueError("method='exact' 는 orig_areas == mesh.area_faces 일 때만")
+        best, _ = select_uniform_exact(mesh, k, max_angle, threshold_deg, mask=mask)
+        return best["angle"], best["direction"]
+    if method != "grid":
+        raise ValueError(f"method 는 'grid' 또는 'exact': {method!r}")
     band_area = orig_areas[mask].sum()
     need0, _ = face_support_and_staircase(mesh, 0, "outward", threshold_deg)
     base_pct = orig_areas[mask & need0].sum() / band_area * 100.0
@@ -134,11 +147,11 @@ def evaluate_assignment(mesh, assignment, threshold_deg=THRESHOLD_DEG):
 # 전략들: 균일 / 구간별 / 세밀(면마다)
 # ─────────────────────────────────────────────────────────────
 def select_uniform(mesh, k, max_angle=MAX_ANGLE_DEG, step=ANGLE_STEP,
-                   threshold_deg=THRESHOLD_DEG):
-    """전역 단일 각도 (RotBot식 균일 원뿔 = 비교 대상)."""
+                   threshold_deg=THRESHOLD_DEG, method="grid"):
+    """전역 단일 각도 (RotBot식 균일 원뿔 = 비교 대상). method: best_angle_for_mask 참고."""
     allmask = np.ones(len(mesh.faces), dtype=bool)
     a, c = best_angle_for_mask(mesh, allmask, mesh.area_faces, k,
-                               max_angle, step, threshold_deg)
+                               max_angle, step, threshold_deg, method)
     m = evaluate_assignment(mesh, [(allmask, a, c)], threshold_deg)
     return {"strategy": "uniform", "n_regions": 1, "profile": [(a, c)], **m}
 
@@ -173,6 +186,9 @@ def blend_penalty(mesh, profile, radius_profile=None,
     각도 변화가 없으면 블렌드 구간 자체가 없어 0 이 되고, J 는 균일각 J 와
     정확히 같아진다.
 
+    '그 구간에 있는' = 면 중심의 **변환높이 Z′** 가 블렌드 구간 안이라는 뜻이다
+    (2026-11-10 고침). 아래 2026-09-22 의 수치들은 실공간 z 구간으로 세던 때 잰 것이다.
+
     ⚠⚠ **이 항이 무엇인지 2026-09-22 에 다시 쟀다. 세 가지가 전부 틀렸다**
         (`analyze_blend_cost.py`, docs/verification.md):
 
@@ -205,7 +221,8 @@ def blend_penalty(mesh, profile, radius_profile=None,
     if spacing_limit is None or spacing_limit <= 1.0:
         return 0.0
     c = 1.0 if direction == "outward" else -1.0
-    fz = mesh.vertices[mesh.faces].mean(axis=1)[:, 2]
+    fc = mesh.vertices[mesh.faces].mean(axis=1)
+    fr, fz = np.hypot(fc[:, 0], fc[:, 1]), fc[:, 2]
     areas = mesh.area_faces
     total = areas.sum()
     cost = 0.0
@@ -215,11 +232,19 @@ def blend_penalty(mesh, profile, radius_profile=None,
         if abs(dt) < 1e-12:
             continue
         s = dt / (b - a)
-        r = (radius_profile.max_between(a, b) if radius_profile is not None
+        # 블렌드는 변환높이 Z′ 구간이다 — 그 층들이 실제로 닿는 곳은 실공간 z 구간
+        # [a, b] 가 아니라 슬랩  a − r·tanθ_i ≤ z ≤ b − r·tanθ_{i+1}  이다
+        # (profile.py docstring ⚠⚠, docs/gap_audit.md G1·G13). 반경도 면적도 그
+        # 조건으로 센다. 예전에는 둘 다 z 구간으로 세서 램프 밴드2 의 블렌드 면적을
+        # 2.3% 로 봤다(실제 15.0%).
+        t_lo, t_hi = c * profile.tans[i], c * profile.tans[i + 1]
+        r = (radius_profile.max_in_slab(a, b, t_lo, t_hi)
+             if radius_profile is not None
              else float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max()))
         m = abs(1.0 - c * r * s)
         risk = min(1.0, max(0.0, (m - 1.0) / (spacing_limit - 1.0)))
-        area_pct = areas[(fz >= a) & (fz <= b)].sum() / total * 100.0
+        in_blend = (fz >= a - fr * t_lo) & (fz <= b - fr * t_hi)
+        area_pct = areas[in_blend].sum() / total * 100.0
         cost += area_pct * risk
     return float(cost)
 

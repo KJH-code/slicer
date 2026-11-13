@@ -40,6 +40,8 @@
 실행:
     python3 analyze_j_vs_optimum.py            # 대표 4 모델
     python3 analyze_j_vs_optimum.py --quick    # 2 모델, 격자 8°
+    python3 analyze_j_vs_optimum.py --only 구 --json part.json   # 모델 하나만 (병렬로 나눠 돌릴 때)
+    python3 analyze_j_vs_optimum.py --merge a.json b.json --json j_vs_optimum_results.json
 """
 
 import argparse
@@ -159,7 +161,21 @@ def main():
     ap.add_argument("--json", default="j_vs_optimum_results.json")
     ap.add_argument("--reanalyze", metavar="JSON",
                     help="저장된 격자로 판정만 다시 (툴패스 안 돌림)")
+    ap.add_argument("--layer-height", type=float, default=None,
+                    help="층고 mm (기본: compare_waist.LAYER_H = 0.4)")
+    ap.add_argument("--only", metavar="이름", action="append",
+                    help="이 문자열이 이름에 든 모델만 (여러 번 줄 수 있다)")
+    ap.add_argument("--merge", metavar="JSON", nargs="+",
+                    help="모델별로 나눠 돌린 JSON 들을 합쳐 판정한다 (툴패스 안 돌림)")
     args = ap.parse_args()
+    if args.merge:
+        rows = [r for p in args.merge for r in json.load(open(p, encoding="utf-8"))]
+        order = [name for name, _b in models(False)]
+        rows.sort(key=lambda r: order.index(r["model"]) if r["model"] in order else 99)
+        report(rows)
+        json.dump(rows, open(args.json, "w"), ensure_ascii=False, indent=1)
+        print(f"\n저장: {args.json}")
+        return
     if args.reanalyze:
         rows = reanalyze(args.reanalyze)
         json.dump(rows, open(args.reanalyze, "w"), ensure_ascii=False, indent=1)
@@ -167,7 +183,10 @@ def main():
     step = args.step if args.step else (8.0 if args.quick else 4.0)
 
     allrows = []
+    lh = args.layer_height
     for name, build in models(args.quick):
+        if args.only and not any(o in name for o in args.only):
+            continue
         mesh = build()
         combos, rp, r_max = enumerate_profiles(mesh, step, args.k)
         print(f"\n[{name}]  격자 {step:g}°  만들 수 있는 조합 {len(combos)}개 "
@@ -175,7 +194,8 @@ def main():
 
         t0 = time.time()
         for c in combos:
-            _p, _t, _f, oh, _i, _g = run_pipeline(mesh, c["prof"], breakdown=True)
+            _p, _t, _f, oh, _i, _g = run_pipeline(mesh, c["prof"], breakdown=True,
+                                                  layer_height=lh)
             c["overhang"] = oh
             c["angle"] = mean_abs_angle(mesh, c["prof"])
         print(f"  툴패스 {len(combos)}회 측정 ({time.time()-t0:.0f}s)")
@@ -183,7 +203,7 @@ def main():
         # J 가 고른 해 (출하 선택기)
         sel = select_banded_j(mesh, args.k, 2, r_max, rp, MAX_SPACING_FACTOR)
         _p, _t, _f, oh_sel, _i, _g = run_pipeline(mesh, sel["profile_obj"],
-                                                  breakdown=True)
+                                                  breakdown=True, layer_height=lh)
         th_sel = [round(t, 1) for t in sel["thetas"]]
 
         sel_pt = dict(overhang=oh_sel, pen=float(blend_penalty(

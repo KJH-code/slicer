@@ -19,6 +19,7 @@ compare_bands.py — 복잡도(밴드 수) vs 성능 곡선, 툴패스 실측판
     python3 compare_bands.py sphere waist:4 waist:1    # 절차 생성 모델 섞기
     python3 compare_bands.py --waist-sweep         # 허리 깊이 축으로 표본 확대
     python3 compare_bands.py --replay compare_bands_results.json   # 그림만 다시 그리기
+    python3 compare_bands.py --waist-sweep --layer-height 0.3 --results r03.json --out /tmp/b03.png
 
 모델 지정자:
     sphere          구 (허리 없음, icosphere r=10)
@@ -70,7 +71,7 @@ def build_model(spec):
     return (os.path.basename(spec), mesh)
 
 
-def sweep(mesh, n_max, k=DEFAULT_K):
+def sweep(mesh, n_max, k=DEFAULT_K, layer_height=None):
     rp = RadiusProfile(mesh)
     r_max = float(np.hypot(mesh.vertices[:, 0], mesh.vertices[:, 1]).max())
     rows = []
@@ -79,8 +80,8 @@ def sweep(mesh, n_max, k=DEFAULT_K):
         r = select_banded_j(mesh, k, n, r_max, rp, MAX_SPACING_FACTOR)
         t_sel = time.time() - t0
         prof = r["profile_obj"]
-        peri, total, fill, oh, ins, gapz = run_pipeline(mesh, prof,
-                                                        breakdown=True)
+        peri, total, fill, oh, ins, gapz = run_pipeline(
+            mesh, prof, breakdown=True, layer_height=layer_height)
         blends = prof.blend_intervals()
         rows.append({
             "n": n, "thetas": r["thetas"], "J": r["J"],
@@ -305,6 +306,8 @@ def main():
                     help=f"밴드 수 곡선의 끝 (기본 {DEFAULT_N_MAX})")
     ap.add_argument("--waist-sweep", action="store_true",
                     help=f"허리 깊이 축으로 표본 확대 (목 반경 {WAIST_SWEEP})")
+    ap.add_argument("--layer-height", type=float, default=None,
+                    help="층고 mm (기본: compare_waist.LAYER_H = 0.4, 기존 표의 값)")
     ap.add_argument("--out", default="compare_bands.png")
     ap.add_argument("--results", default="compare_bands_results.json",
                     help="측정 결과를 남길 JSON (그림만 다시 그릴 때 --replay 로 읽는다)")
@@ -329,7 +332,8 @@ def main():
         summaries = []
         for spec in specs:
             name, mesh = build_model(spec)
-            summaries.append(report(name, mesh, sweep(mesh, args.n_max)))
+            summaries.append(report(name, mesh, sweep(
+                mesh, args.n_max, layer_height=args.layer_height)))
 
         with open(args.results, "w", encoding="utf-8") as f:
             json.dump(summaries, f, ensure_ascii=False, indent=1, default=float)

@@ -67,7 +67,9 @@ def risk_values(mesh, prof, rp, limit=MAX_SPACING_FACTOR, direction="outward"):
         if abs(dt) < 1e-12:
             continue
         s = dt / (b - a)
-        r_b = rp.max_between(a, b)
+        # `blend_penalty` 와 같은 조회 (2026-11-10: 실공간 z 구간 → 그 Z′ 구간의 층이
+        # 실제로 닿는 범위. docs/gap_audit.md G1)
+        r_b = rp.max_in_slab(a, b, c * prof.tans[i], c * prof.tans[i + 1])
         m = abs(1.0 - c * r_b * s)
         out.append((a, b, float(m),
                     float(min(1.0, max(0.0, (m - 1.0) / (limit - 1.0))))))

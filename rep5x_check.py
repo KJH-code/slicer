@@ -2,34 +2,44 @@
 rep5x_check.py — REP5X G-code 사전 점검 (검사기 C 의 REP5X 판).
 
     python3 rep5x_check.py out_rep5x.gcode
-    python3 rep5x_check.py out.gcode --c-min -360 --c-max 360 --max-feed 12000
+    python3 rep5x_check.py out.gcode --bed-clearance 0.2 --omega-max 90
 
 `open5x_check.py` 와 **보는 것이 다르다.** Open5x 는 슬라이서가 기계좌표를 내므로
 기계 Z 음수·베드 이탈을 봤다. REP5X 는 펌웨어가 역기구학을 해서 슬라이서가
-**부품좌표 + 공구 방향(B/C)** 을 내므로, 대신 **펌웨어 소프트 엔드스톱**이 핵심이다.
+**팁 좌표 + 공구 방향(B/C)** 을 내므로, **펌웨어가 그 파일을 어떻게 받아들이는가**가
+핵심이다. 파일 전체(시작/종료 G-code 포함)를 한 줄씩 따라가며 본다:
 
-가장 중요한 것: **C 가 ±360° 창 안인가.** "Continuous yaw rotation" 은 슬립링이
-푸는 기계적 제약이지 소프트웨어 한계가 아니다 — `Configuration.h` 의
-`I_MIN_POS/I_MAX_POS` 가 ±360 이고 `MIN/MAX_SOFTWARE_ENDSTOP_I` 가 켜져 있다.
-원뿔 G-code 는 C 가 계속 누적되므로(funnel 20° 에서 44.5회전) 되감기 없이 걸면
-**소프트 엔드스톱에 걸려 멈춘다.**
+  [치명] 베드 간섭 — 기운 핫엔드 모델의 최저점이 베드 여유 아래로 내려간다
+  [치명] native XY 범위 밖 — 라이브 TCP 에서 범위 밖 회전 이동은 조용히 버려진다
+  [치명] 상태 — G28 뒤 B0 C0 복귀 없이 압출, B/C≠0 에서 G43.4/G49 전환, T1/T2
+  [치명] 회전축 속도 상한 초과 — 펌웨어는 F 를 팁 XYZ 길이에만 적용한다
+  [치명] C 가 ±360° 창 밖 (원뿔 G-code 는 C 가 누적되므로 되감기 없이는 넘는다)
+  [치명] M668(SD 전처리) 줄 형식 — 이동 줄은 0열 G, 127자 이하, 주석 없음
+  [치명] 노즐이 출력물을 친다 / 되감기 도중 쓸린다
+  [경고] joint Z < 0, joint XY 범위 밖 — 팁 좌표 리밋으로는 안 잡힌다
 
-⚠ 이 검사를 통과해도 **첫 출력은 사람이 지켜봐야 한다.** 특히 **노즐 몸체·B_arm 과
-  출력물의 간섭을 보지 못한다** — 헤드 회전식에서는 베드 틸트식에서 성립하던
-  '간섭이 정의상 불가능' 논증이 **성립하지 않는다**(`docs/platform_comparison.md`).
-⚠ 축 부호(`INVERT_I_DIR`/`INVERT_J_DIR`, 조립 방향)도 보지 못한다.
-  첫 출력 전에 `G0 B10` 을 눈으로 확인할 것.
+근거는 docs/rep5x_machine_facts.md 다.
+
+⚠ 이 검사를 통과해도 **첫 출력은 사람이 지켜봐야 한다.**
+  · 핫엔드 모델은 공식 뷰어의 것이고 **실측 전 추정**이다. B_arm·캐리지·팬 덕트·
+    Bowden 은 모델에 없다 (`--arm-radius` 로 B_arm 원기둥만 넣을 수 있다)
+  · 축 부호(`INVERT_I_DIR`/`INVERT_J_DIR`, 조립 방향)를 보지 못한다.
+    첫 출력 전에 `G0 B10` 을 눈으로 확인할 것
+  · LB/LC, 베드 중앙 native 좌표, 소프트 엔드스톱은 `M665` `M503` `M211` 로 대조
 """
 
 import argparse
+import dataclasses
 
 from conical import gcode as gc
 from conical.rep5x import (
     REP5X,
-    Rep5xProfile,
+    b_safe,
     check_head_interference,
+    check_m668_format,
     check_rep5x,
     check_rewind_sweep,
+    print_body,
 )
 from conical.toolpath import HotendProfile
 
@@ -45,8 +55,20 @@ def main():
                     help="C 소프트 엔드스톱 상한 (I_MAX_POS)")
     ap.add_argument("--b-min", type=float, default=REP5X.b_min)
     ap.add_argument("--b-max", type=float, default=REP5X.b_max)
-    ap.add_argument("--printable-radius", type=float,
-                    default=REP5X.printable_radius)
+    ap.add_argument("--lb", type=float, default=REP5X.lb,
+                    help="틸트축→팁 거리 mm (M665 로 읽은 값). joint Z 판정에 쓴다")
+    ap.add_argument("--bed-clearance", type=float, default=REP5X.bed_clearance,
+                    help="핫엔드 몸체와 베드 사이에 요구할 여유 mm")
+    ap.add_argument("--omega-max", type=float, default=REP5X.omega_max,
+                    help="회전축 속도 상한 °/s")
+    ap.add_argument("--bed-center", type=float, nargs=2, metavar=("X", "Y"),
+                    default=list(REP5X.bed_center),
+                    help="베드 중앙의 native 좌표. 시작 G-code 가 없는 파일에서 "
+                         "부품 원점으로 가정한다")
+    ap.add_argument("--hotend", choices=["rep5x-v3se", "generic"],
+                    default="rep5x-v3se",
+                    help="핫엔드 모델. rep5x-v3se=공식 뷰어 모델(실측 전 추정), "
+                         "generic=예전 기본값(Ender 3 V2 계열 추정)")
     ap.add_argument("--max-step", type=float, default=30.0,
                     help="한 이동에 허용할 C 변화(도). 기본 30")
     ap.add_argument("--max-feed", type=float, default=None,
@@ -61,12 +83,22 @@ def main():
                          "주면 팁에서 LB 까지 원기둥으로 넣는다")
     args = ap.parse_args()
 
-    prof = Rep5xProfile(c_min=args.c_min, c_max=args.c_max,
-                        b_min=args.b_min, b_max=args.b_max,
-                        printable_radius=args.printable_radius)
-    items = gc.parse(open(args.gcode).readlines())
+    prof = dataclasses.replace(
+        REP5X, c_min=args.c_min, c_max=args.c_max,
+        b_min=args.b_min, b_max=args.b_max, lb=args.lb,
+        bed_clearance=args.bed_clearance, omega_max=args.omega_max,
+        bed_center=tuple(args.bed_center),
+        hotend=REP5X.hotend if args.hotend == "rep5x-v3se" else HotendProfile())
+    with open(args.gcode, encoding="utf-8") as fh:
+        lines = fh.readlines()
+    items = gc.parse(lines)
     findings, st = check_rep5x(items, prof, max_dc_deg=args.max_step,
                                max_feed=args.max_feed)
+    fmt_findings, fmt = check_m668_format(lines)
+    findings += fmt_findings
+
+    def num(v, spec, unit=""):
+        return "-" if v is None else f"{format(v, spec)}{unit}"
 
     print("=" * 66)
     print(f"[rep5x_check] {args.gcode}")
@@ -77,18 +109,39 @@ def main():
     else:
         tilt = f"{st['b_min']:.1f} ~ {st['b_max']:.1f}° (한 걸음 최대 {st['b_max_step_deg']:.1f}°)"
     print(f"  이동          : {st['moves']:,}   틸트 {prof.tilt_axis}={tilt}")
-    print(f"  RTCP({prof.rtcp_on})  : {'켜짐' if st['rtcp'] else '**없음**'}  "
-          f"(꺼져 있으면 X/Y/Z 가 노즐 팁이 아니다)")
+    print(f"  RTCP({prof.rtcp_on})  : "
+          + ("**없음**" if not st["rtcp"] else f"켜짐 ({st['rtcp_on_count']}번)")
+          + f"   상태 위반 {st['state_fatal']}건, TCP 없이 기운 채 압출 "
+            f"{st['cold_extrusions']}개")
     print(f"  C 범위        : {st['c_min']:.1f} ~ {st['c_max']:.1f}°  "
           f"(창 {prof.c_min:.0f}~{prof.c_max:.0f}, "
           f"{st['c_span_turns']:.2f}회전)")
     print(f"  C 최대 한 걸음: {st['c_max_step_deg']:.1f}°")
-    print(f"  부품 최대 반경: {st['radius_max']:.1f}mm  "
-          f"(PRINTABLE_RADIUS {prof.printable_radius:.0f})")
+    print(f"  회전 속도     : 최대 {st['omega_max_deg_s']:,.0f}°/s  "
+          f"(상한 {prof.omega_max:g}, 초과 {st['omega_violations']:,}개)")
+    box = st["native_box"]
+    print(f"  native XY     : X {num(box[0], '.1f')}~{num(box[1], '.1f')}  "
+          f"Y {num(box[2], '.1f')}~{num(box[3], '.1f')}  "
+          f"(범위 X {prof.native_x[0]:g}~{prof.native_x[1]:g}, "
+          f"Y {prof.native_y[0]:g}~{prof.native_y[1]:g}; 밖 {st['native_xy_out']:,}개"
+          + (", 부품 원점 = 베드 중앙 **가정**" if st["origin_assumed"] else "")
+          + ")")
+    print(f"  베드 간섭     : {st['bed_hits']:,}개  "
+          f"(여유선까지 최소 {num(st['bed_gap_min'], '+.2f', 'mm')}; "
+          f"핫엔드 '{prof.hotend.name}', 여유 {prof.bed_clearance:g}mm, "
+          f"팁 높이 0 의 B_safe {b_safe(0.0, prof.hotend, prof.bed_clearance):.1f}°)")
+    print(f"  joint Z 최저  : {num(st['joint_z_min'], '.2f', 'mm')}  "
+          f"(LB {prof.lb:g}; joint XY 범위 밖 {st['joint_xy_out']:,}개)")
+    print(f"  M668 줄 형식  : 이동 줄 {fmt['move_lines']:,}개 중 주석 {fmt['commented']}, "
+          f"들여쓰기 {fmt['indented']}, 127자 초과 {fmt['too_long']}, "
+          f"G2/G3 {fmt['arcs']}")
     print(f"  되감기        : {st['rewinds']}회")
 
     if not args.no_interference:
-        _col, ci = check_head_interference(items, prof, HotendProfile(),
+        # 간섭 검사는 좌표를 부품좌표로 읽는다 → TCP 가 켜진 구간(출력 본문)만 넘긴다.
+        # 시작 G-code 의 프라임 선은 native 좌표라 그대로 넣으면 엉뚱한 장애물이 된다.
+        body = print_body(items, prof)
+        _col, ci = check_head_interference(body, prof, prof.hotend,
                                            arm_radius=args.arm_radius,
                                            stride=args.stride)
         print(f"  노즐 간섭     : {ci['collision_pct']:.2f}%  "
@@ -98,7 +151,7 @@ def main():
             findings.append(("치명", f"노즐이 출력물을 친다 "
                                      f"{ci['collision_pct']:.2f}% "
                                      f"(처음 z={ci['first_collision_z']})"))
-        sw, ss = check_rewind_sweep(items, prof, HotendProfile(),
+        sw, ss = check_rewind_sweep(body, prof, prof.hotend,
                                     arm_radius=args.arm_radius)
         if ss["checked"]:
             print(f"  되감기 쓸림   : {ss['swept_hits']}/{ss['checked']} 자세")
@@ -112,7 +165,7 @@ def main():
             mark = {"치명": "✖", "경고": "⚠", "정보": "·"}[sev]
             print(f"    {mark} [{sev}] {msg}")
 
-    print("  ⚠ 노즐 몸체·B_arm 간섭과 축 부호는 보지 못한다. "
+    print("  ⚠ 핫엔드 모델은 실측 전 추정이고 B_arm·캐리지·축 부호는 보지 못한다. "
           "첫 출력 전 `G0 B10` 을 눈으로 확인할 것.")
     return 1 if any(s == "치명" for s, _ in findings) else 0
 

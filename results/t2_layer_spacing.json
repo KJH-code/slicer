@@ -1,0 +1,922 @@
+{
+ "criteria": "docs/test_t2_t6.md §1.4",
+ "pair_window_mm": 0.1,
+ "pairs_per_layer": 300,
+ "seed": 0,
+ "cases": [
+  {
+   "name": "ctrl_lamp_25",
+   "layer_height": 0.3,
+   "file": "ctrl_lamp_25_h0.3.gcode",
+   "profile": [
+    [
+     0.0,
+     25.0
+    ]
+   ],
+   "blends": [],
+   "n_layers": 110,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 4457,
+   "n_blend_pairs": 0,
+   "dtan_max_abs": 0.0,
+   "pred_range": [
+    0.3,
+    0.3
+   ],
+   "M1_all": {
+    "n": 4457,
+    "min": 0.9964,
+    "p2.5": 0.997159,
+    "median": 1.0,
+    "p97.5": 1.002816,
+    "max": 1.003907
+   },
+   "M1_blend": {
+    "n": 0
+   },
+   "M2_all_uncorrected": {
+    "n": 4457,
+    "min": 0.843333,
+    "p2.5": 0.863333,
+    "median": 1.0,
+    "p97.5": 1.146667,
+    "max": 1.156667
+   },
+   "M1_abs_err_mm_max": 0.001172,
+   "pass_all": true,
+   "pass_blend": null,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000969,
+   "n_layers_r_span_lt_1mm": 22,
+   "n_pairs_from_narrow_layer": 500,
+   "layer_line_fit_resid_max_mm": 0.000977,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "ctrl_lamp_25",
+   "layer_height": 0.4,
+   "file": "ctrl_lamp_25_h0.4.gcode",
+   "profile": [
+    [
+     0.0,
+     25.0
+    ]
+   ],
+   "blends": [],
+   "n_layers": 83,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 2919,
+   "n_blend_pairs": 0,
+   "dtan_max_abs": 0.0,
+   "pred_range": [
+    0.4,
+    0.4
+   ],
+   "M1_all": {
+    "n": 2919,
+    "min": 0.996886,
+    "p2.5": 0.997972,
+    "median": 1.0,
+    "p97.5": 1.002328,
+    "max": 1.003271
+   },
+   "M1_blend": {
+    "n": 0
+   },
+   "M2_all_uncorrected": {
+    "n": 2919,
+    "min": 0.885,
+    "p2.5": 0.8925,
+    "median": 1.0,
+    "p97.5": 1.105,
+    "max": 1.1175
+   },
+   "M1_abs_err_mm_max": 0.001308,
+   "pass_all": true,
+   "pass_blend": null,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000414,
+   "n_layers_r_span_lt_1mm": 17,
+   "n_pairs_from_narrow_layer": 322,
+   "layer_line_fit_resid_max_mm": 0.000993,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "ctrl_sphere_20",
+   "layer_height": 0.3,
+   "file": "ctrl_sphere_20_h0.3.gcode",
+   "profile": [
+    [
+     0.0,
+     20.0
+    ]
+   ],
+   "blends": [],
+   "n_layers": 69,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 5470,
+   "n_blend_pairs": 0,
+   "dtan_max_abs": 0.0,
+   "pred_range": [
+    0.3,
+    0.3
+   ],
+   "M1_all": {
+    "n": 5470,
+    "min": 0.996092,
+    "p2.5": 0.997155,
+    "median": 1.000006,
+    "p97.5": 1.002819,
+    "max": 1.004216
+   },
+   "M1_blend": {
+    "n": 0
+   },
+   "M2_all_uncorrected": {
+    "n": 5470,
+    "min": 0.876667,
+    "p2.5": 0.886667,
+    "median": 0.993333,
+    "p97.5": 1.106667,
+    "max": 1.123333
+   },
+   "M1_abs_err_mm_max": 0.001265,
+   "pass_all": true,
+   "pass_blend": null,
+   "slope_vs_meta_tan_max_span_ge_1mm": 9.7e-05,
+   "n_layers_r_span_lt_1mm": 4,
+   "n_pairs_from_narrow_layer": 46,
+   "layer_line_fit_resid_max_mm": 0.000842,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "ctrl_sphere_20",
+   "layer_height": 0.4,
+   "file": "ctrl_sphere_20_h0.4.gcode",
+   "profile": [
+    [
+     0.0,
+     20.0
+    ]
+   ],
+   "blends": [],
+   "n_layers": 52,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 3687,
+   "n_blend_pairs": 0,
+   "dtan_max_abs": 0.0,
+   "pred_range": [
+    0.4,
+    0.4
+   ],
+   "M1_all": {
+    "n": 3687,
+    "min": 0.996782,
+    "p2.5": 0.997708,
+    "median": 0.999894,
+    "p97.5": 1.001973,
+    "max": 1.003094
+   },
+   "M1_blend": {
+    "n": 0
+   },
+   "M2_all_uncorrected": {
+    "n": 3687,
+    "min": 0.9075,
+    "p2.5": 0.915,
+    "median": 0.9975,
+    "p97.5": 1.0825,
+    "max": 1.0925
+   },
+   "M1_abs_err_mm_max": 0.001287,
+   "pass_all": true,
+   "pass_blend": null,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000259,
+   "n_layers_r_span_lt_1mm": 3,
+   "n_pairs_from_narrow_layer": 4,
+   "layer_line_fit_resid_max_mm": 0.000726,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "lamp_band2",
+   "layer_height": 0.3,
+   "file": "lamp_band2_h0.3.gcode",
+   "profile": [
+    [
+     0.006392,
+     30.0
+    ],
+    [
+     17.348496,
+     30.0
+    ],
+    [
+     19.657897,
+     0.0
+    ],
+    [
+     30.0,
+     0.0
+    ]
+   ],
+   "blends": [
+    [
+     17.348496,
+     19.657897
+    ]
+   ],
+   "n_layers": 100,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 3923,
+   "n_blend_pairs": 546,
+   "dtan_max_abs": 0.075,
+   "pred_range": [
+    0.3,
+    0.436956
+   ],
+   "M1_all": {
+    "n": 3923,
+    "min": 0.833333,
+    "p2.5": 0.99681,
+    "median": 1.0,
+    "p97.5": 1.002638,
+    "max": 1.004378
+   },
+   "M1_blend": {
+    "n": 546,
+    "min": 0.997725,
+    "p2.5": 0.997803,
+    "median": 1.000151,
+    "p97.5": 1.002274,
+    "max": 1.003216
+   },
+   "M2_all_uncorrected": {
+    "n": 3923,
+    "min": 0.806667,
+    "p2.5": 0.826667,
+    "median": 1.0,
+    "p97.5": 1.173333,
+    "max": 1.193333
+   },
+   "M1_abs_err_mm_max": 0.05,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000211,
+   "n_layers_r_span_lt_1mm": 17,
+   "n_pairs_from_narrow_layer": 609,
+   "layer_line_fit_resid_max_mm": 0.00099,
+   "n_outside_5pct": 16,
+   "worst": [
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.124451,
+     "dr": 0.086267,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.124451,
+     "dr": 0.086267,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.124451,
+     "dr": 0.086267,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.124451,
+     "dr": 0.086267,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.125,
+     "dr": 0.086816,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.125,
+     "dr": 0.086816,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.124615,
+     "dr": 0.086432,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.124615,
+     "dr": 0.086432,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.124615,
+     "dr": 0.086432,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    },
+    {
+     "layer": 0,
+     "Zp": 0.3,
+     "r": 0.125,
+     "dr": 0.086816,
+     "dtan": 0.0,
+     "meas": 0.25,
+     "pred": 0.3,
+     "rho": 0.833333,
+     "dist_to_blend": 17.048496,
+     "layer_k_r_span": 0.000184
+    }
+   ]
+  },
+  {
+   "name": "lamp_band2",
+   "layer_height": 0.4,
+   "file": "lamp_band2_h0.4.gcode",
+   "profile": [
+    [
+     0.006392,
+     30.0
+    ],
+    [
+     17.348496,
+     30.0
+    ],
+    [
+     19.657897,
+     0.0
+    ],
+    [
+     30.0,
+     0.0
+    ]
+   ],
+   "blends": [
+    [
+     17.348496,
+     19.657897
+    ]
+   ],
+   "n_layers": 75,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 2780,
+   "n_blend_pairs": 418,
+   "dtan_max_abs": 0.1,
+   "pred_range": [
+    0.4,
+    0.582608
+   ],
+   "M1_all": {
+    "n": 2780,
+    "min": 0.996412,
+    "p2.5": 0.99723,
+    "median": 1.0,
+    "p97.5": 1.002095,
+    "max": 1.003306
+   },
+   "M1_blend": {
+    "n": 418,
+    "min": 0.998482,
+    "p2.5": 0.998484,
+    "median": 1.000133,
+    "p97.5": 1.001333,
+    "max": 1.001674
+   },
+   "M2_all_uncorrected": {
+    "n": 2780,
+    "min": 0.855,
+    "p2.5": 0.8675,
+    "median": 1.0,
+    "p97.5": 1.1325,
+    "max": 1.145
+   },
+   "M1_abs_err_mm_max": 0.001435,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000201,
+   "n_layers_r_span_lt_1mm": 13,
+   "n_pairs_from_narrow_layer": 416,
+   "layer_line_fit_resid_max_mm": 0.000974,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "sphere_10_30",
+   "layer_height": 0.3,
+   "file": "sphere_10_30_h0.3.gcode",
+   "profile": [
+    [
+     0.072909,
+     10.0
+    ],
+    [
+     0.423641,
+     10.0
+    ],
+    [
+     11.576359,
+     30.0
+    ],
+    [
+     19.927091,
+     30.0
+    ]
+   ],
+   "blends": [
+    [
+     0.423641,
+     11.576359
+    ]
+   ],
+   "n_layers": 72,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 9436,
+   "n_blend_pairs": 4418,
+   "dtan_max_abs": 0.010787,
+   "pred_range": [
+    0.203297,
+    0.3
+   ],
+   "M1_all": {
+    "n": 9436,
+    "min": 0.992978,
+    "p2.5": 0.996646,
+    "median": 0.999957,
+    "p97.5": 1.003291,
+    "max": 1.006611
+   },
+   "M1_blend": {
+    "n": 4418,
+    "min": 0.992978,
+    "p2.5": 0.996196,
+    "median": 0.999859,
+    "p97.5": 1.003778,
+    "max": 1.006611
+   },
+   "M2_all_uncorrected": {
+    "n": 9436,
+    "min": 0.759624,
+    "p2.5": 0.801302,
+    "median": 0.956418,
+    "p97.5": 1.150112,
+    "max": 1.235302
+   },
+   "M1_abs_err_mm_max": 0.00143,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000206,
+   "n_layers_r_span_lt_1mm": 2,
+   "n_pairs_from_narrow_layer": 1,
+   "layer_line_fit_resid_max_mm": 0.000857,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "sphere_10_30",
+   "layer_height": 0.4,
+   "file": "sphere_10_30_h0.4.gcode",
+   "profile": [
+    [
+     0.072909,
+     10.0
+    ],
+    [
+     0.423641,
+     10.0
+    ],
+    [
+     11.576359,
+     30.0
+    ],
+    [
+     19.927091,
+     30.0
+    ]
+   ],
+   "blends": [
+    [
+     0.423641,
+     11.576359
+    ]
+   ],
+   "n_layers": 54,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 5779,
+   "n_blend_pairs": 2493,
+   "dtan_max_abs": 0.014383,
+   "pred_range": [
+    0.272016,
+    0.4
+   ],
+   "M1_all": {
+    "n": 5779,
+    "min": 0.995595,
+    "p2.5": 0.99745,
+    "median": 1.000033,
+    "p97.5": 1.002527,
+    "max": 1.004064
+   },
+   "M1_blend": {
+    "n": 2493,
+    "min": 0.995595,
+    "p2.5": 0.997233,
+    "median": 1.000119,
+    "p97.5": 1.0027,
+    "max": 1.004064
+   },
+   "M2_all_uncorrected": {
+    "n": 5779,
+    "min": 0.796096,
+    "p2.5": 0.823991,
+    "median": 0.9825,
+    "p97.5": 1.1175,
+    "max": 1.172827
+   },
+   "M1_abs_err_mm_max": 0.001455,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 7.1e-05,
+   "n_layers_r_span_lt_1mm": 2,
+   "n_pairs_from_narrow_layer": 1,
+   "layer_line_fit_resid_max_mm": 0.000834,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "sphere_28_20",
+   "layer_height": 0.3,
+   "file": "sphere_28_20_h0.3.gcode",
+   "profile": [
+    [
+     0.072909,
+     28.0
+    ],
+    [
+     3.718515,
+     28.0
+    ],
+    [
+     6.281485,
+     20.0
+    ],
+    [
+     19.927091,
+     20.0
+    ]
+   ],
+   "blends": [
+    [
+     3.718515,
+     6.281485
+    ]
+   ],
+   "n_layers": 69,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 6024,
+   "n_blend_pairs": 787,
+   "dtan_max_abs": 0.019634,
+   "pred_range": [
+    0.3,
+    0.428867
+   ],
+   "M1_all": {
+    "n": 6024,
+    "min": 0.996092,
+    "p2.5": 0.997217,
+    "median": 1.000051,
+    "p97.5": 1.002738,
+    "max": 1.027781
+   },
+   "M1_blend": {
+    "n": 787,
+    "min": 0.996693,
+    "p2.5": 0.998148,
+    "median": 1.000118,
+    "p97.5": 1.002243,
+    "max": 1.003013
+   },
+   "M2_all_uncorrected": {
+    "n": 6024,
+    "min": 0.823333,
+    "p2.5": 0.886667,
+    "median": 0.996667,
+    "p97.5": 1.103333,
+    "max": 1.176667
+   },
+   "M1_abs_err_mm_max": 0.008334,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000186,
+   "n_layers_r_span_lt_1mm": 5,
+   "n_pairs_from_narrow_layer": 83,
+   "layer_line_fit_resid_max_mm": 0.000768,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "sphere_28_20",
+   "layer_height": 0.4,
+   "file": "sphere_28_20_h0.4.gcode",
+   "profile": [
+    [
+     0.072909,
+     28.0
+    ],
+    [
+     3.718515,
+     28.0
+    ],
+    [
+     6.281485,
+     20.0
+    ],
+    [
+     19.927091,
+     20.0
+    ]
+   ],
+   "blends": [
+    [
+     3.718515,
+     6.281485
+    ]
+   ],
+   "n_layers": 52,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 4020,
+   "n_blend_pairs": 572,
+   "dtan_max_abs": 0.026179,
+   "pred_range": [
+    0.4,
+    0.570711
+   ],
+   "M1_all": {
+    "n": 4020,
+    "min": 0.996782,
+    "p2.5": 0.997838,
+    "median": 0.999894,
+    "p97.5": 1.001949,
+    "max": 1.003094
+   },
+   "M1_blend": {
+    "n": 572,
+    "min": 0.997189,
+    "p2.5": 0.998208,
+    "median": 0.999902,
+    "p97.5": 1.001384,
+    "max": 1.002431
+   },
+   "M2_all_uncorrected": {
+    "n": 4020,
+    "min": 0.8675,
+    "p2.5": 0.915,
+    "median": 0.995,
+    "p97.5": 1.0825,
+    "max": 1.0925
+   },
+   "M1_abs_err_mm_max": 0.001314,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000225,
+   "n_layers_r_span_lt_1mm": 4,
+   "n_pairs_from_narrow_layer": 19,
+   "layer_line_fit_resid_max_mm": 0.000788,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "waist3x2_42_36",
+   "layer_height": 0.3,
+   "file": "waist3x2_42_36_h0.3.gcode",
+   "profile": [
+    [
+     0.005823,
+     42.0
+    ],
+    [
+     5.724445,
+     42.0
+    ],
+    [
+     9.281378,
+     36.0
+    ],
+    [
+     30.0,
+     36.0
+    ]
+   ],
+   "blends": [
+    [
+     5.724445,
+     9.281378
+    ]
+   ],
+   "n_layers": 132,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 14151,
+   "n_blend_pairs": 1653,
+   "dtan_max_abs": 0.014664,
+   "pred_range": [
+    0.3,
+    0.434257
+   ],
+   "M1_all": {
+    "n": 14151,
+    "min": 0.994269,
+    "p2.5": 0.996773,
+    "median": 0.999937,
+    "p97.5": 1.003377,
+    "max": 1.043333
+   },
+   "M1_blend": {
+    "n": 1653,
+    "min": 0.995552,
+    "p2.5": 0.997058,
+    "median": 0.999801,
+    "p97.5": 1.002437,
+    "max": 1.003645
+   },
+   "M2_all_uncorrected": {
+    "n": 14151,
+    "min": 0.713333,
+    "p2.5": 0.773333,
+    "median": 0.979142,
+    "p97.5": 1.21,
+    "max": 1.283333
+   },
+   "M1_abs_err_mm_max": 0.013,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000422,
+   "n_layers_r_span_lt_1mm": 9,
+   "n_pairs_from_narrow_layer": 228,
+   "layer_line_fit_resid_max_mm": 0.001174,
+   "n_outside_5pct": 0,
+   "worst": []
+  },
+  {
+   "name": "waist3x2_42_36",
+   "layer_height": 0.4,
+   "file": "waist3x2_42_36_h0.4.gcode",
+   "profile": [
+    [
+     0.005823,
+     42.0
+    ],
+    [
+     5.724445,
+     42.0
+    ],
+    [
+     9.281378,
+     36.0
+    ],
+    [
+     30.0,
+     36.0
+    ]
+   ],
+   "blends": [
+    [
+     5.724445,
+     9.281378
+    ]
+   ],
+   "n_layers": 99,
+   "skipped_layer_pairs": 0,
+   "n_pairs": 10728,
+   "n_blend_pairs": 877,
+   "dtan_max_abs": 0.019552,
+   "pred_range": [
+    0.4,
+    0.577952
+   ],
+   "M1_all": {
+    "n": 10728,
+    "min": 0.995472,
+    "p2.5": 0.997779,
+    "median": 1.000026,
+    "p97.5": 1.002561,
+    "max": 1.003793
+   },
+   "M1_blend": {
+    "n": 877,
+    "min": 0.997097,
+    "p2.5": 0.998292,
+    "median": 0.999972,
+    "p97.5": 1.002061,
+    "max": 1.00311
+   },
+   "M2_all_uncorrected": {
+    "n": 10728,
+    "min": 0.799247,
+    "p2.5": 0.83,
+    "median": 1.0275,
+    "p97.5": 1.165,
+    "max": 1.2125
+   },
+   "M1_abs_err_mm_max": 0.001811,
+   "pass_all": true,
+   "pass_blend": true,
+   "slope_vs_meta_tan_max_span_ge_1mm": 0.000494,
+   "n_layers_r_span_lt_1mm": 6,
+   "n_pairs_from_narrow_layer": 48,
+   "layer_line_fit_resid_max_mm": 0.001058,
+   "n_outside_5pct": 0,
+   "worst": []
+  }
+ ],
+ "pooled": {
+  "band_all": {
+   "n": 56841,
+   "min": 0.833333,
+   "p2.5": 0.997062,
+   "median": 1.0,
+   "p97.5": 1.002906,
+   "max": 1.043333,
+   "pass": true
+  },
+  "band_blend": {
+   "n": 11764,
+   "min": 0.992978,
+   "p2.5": 0.996869,
+   "median": 0.999974,
+   "p97.5": 1.002951,
+   "max": 1.006611,
+   "pass": true
+  },
+  "ctrl_all": {
+   "n": 16533,
+   "min": 0.996092,
+   "p2.5": 0.997372,
+   "median": 1.0,
+   "p97.5": 1.002604,
+   "max": 1.004216,
+   "pass": true
+  }
+ }
+}
